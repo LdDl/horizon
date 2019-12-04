@@ -28,7 +28,6 @@ func NewGPSMeasurement(t time.Time, lon, lat float64, srid ...int) *GPSMeasureme
 	gps := GPSMeasurement{
 		dateTime: t,
 		id:       t.Unix(),
-		GeoPoint: newGeoPoint(lon, lat, srid[0]),
 	}
 	if len(srid) != 0 {
 		switch srid[0] {
@@ -58,7 +57,6 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 	gps := GPSMeasurement{
 		dateTime: dateTime,
 		id:       dateTime.Unix(),
-		GeoPoint: newGeoPoint(lon, lat, srid[0]),
 	}
 	if len(srid) != 0 {
 		switch srid[0] {
