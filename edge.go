@@ -4,7 +4,7 @@ import (
 	"github.com/golang/geo/s2"
 )
 
-// Edge Representation of segment of road
+// Edge Representation of segment of road (edge in graph)
 /*
 	ID - unique identifier
 	Source - identifier of source vertex
