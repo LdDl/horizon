@@ -106,7 +106,7 @@ func (storage *S2Storage) SearchInRadiusLonLat(lon, lat float64, radius float64)
 	return result, nil
 }
 
-// SearchInRadius Returns polylines in radius
+// SearchInRadius Returns edges in radius
 /*
 	pt - s2.Point
 	radius - radius of search
@@ -124,10 +124,8 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 		if item != nil {
 			for _, edgeID := range item.(indexedItem).edgesInCell {
 				polyline := storage.edges[edgeID]
-
 				minEdge := s2.Edge{}
 				minDist := s1.ChordAngle(0)
-
 				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
 					if i == 0 {
 						minEdge = polyline.Polyline.Edge(0)
@@ -178,9 +176,9 @@ func (h *s2Heap) Pop() interface{} {
 
 // NearestNeighborsInRadius Returns edges in radius with max objects restriction (KNN)
 /*
-	pt - point
+	pt - s2.Point
 	radius - radius of search
-	n - maximum polylines
+	n - first N closest edges
 */
 func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, n int) ([]NearestObject, error) {
 	found, err := storage.SearchInRadius(pt, radius)
