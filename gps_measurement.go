@@ -32,13 +32,13 @@ func NewGPSMeasurement(t time.Time, lon, lat float64, srid ...int) *GPSMeasureme
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			gps.GeoPoint = newGeoPoint(lon, lat, 0)
+			gps.GeoPoint = NewEuclideanPoint(lon, lat)
 			break
 		case 4326:
-			gps.GeoPoint = newGeoPoint(lon, lat, 4326)
+			gps.GeoPoint = NewWGS84Point(lon, lat)
 			break
 		default:
-			gps.GeoPoint = newGeoPoint(lon, lat, 4326)
+			gps.GeoPoint = NewWGS84Point(lon, lat)
 			break
 		}
 	}
@@ -61,13 +61,13 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			gps.GeoPoint = newGeoPoint(lon, lat, 0)
+			gps.GeoPoint = NewEuclideanPoint(lon, lat)
 			break
 		case 4326:
-			gps.GeoPoint = newGeoPoint(lon, lat, 4326)
+			gps.GeoPoint = NewWGS84Point(lon, lat)
 			break
 		default:
-			gps.GeoPoint = newGeoPoint(lon, lat, 4326)
+			gps.GeoPoint = NewWGS84Point(lon, lat)
 			break
 		}
 	}

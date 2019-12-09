@@ -23,7 +23,7 @@ type State struct {
 	Projected      *GeoPoint
 }
 
-// NewState Returns pointer to created State
+// NewStateFromLonLat Returns pointer to created State
 /*
 	stateID - unique identifier for state
 	graphVertex - indentifier of vertex which is closest to Observation
@@ -32,7 +32,7 @@ type State struct {
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewState(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) *State {
+func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) *State {
 	state := State{
 		RoadPositionID: stateID,
 		GraphEdge:      e,
@@ -41,13 +41,44 @@ func NewState(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) 
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			state.Projected = newGeoPoint(lon, lat, 0)
+			state.Projected = NewEuclideanPoint(lon, lat)
 			break
 		case 4326:
-			state.Projected = newGeoPoint(lon, lat, 4326)
+			state.Projected = NewWGS84Point(lon, lat)
 			break
 		default:
-			state.Projected = newGeoPoint(lon, lat, 4326)
+			state.Projected = NewWGS84Point(lon, lat)
+			break
+		}
+	}
+	return &state
+}
+
+// NewStateFromS2LatLng Returns pointer to created State
+/*
+	stateID - unique identifier for state
+	graphVertex - indentifier of vertex which is closest to Observation
+	e - pointer to Edge
+	lon - longitude (X for SRID = 0)
+	lat - latitude (Y for SRID = 0)
+	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
+*/
+func NewStateFromS2LatLng(stateID, graphVertex int, e *Edge, latLng *s2.LatLng, srid ...int) *State {
+	state := State{
+		RoadPositionID: stateID,
+		GraphEdge:      e,
+		GraphVertex:    graphVertex,
+	}
+	if len(srid) != 0 {
+		switch srid[0] {
+		case 0:
+			state.Projected = NewEuclideanPoint(latLng.Lng.Degrees(), latLng.Lat.Degrees())
+			break
+		case 4326:
+			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
+			break
+		default:
+			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
 			break
 		}
 	}
