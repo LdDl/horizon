@@ -83,8 +83,8 @@ func (storage *S2Storage) SearchInRadiusLonLat(lon, lat float64, radius float64)
 	for _, cellID := range cu {
 		item := storage.BTree.Get(indexedItem{CellID: cellID})
 		if item != nil {
-			for _, polylineID := range item.(indexedItem).edgesInCell {
-				polyline := storage.edges[polylineID]
+			for _, edgeID := range item.(indexedItem).edgesInCell {
+				polyline := storage.edges[edgeID]
 				minEdge := s2.Edge{}
 				minDist := s1.ChordAngle(0)
 				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
@@ -99,7 +99,7 @@ func (storage *S2Storage) SearchInRadiusLonLat(lon, lat float64, radius float64)
 						minDist = distance
 					}
 				}
-				result[polylineID] = minDist.Angle().Radians() * EarthRadius
+				result[edgeID] = minDist.Angle().Radians() * EarthRadius
 			}
 		}
 	}
@@ -122,8 +122,8 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 	for _, cellID := range cu {
 		item := storage.BTree.Get(indexedItem{CellID: cellID})
 		if item != nil {
-			for _, polylineID := range item.(indexedItem).edgesInCell {
-				polyline := storage.edges[polylineID]
+			for _, edgeID := range item.(indexedItem).edgesInCell {
+				polyline := storage.edges[edgeID]
 
 				minEdge := s2.Edge{}
 				minDist := s1.ChordAngle(0)
@@ -140,7 +140,7 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 						minDist = distance
 					}
 				}
-				result[polylineID] = minDist.Angle().Radians() * EarthRadius
+				result[edgeID] = minDist.Angle().Radians() * EarthRadius
 			}
 		}
 	}
@@ -149,11 +149,11 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 
 // NearestObject Nearest object to given point
 /*
-	polylineID - unique identifier
+	edgeID - unique identifier
 	distanceTo - distance to object
 */
 type NearestObject struct {
-	polylineID uint64
+	edgeID     uint64
 	distanceTo float64
 }
 
@@ -183,13 +183,13 @@ func (h *s2Heap) Pop() interface{} {
 	n - maximum polylines
 */
 func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, n int) ([]NearestObject, error) {
-	closest, err := storage.SearchInRadius(pt, radius)
+	found, err := storage.SearchInRadius(pt, radius)
 	if err != nil {
 		return nil, err
 	}
 	h := &s2Heap{}
 	heap.Init(h)
-	for k, v := range closest {
+	for k, v := range found {
 		heap.Push(h, NearestObject{k, v})
 	}
 	l := h.Len()
