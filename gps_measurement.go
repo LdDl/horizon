@@ -14,6 +14,11 @@ type GPSMeasurement struct {
 	*GeoPoint
 }
 
+// ID Returns generated identifier of GPS-point
+func (gps *GPSMeasurement) ID() int64 {
+	return gps.id
+}
+
 // GPSTrack Set of telematic data
 type GPSTrack []*GPSMeasurement
 

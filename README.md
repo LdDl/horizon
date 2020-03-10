@@ -22,7 +22,7 @@ Horizon is project aimed to do map matching, routing.
 @todo
 
 ## Benchmark
-@todo
+Please follow [link](BENCHMARK.md)
 
 ## Support
 @todo
