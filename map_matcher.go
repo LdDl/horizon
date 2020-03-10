@@ -30,10 +30,16 @@ func NewMapMatcherDefault() *MapMatcher {
 /*
 	props - parameters of Hidden Markov Model
 */
-func NewMapMatcher(props *HmmProbabilities) *MapMatcher {
-	return &MapMatcher{
+func NewMapMatcher(props *HmmProbabilities, graphFileName string) (*MapMatcher, error) {
+	mm := &MapMatcher{
 		hmmParams: props,
 	}
+	mapEngine, err := prepareEngine(graphFileName)
+	if err != nil {
+		return nil, err
+	}
+	mm.engine = mapEngine
+	return mm, nil
 }
 
 // Run Do magic

@@ -26,9 +26,9 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		}
 	)
 
-	var err error
-	matcher := NewMapMatcher(NewHmmProbabilities(sigma, beta))
-	matcher.engine, err = prepareEngine(graphFileName)
+	hmmParams := NewHmmProbabilities(sigma, beta)
+
+	matcher, err := NewMapMatcher(hmmParams, graphFileName)
 	if err != nil {
 		t.Error(err)
 	}
