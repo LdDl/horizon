@@ -14,7 +14,7 @@ type GPSMeasurement struct {
 	*GeoPoint
 }
 
-// ID Returns generated identifier of GPS-point
+// ID Returns generated identifier for GPS-point
 func (gps *GPSMeasurement) ID() int64 {
 	return gps.id
 }
