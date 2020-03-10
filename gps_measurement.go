@@ -1,6 +1,10 @@
 package horizon
 
-import "time"
+import (
+	"time"
+
+	geojson "github.com/paulmach/go.geojson"
+)
 
 // GPSMeasurements Set of telematic data
 type GPSMeasurements []*GPSMeasurement
@@ -80,4 +84,9 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 		}
 	}
 	return &gps
+}
+
+// GeoJSON Returns GeoJSON representation of GeoPoint
+func (gp *GeoPoint) GeoJSON() *geojson.Feature {
+	return S2PointToGeoJSONFeature(&gp.Point)
 }

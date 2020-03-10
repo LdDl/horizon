@@ -50,3 +50,19 @@ func GeoJSONToS2PolylineFeature(pts *geojson.Geometry) (*s2.Polyline, error) {
 	}
 	return s2.PolylineFromLatLngs(latLngs), nil
 }
+
+// S2PolylineToGeoJSONFeature Returns GeoJSON representation of *s2.Polyline
+func S2PolylineToGeoJSONFeature(pts *s2.Polyline) *geojson.Feature {
+	coordinates := make([][]float64, len(*pts))
+	for i := range *pts {
+		latLng := s2.LatLngFromPoint((*pts)[i])
+		coordinates[i] = []float64{latLng.Lng.Degrees(), latLng.Lat.Degrees()}
+	}
+	return geojson.NewLineStringFeature(coordinates)
+}
+
+// S2PointToGeoJSONFeature Returns GeoJSON representation of *s2.Point
+func S2PointToGeoJSONFeature(pt *s2.Point) *geojson.Feature {
+	latLng := s2.LatLngFromPoint(*pt)
+	return geojson.NewPointFeature([]float64{latLng.Lng.Degrees(), latLng.Lat.Degrees()})
+}
