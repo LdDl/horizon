@@ -1,7 +1,15 @@
 package horizon
 
 import (
+	"bufio"
+	"encoding/csv"
+	"io"
+	"os"
+	"strconv"
+
 	"github.com/LdDl/ch"
+	"github.com/golang/geo/s2"
+	geojson "github.com/paulmach/go.geojson"
 )
 
 // MapEngine Engine for solving finding shortest path and KNN problems
@@ -52,4 +60,116 @@ func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) {
 			engine.s2Storage.AddEdge(uint64(edges[i][j].ID), edges[i][j])
 		}
 	}
+}
+
+func prepareEngine(graphFileName string) (*MapEngine, error) {
+	engine := NewMapEngineDefault()
+	edges, err := extractEdgesFromCSV(graphFileName)
+	if err != nil {
+		return nil, err
+	}
+	engine.prepareGraph(edges)
+	engine.graph.PrepareContracts()
+	return engine, nil
+}
+
+func extractEdgesFromCSV(fname string) (map[int64]map[int64]*Edge, error) {
+	file, err := os.Open(fname)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	reader := csv.NewReader(bufio.NewReader(file))
+	reader.Comma = ';'
+	reader.LazyQuotes = true
+	_, err = reader.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	ans := make(map[int64]map[int64]*Edge)
+	edgeID := int64(0)
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+
+		source, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		target, err := strconv.ParseInt(record[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		if source == target {
+			continue
+		}
+
+		oneway := record[2]
+		weight, err := strconv.ParseFloat(record[3], 64)
+		if err != nil {
+			return nil, err
+		}
+
+		coordinates := record[4]
+		bytesCoordinates := []byte(coordinates)
+		geojsonPolyline, err := geojson.UnmarshalGeometry(bytesCoordinates)
+		if err != nil {
+			return nil, err
+		}
+
+		s2Polyline, err := GeoJSONToS2PolylineFeature(geojsonPolyline)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := ans[source]; !ok {
+			ans[source] = make(map[int64]*Edge)
+			ans[source][target] = &Edge{
+				ID:       edgeID,
+				Source:   source,
+				Target:   target,
+				Weight:   weight,
+				Polyline: s2Polyline,
+			}
+		} else {
+			ans[source][target] = &Edge{
+				ID:       edgeID,
+				Source:   source,
+				Target:   target,
+				Weight:   weight,
+				Polyline: s2Polyline,
+			}
+		}
+
+		if oneway == "B" {
+			reverseS2Polyline := make(s2.Polyline, len(*s2Polyline))
+			copy(reverseS2Polyline, *s2Polyline)
+			reverseS2Polyline.Reverse()
+
+			edgeID++
+			if _, ok := ans[target]; !ok {
+				ans[target] = make(map[int64]*Edge)
+				ans[target][source] = &Edge{
+					ID:       edgeID,
+					Source:   target,
+					Target:   source,
+					Weight:   weight,
+					Polyline: &reverseS2Polyline,
+				}
+			} else {
+				ans[target][source] = &Edge{
+					ID:       edgeID,
+					Source:   target,
+					Target:   source,
+					Weight:   weight,
+					Polyline: &reverseS2Polyline,
+				}
+			}
+		}
+		edgeID++
+	}
+	return ans, nil
 }

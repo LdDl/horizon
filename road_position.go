@@ -19,11 +19,11 @@ type RoadPositions []*RoadPosition
 type RoadPosition struct {
 	RoadPositionID int
 	GraphEdge      *Edge
-	GraphVertex    int
+	GraphVertex    int64
 	Projected      *GeoPoint
 }
 
-// NewStateFromLonLat Returns pointer to created State
+// NewRoadPositionFromLonLat Returns pointer to created State
 /*
 	stateID - unique identifier for state
 	graphVertex - indentifier of vertex which is closest to Observation
@@ -32,7 +32,7 @@ type RoadPosition struct {
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
+func NewRoadPositionFromLonLat(stateID int, graphVertex int64, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
 	state := RoadPosition{
 		RoadPositionID: stateID,
 		GraphEdge:      e,
@@ -54,7 +54,7 @@ func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, sri
 	return &state
 }
 
-// NewStateFromS2LatLng Returns pointer to created State
+// NewRoadPositionFromS2LatLng Returns pointer to created State
 /*
 	stateID - unique identifier for state
 	graphVertex - indentifier of vertex which is closest to Observation
@@ -63,7 +63,7 @@ func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, sri
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewStateFromS2LatLng(stateID, graphVertex int, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
+func NewRoadPositionFromS2LatLng(stateID int, graphVertex int64, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
 	state := RoadPosition{
 		RoadPositionID: stateID,
 		GraphEdge:      e,

@@ -2,6 +2,9 @@ package horizon
 
 import "time"
 
+// GPSMeasurements Set of telematic data
+type GPSMeasurements []*GPSMeasurement
+
 // GPSMeasurement Representation of telematic data
 /*
 	id - unique identifier
@@ -9,13 +12,13 @@ import "time"
 	GeoPoint - latitude(Y)/longitude(X), pointer to GeoPoint (wrapper)
 */
 type GPSMeasurement struct {
-	id       int64
+	id       int
 	dateTime time.Time
 	*GeoPoint
 }
 
 // ID Returns generated identifier for GPS-point
-func (gps *GPSMeasurement) ID() int64 {
+func (gps *GPSMeasurement) ID() int {
 	return gps.id
 }
 
@@ -32,7 +35,7 @@ type GPSTrack []*GPSMeasurement
 func NewGPSMeasurement(t time.Time, lon, lat float64, srid ...int) *GPSMeasurement {
 	gps := GPSMeasurement{
 		dateTime: t,
-		id:       t.Unix(),
+		id:       int(t.Unix()),
 	}
 	if len(srid) != 0 {
 		switch srid[0] {
@@ -61,7 +64,7 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 	dateTime := time.Now().Add(time.Duration(id) * time.Second)
 	gps := GPSMeasurement{
 		dateTime: dateTime,
-		id:       dateTime.Unix(),
+		id:       int(dateTime.Unix()),
 	}
 	if len(srid) != 0 {
 		switch srid[0] {
