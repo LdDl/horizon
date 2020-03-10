@@ -6,17 +6,17 @@ import (
 	"github.com/golang/geo/s2"
 )
 
-// States Set of states
-type States []*State
+// RoadPositions Set of states
+type RoadPositions []*RoadPosition
 
-// State Representation of state (in terms of Hidden Markov Model)
+// RoadPosition Representation of state (in terms of Hidden Markov Model)
 /*
-	RoadPositionID - unique identifier of state
+	ID - unique identifier of state
 	GraphEdge - pointer to closest edge in graph
 	GraphVertex  - indentifier of closest vertex
 	Projected - point (Observation) project onto edge, pointer to GeoPoint
 */
-type State struct {
+type RoadPosition struct {
 	RoadPositionID int
 	GraphEdge      *Edge
 	GraphVertex    int
@@ -32,8 +32,8 @@ type State struct {
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) *State {
-	state := State{
+func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
+	state := RoadPosition{
 		RoadPositionID: stateID,
 		GraphEdge:      e,
 		GraphVertex:    graphVertex,
@@ -63,8 +63,8 @@ func NewStateFromLonLat(stateID, graphVertex int, e *Edge, lon, lat float64, sri
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewStateFromS2LatLng(stateID, graphVertex int, e *Edge, latLng *s2.LatLng, srid ...int) *State {
-	state := State{
+func NewStateFromS2LatLng(stateID, graphVertex int, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
+	state := RoadPosition{
 		RoadPositionID: stateID,
 		GraphEdge:      e,
 		GraphVertex:    graphVertex,
@@ -86,12 +86,12 @@ func NewStateFromS2LatLng(stateID, graphVertex int, e *Edge, latLng *s2.LatLng, 
 }
 
 // ID Method to fit interface State (see https://github.com/LdDl/viterbi/blob/master/viterbi.go#L9)
-func (state State) ID() int {
+func (state RoadPosition) ID() int {
 	return state.RoadPositionID
 }
 
 // String Pretty format for State
-func (state State) String() string {
+func (state RoadPosition) String() string {
 	latlng := s2.LatLngFromPoint(state.Projected.Point)
 	return fmt.Sprintf(
 		"State is:\n\tSourceVertexID => %v\n\tTargetVertexID => %v\n\tSRID: %d\n\tCoords => %v",
