@@ -38,11 +38,11 @@ func NewMapEngine(storageLevel int, degree int) *MapEngine {
 	}
 }
 
-// PrepareGraph Insertes vertices and edges into MapEngine
+// prepareGraph Insertes vertices and edges into MapEngine
 /*
 	edges - set of edges (map[from_vertex]map[to_vertex]Edge)
 */
-func (engine *MapEngine) PrepareGraph(edges map[int64]map[int64]*Edge) {
+func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) {
 	engine.edges = edges
 	for i := range edges {
 		engine.graph.CreateVertex(i)
