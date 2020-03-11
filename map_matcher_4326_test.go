@@ -1,6 +1,8 @@
 package horizon
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestMapMatcherSRID_4326(t *testing.T) {
 
@@ -22,12 +24,11 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 				&ObservationResult{Observation: gpsMeasurements[2]},
 				&ObservationResult{Observation: gpsMeasurements[3]},
 			},
-			Probability: -95.148024,
+			Probability: -47.251535,
 		}
 	)
 
 	hmmParams := NewHmmProbabilities(sigma, beta)
-
 	matcher, err := NewMapMatcher(hmmParams, graphFileName)
 	if err != nil {
 		t.Error(err)
@@ -62,4 +63,5 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 			)
 		}
 	}
+
 }

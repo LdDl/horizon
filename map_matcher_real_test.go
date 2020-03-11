@@ -3,8 +3,6 @@ package horizon
 import (
 	"testing"
 	"time"
-
-	geojson "github.com/paulmach/go.geojson"
 )
 
 func TestMapMatcher_BIG(t *testing.T) {
@@ -42,13 +40,6 @@ func TestMapMatcher_BIG(t *testing.T) {
 			Probability: -81.741322,
 		}
 	)
-
-	// clear
-	initialPath := geojson.NewFeatureCollection()
-	for i := range gpsMeasurements {
-		f := gpsMeasurements[i].GeoJSON()
-		initialPath.AddFeature(f)
-	}
 
 	hmmParams := NewHmmProbabilities(sigma, beta)
 	matcher, err := NewMapMatcher(hmmParams, graphFileName)
@@ -91,10 +82,5 @@ func TestMapMatcher_BIG(t *testing.T) {
 			)
 		}
 	}
-
-	f := S2PolylineToGeoJSONFeature(&result.Path)
-	initialPath.AddFeature(f)
-	bb, _ := initialPath.MarshalJSON()
-	t.Error(string(bb))
 
 }

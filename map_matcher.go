@@ -3,7 +3,6 @@ package horizon
 import (
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
@@ -68,7 +67,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			edge := matcher.engine.edges[m][n]
 			proj, fraction := calcProjection(*edge.Polyline, s2point)
 			latLng := s2.LatLngFromPoint(proj)
-
 			_ = fraction
 			// @todo determine which vertex is better to use. something like below, maybe?
 			// choosenID := n
@@ -79,10 +77,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			// 		choosenID = n
 			// 	}
 			// }
-			// log.Println("STATE", i, stateID, edge, m, n)
-
-			// fmt.Printf("state :  %d %d (%d->%d)\n", i, stateID, edge.Source, edge.Target)
-
 			roadPos := NewRoadPositionFromLonLat(stateID, n, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
 			localStates[j] = roadPos
 			stateID++
@@ -94,7 +88,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 	routeLengths := make(lengths)
 
-	st := time.Now()
 	for i := 1; i < len(layers); i++ {
 		prevStates := layers[i-1]
 		currentStates := layers[i]
@@ -116,19 +109,17 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					one2manyStatesIndices = append(one2manyStatesIndices, n)
 				}
 			}
-			anss, paths := matcher.engine.graph.ShortestPathOneToMany(prevStates[m].GraphVertex, one2manyVertices)
-			for i := range anss {
-				if anss[i] == -1 {
-					anss[i] = math.MaxFloat64
+			answers, pathes := matcher.engine.graph.ShortestPathOneToMany(prevStates[m].GraphVertex, one2manyVertices)
+			for i := range answers {
+				if answers[i] == -1 {
+					answers[i] = math.MaxFloat64
 				}
-				chRoutes[prevStates[m].RoadPositionID][currentStates[one2manyStatesIndices[i]].RoadPositionID] = paths[i]
-				routeLengths.AddRouteLength(prevStates[m], currentStates[one2manyStatesIndices[i]], anss[i])
+				chRoutes[prevStates[m].RoadPositionID][currentStates[one2manyStatesIndices[i]].RoadPositionID] = pathes[i]
+				routeLengths.AddRouteLength(prevStates[m], currentStates[one2manyStatesIndices[i]], answers[i])
 				// fmt.Printf("(2) from (%d->%d) to ans (%d->%d) : %f\n", prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target, currentStates[one2manyStatesIndices[i]].GraphEdge.Source, currentStates[one2manyStatesIndices[i]].GraphEdge.Target, anss[i])
 			}
 		}
 	}
-
-	fmt.Println("Done routes lengths in:", time.Since(st))
 
 	// for i := 1; i < len(layers); i++ {
 	// 	prevStates := layers[i-1]
@@ -157,16 +148,12 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	// 	}
 	// }
 
-	st = time.Now()
 	v, err := matcher.PrepareViterbi(obsState, routeLengths, gpsMeasurements)
 	if err != nil {
 		return MatcherResult{}, err
 	}
-	fmt.Println("Done Viterbi's algorithm preparation in:", time.Since(st))
 
-	st = time.Now()
 	vpath := v.EvalPathLogProbabilities()
-	fmt.Println("Done Viterbi's algorithm in:", time.Since(st))
 
 	if len(vpath.Path) != len(gpsMeasurements) {
 		return MatcherResult{}, fmt.Errorf("Number of states in final path != number of observations. Should be unreachable error")
