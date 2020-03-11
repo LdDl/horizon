@@ -27,17 +27,35 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 go get -u github.com/LdDl/horizon/...
 go install github.com/LdDl/horizon/...
 ```
+Check if **horizon** binary was installed properly:
+```shell
+horizon -h
+```
+Output should be:
+```shell
+  -f string
+        Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch) (default "graph.csv")
+  -h string
+        Bind address (default "0.0.0.0")
+  -p int
+        Port (default 32800)
+  -sigma float
+        σ-parameter for evaluating emission probabilities (default 50)
+  -beta float
+        β-parameter for evaluationg transition probabilities (default 30)
+```
 
 ## Usage
 Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 0. Installing Prerequisites
 
+
     * Install [osm2ch tool](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
         ```shell
         go install github.com/LdDl/ch/...
         ```
-    * Check if osm2ch binary was installed properly:
+    * Check if **osm2ch** binary was installed properly:
         ```shell
         osm2ch -h
         ```
@@ -47,7 +65,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```shell
         sudo apt install osmctools && wget -O - http://m.m.i24.cc/osmconvert.c | sudo cc -x c - -lz -O3 -o osmconvert
         ```
-    * Check if osmconvert binary was installed properly:
+    * Check if **osmconvert** binary was installed properly:
         ```shell
         osmconvert -h
         ```
@@ -61,8 +79,12 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
     ```
 3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
-    ```
+    ```shell
     osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
+    ```
+4. Start **horizon** server. Provide bind address and port of your needs.
+    ```shell
+    horizon -p 32800 -h 0.0.0.0 -f map.csv
     ```
 
 ## Benchmark
@@ -89,6 +111,7 @@ Thanks for approach described in this paper:
 * S2 (spherical geometry) library - [s2](https://github.com/golang/geo#overview). License is Apache-2.0
 * Btree implementation - [btree](https://github.com/google/btree#btree-implementation-for-go). License is Apache-2.0
 * GeoJSON stuff - [go.geojson](https://github.com/paulmach/go.geojson#gogeojson). License is MIT
+* Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
 
 ## License
 You can check it [here](https://github.com/LdDl/horizon/blob/master/LICENSE)

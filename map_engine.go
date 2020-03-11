@@ -3,9 +3,11 @@ package horizon
 import (
 	"bufio"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/LdDl/ch"
 	"github.com/golang/geo/s2"
@@ -64,12 +66,21 @@ func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) {
 
 func prepareEngine(graphFileName string) (*MapEngine, error) {
 	engine := NewMapEngineDefault()
+	fmt.Printf("Extractiong edges from '%s' file... ", graphFileName)
+	st := time.Now()
 	edges, err := extractEdgesFromCSV(graphFileName)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("Done in %v\n", time.Since(st))
+	fmt.Printf("Preparing graph... ")
+	st = time.Now()
 	engine.prepareGraph(edges)
+	fmt.Printf("Done in %v\n", time.Since(st))
+	fmt.Printf("Preparing contracts... ")
+	st = time.Now()
 	engine.graph.PrepareContracts()
+	fmt.Printf("Done in %v\n", time.Since(st))
 	return engine, nil
 }
 
