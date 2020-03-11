@@ -1,0 +1,5 @@
+*.osm
+*.pbf
+*.json
+*.geojson
+map.osm
