@@ -103,7 +103,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
 					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 					routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-					// fmt.Printf("(1) from (%d->%d) to ans (%d->%d) : %f\n", prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target, currentStates[n].GraphEdge.Source, currentStates[n].GraphEdge.Target, ans)
 				} else {
 					one2manyVertices = append(one2manyVertices, currentStates[n].GraphVertex)
 					one2manyStatesIndices = append(one2manyStatesIndices, n)
@@ -116,37 +115,37 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				}
 				chRoutes[prevStates[m].RoadPositionID][currentStates[one2manyStatesIndices[i]].RoadPositionID] = pathes[i]
 				routeLengths.AddRouteLength(prevStates[m], currentStates[one2manyStatesIndices[i]], answers[i])
-				// fmt.Printf("(2) from (%d->%d) to ans (%d->%d) : %f\n", prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target, currentStates[one2manyStatesIndices[i]].GraphEdge.Source, currentStates[one2manyStatesIndices[i]].GraphEdge.Target, anss[i])
 			}
 		}
 	}
 
-	// for i := 1; i < len(layers); i++ {
-	// 	prevStates := layers[i-1]
-	// 	currentStates := layers[i]
-	// 	for m := range prevStates {
-	// 		if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
-	// 			chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
-	// 		}
-	// 		for n := range currentStates {
-	// 			if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
-	// 				ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-	// 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-	// 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-	// 				// fmt.Printf("(1) from (%d->%d) to ans (%d->%d) : %f\n", prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target, currentStates[n].GraphEdge.Source, currentStates[n].GraphEdge.Target, ans)
-	// 			} else {
-	// 				ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
-	// 				if ans == -1 {
-	// 					ans = math.MaxFloat64
-	// 				}
-	// 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
-	// 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-	// 				// fmt.Printf("(2) from (%d->%d) to ans (%d->%d) : %f\n", prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target, currentStates[n].GraphEdge.Source, currentStates[n].GraphEdge.Target, ans)
-	// 			}
-
-	// 		}
-	// 	}
-	// }
+	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
+	//
+	/*
+		for i := 1; i < len(layers); i++ {
+			prevStates := layers[i-1]
+			currentStates := layers[i]
+			for m := range prevStates {
+				if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
+					chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
+				}
+				for n := range currentStates {
+					if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
+						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					} else {
+						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
+						if ans == -1 {
+							ans = math.MaxFloat64
+						}
+						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
+						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					}
+				}
+			}
+		}
+	*/
 
 	v, err := matcher.PrepareViterbi(obsState, routeLengths, gpsMeasurements)
 	if err != nil {

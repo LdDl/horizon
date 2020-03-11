@@ -23,7 +23,7 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 
 
 ## Installation
-```go
+```shell
 go get github.com/LdDl/ch
 ```
 
