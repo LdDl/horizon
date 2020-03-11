@@ -3,3 +3,4 @@
 *.json
 *.geojson
 map.osm
+map.csv

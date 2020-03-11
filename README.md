@@ -24,13 +24,46 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 
 ## Installation
 ```shell
-go get -u github.com/LdDl/horizon
+go get -u github.com/LdDl/horizon/...
 go install github.com/LdDl/horizon/...
 ```
 
 ## Usage
 Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
-1. First of all you need to download road graph (OSM is most popular format, we guess).
+
+0. Installing Prerequisites
+
+    * Install [osm2ch tool](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
+        ```shell
+        go install github.com/LdDl/ch/...
+        ```
+    * Check if osm2ch binary was installed properly:
+        ```shell
+        osm2ch -h
+        ```
+
+    * Install [osmconvert tool](https://wiki.openstreetmap.org/wiki/Osmconvert). You can follow the [link](https://wiki.openstreetmap.org/wiki/Osmconvert#Binaries) for theirs instruction.
+    We advice to use this method (described in [Source](https://wiki.openstreetmap.org/wiki/Osmconvert#Source) paragraph):
+        ```shell
+        sudo apt install osmctools && wget -O - http://m.m.i24.cc/osmconvert.c | sudo cc -x c - -lz -O3 -o osmconvert
+        ```
+    * Check if osmconvert binary was installed properly:
+        ```shell
+        osmconvert -h
+        ```
+
+1. First of all (except previous step), you need to download road graph (OSM is most popular format, we guess). Notice: you must change bbox for your region.
+    ```shell
+    wget 'https://overpass-api.de/api/map?bbox=37.5453,55.7237,37.7252,55.7837' -O map.osm
+    ```
+2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert). Drop author and version tags also (those not necessary for map matching). 
+    ```shell
+    osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
+    ```
+3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
+    ```
+    osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
+    ```
 
 ## Benchmark
 Please follow [link](BENCHMARK.md)
