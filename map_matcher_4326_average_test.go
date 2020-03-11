@@ -10,7 +10,7 @@ import (
 func TestMapMatcher_4326BIG(t *testing.T) {
 
 	var (
-		graphFileName   = "data/osm2ch_export.csv"
+		graphFileName   = "test_data/osm2ch_export.csv"
 		sigma           = 50.0
 		beta            = 30.0
 		gpsMeasurements = GPSMeasurements{
@@ -90,7 +90,7 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
 	b.Log("Please wait until inital data is loaded (SRID 4326, average graph)")
 	var (
-		graphFileName   = "data/osm2ch_export.csv"
+		graphFileName   = "test_data/osm2ch_export.csv"
 		sigma           = 50.0
 		beta            = 30.0
 		gpsMeasurements = GPSMeasurements{
@@ -105,22 +105,6 @@ func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
 			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 9, 0, time.UTC), 37.600926871550165, 55.752634490168425, 4326),
 			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 10, 0, time.UTC), 37.600385085563467, 55.755596255965337, 4326),
 		}
-
-		correctStates = MatcherResult{
-			Observations: []*ObservationResult{
-				&ObservationResult{Observation: gpsMeasurements[0]},
-				&ObservationResult{Observation: gpsMeasurements[1]},
-				&ObservationResult{Observation: gpsMeasurements[2]},
-				&ObservationResult{Observation: gpsMeasurements[3]},
-				&ObservationResult{Observation: gpsMeasurements[4]},
-				&ObservationResult{Observation: gpsMeasurements[5]},
-				&ObservationResult{Observation: gpsMeasurements[5]},
-				&ObservationResult{Observation: gpsMeasurements[7]},
-				&ObservationResult{Observation: gpsMeasurements[8]},
-				&ObservationResult{Observation: gpsMeasurements[9]},
-			},
-			Probability: -81.741322,
-		}
 	)
 
 	hmmParams := NewHmmProbabilities(sigma, beta)
@@ -128,17 +112,6 @@ func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
 	if err != nil {
 		b.Error(err)
 	}
-
-	correctStates.Observations[0].MatchedEdge = *matcher.engine.edges[10099][10100]
-	correctStates.Observations[1].MatchedEdge = *matcher.engine.edges[10109][10110]
-	correctStates.Observations[2].MatchedEdge = *matcher.engine.edges[10118][10119]
-	correctStates.Observations[3].MatchedEdge = *matcher.engine.edges[10120][10121]
-	correctStates.Observations[4].MatchedEdge = *matcher.engine.edges[10122][10123]
-	correctStates.Observations[5].MatchedEdge = *matcher.engine.edges[10123][10124]
-	correctStates.Observations[6].MatchedEdge = *matcher.engine.edges[10124][10125]
-	correctStates.Observations[7].MatchedEdge = *matcher.engine.edges[12276][12277]
-	correctStates.Observations[8].MatchedEdge = *matcher.engine.edges[12280][12281]
-	correctStates.Observations[9].MatchedEdge = *matcher.engine.edges[21762][21763]
 
 	statesRadiusMeters := 7.0
 	maxStates := 5

@@ -24,11 +24,13 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 
 ## Installation
 ```shell
-go get github.com/LdDl/ch
+go get -u github.com/LdDl/horizon
+go install github.com/LdDl/horizon/...
 ```
 
 ## Usage
-@todo
+Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
+1. First of all you need to download road graph (OSM is most popular format, we guess).
 
 ## Benchmark
 Please follow [link](BENCHMARK.md)
