@@ -6,6 +6,11 @@ var map = new mapboxgl.Map({
     zoom: 17
 });
 
+var textFieldProps = {
+    'type': 'identity',
+    'property': 'num'
+};
+
 var draw = new MapboxDraw({
     displayControlsDefault: false,
     userProperties: true,
@@ -15,53 +20,72 @@ var draw = new MapboxDraw({
     styles: [
         {
             'id': 'gl-draw-point-point-stroke-inactive',
-            'type': 'circle',
+            'type': 'symbol',
             'filter': ['all', ['==', 'active', 'false'],
                 ['==', '$type', 'Point'],
                 ['==', 'meta', 'feature'],
                 ['!=', 'mode', 'static']
             ],
-            'paint': {
-                'circle-radius': 5,
-                'circle-opacity': 1,
-                'circle-color': '#fff'
+            'layout': {
+                'text-field': textFieldProps,
+                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                'text-radial-offset': 0.5,
+                'text-justify': 'auto',
+                'icon-image': 'car-15',
+                'icon-allow-overlap': true,
+                'text-allow-overlap': true
             }
         },
         {
             'id': 'gl-draw-point-inactive',
-            'type': 'circle',
+            'type': 'symbol',
             'filter': ['all', ['==', 'active', 'false'],
                 ['==', '$type', 'Point'],
                 ['==', 'meta', 'feature'],
                 ['!=', 'mode', 'static']
             ],
-            'paint': {
-                'circle-radius': 3,
-                'circle-color': '#3bb2d0'
+            'layout': {
+                'text-field': textFieldProps,
+                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                'text-radial-offset': 0.5,
+                'text-justify': 'auto',
+                'icon-image': 'car-15',
+                'icon-allow-overlap': true,
+                'text-allow-overlap': true
             }
         },
         {
             'id': 'gl-draw-point-stroke-active',
-            'type': 'circle',
+            'type': 'symbol',
             'filter': ['all', ['==', '$type', 'Point'],
                 ['==', 'active', 'true'],
                 ['!=', 'meta', 'midpoint']
             ],
-            'paint': {
-                'circle-radius': 7,
-                'circle-color': '#fff'
+            'layout': {
+                'text-field': textFieldProps,
+                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                'text-radial-offset': 0.5,
+                'text-justify': 'auto',
+                'icon-image': 'car-15',
+                'icon-allow-overlap': true,
+                'text-allow-overlap': true
             }
         },
         {
             'id': 'gl-draw-point-active',
-            'type': 'circle',
+            'type': 'symbol',
             'filter': ['all', ['==', '$type', 'Point'],
                 ['!=', 'meta', 'midpoint'],
                 ['==', 'active', 'true']
             ],
-            'paint': {
-                'circle-radius': 5,
-                'circle-color': '#fbb03b'
+            'layout': {
+                'text-field': textFieldProps,
+                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                'text-radial-offset': 0.5,
+                'text-justify': 'auto',
+                'icon-image': 'car-15',
+                'icon-allow-overlap': true,
+                'text-allow-overlap': true
             }
         }
     ]
@@ -77,9 +101,19 @@ map.on("load", function() {
     map.on("draw.update", updateMapMatch);
 });
 
+
 function updateMapMatch(e) {
+    
     var data = draw.getAll();
     // draw.changeMode("draw_point");
+    data.features.forEach((feature, index, arr) => {
+        // arr[index].properties.num = index;
+        // arr[index].num = index;
+        // arr[index].id = index;
+        draw.setFeatureProperty(arr[index].id, "num", index);
+        draw.add(draw.get(arr[index].id))
+    })
+
     if (data.features.length < 3) {
         console.log(`You need to provide another ${3-data.features.length} GPS points`);
         return
@@ -98,6 +132,7 @@ function updateMapMatch(e) {
 }
 
 function doMapMatch(gpsMeasurements) {
+    
     let requestData = {
         "maxStates": 5,
         "stateRadius": 7,
@@ -127,24 +162,23 @@ function doMapMatch(gpsMeasurements) {
                 "data": jsoned.data
             });
         }
-        if (this.map.getLayer(layerName)) {
-            this.map.removeLayer(layerName);
+        if (!this.map.getLayer(layerName)) {
+            map.addLayer({
+                "id": layerName,
+                "type": "line",
+                "source": sourceName,
+                "layout": {
+                    "line-join": "round",
+                    "line-cap": "butt"
+                },
+                "paint": {
+                    "line-color": "#0000ff",
+                    "line-opacity": 0.8 ,
+                    "line-dasharray": [0, 4, 3],
+                    "line-width": 3
+                }
+            });
         }
-        map.addLayer({
-            "id": layerName,
-            "type": "line",
-            "source": sourceName,
-            "layout": {
-                "line-join": "round",
-                "line-cap": "butt"
-            },
-            "paint": {
-                "line-color": "#0000ff",
-                "line-opacity": 0.8 ,
-                "line-dasharray": [0, 4, 3],
-                "line-width": 3
-            }
-        });
 
         // Animation - https://stackoverflow.com/a/45817976/6026885
         let step = 0;
