@@ -30,7 +30,8 @@ New ideas, thought about needed features will be store in this file.
 * Think about: Add sort for provided GPS points to avoid client's mistake ???
 * REST server side (and store it in folder cmd/)
     * Service bringing MVT tiles of graph
-
+    * Isochrones
+    
 ### Continuous activity
 * README
 * Benchmarks and tests
