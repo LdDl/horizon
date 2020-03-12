@@ -20,7 +20,8 @@ New ideas, thought about needed features will be store in this file.
 
 ### Planned
 * Stable core (need many tests as possible)
-* Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js) + [VueJS](https://github.com/vuejs/vue)
+* Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
+* Rewrite front-end on [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
 * gRPC server side (and store it in folder cmd/) with same features as REST
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
