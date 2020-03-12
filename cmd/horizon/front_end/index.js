@@ -52,9 +52,26 @@ function updateMapMatch(e) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestData)
-    }).then((response) => { 
-        console.log(response);
-        
+    })
+    .then(response => response.json())
+    .then(function(jsoned) {
+        map.addSource("source_matched_route", {
+            "type": "geojson",
+            "data": jsoned.data
+        });
+        map.addLayer({
+            'id': 'layer_matched_route',
+            'type': 'line',
+            'source': 'source_matched_route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            'paint': {
+                'line-color': '#888',
+                'line-width': 8
+            }
+        });
     });
 
 }
