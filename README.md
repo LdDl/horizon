@@ -82,9 +82,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```shell
     osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
     ```
-4. Start **horizon** server. Provide bind address and port of your needs.
+4. Start **horizon** server. Provide bind address, port, filename for road graph, σ and β parameters of your needs.
     ```shell
-    horizon -p 32800 -h 0.0.0.0 -f map.csv
+    horizon -p 32800 -h 0.0.0.0 -f map.csv -sigma 50.0 -beta 30.0
     ```
 
 ## Benchmark
