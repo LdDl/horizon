@@ -28,6 +28,8 @@ New ideas, thought about needed features will be store in this file.
 * Contributing guidelines
 * Think about: Add option for REST to provide GPS points without timestamp ???
 * Think about: Add sort for provided GPS points to avoid client's mistake ???
+* REST server side (and store it in folder cmd/)
+    * Service bringing MVT tiles of graph
 
 ### Continuous activity
 * README
