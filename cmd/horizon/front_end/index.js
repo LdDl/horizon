@@ -1,7 +1,7 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGltYWhraWluIiwiYSI6ImNqZmNqYWV3bjJxM2IzNG52M3cwNG9sbTEifQ.hBZWN6asfRuTVSKV6Ut1Bw'; // token from Mapbox docs (https://docs.mapbox.com/mapbox-gl-js/example/simple-map/)
 var map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v11',
+    container: "map",
+    style: "mapbox://styles/mapbox/streets-v11",
     center: [0, 0],
     zoom: 1
 });
@@ -14,13 +14,13 @@ var draw = new MapboxDraw({
     }
 });
 
-map.addControl(draw, 'top-left');
+map.addControl(draw, "top-left");
 
-map.on('load', function() {
+map.on("load", function() {
     console.log("Map has been loaded");
-    map.on('draw.create', updateMapMatch);
-    map.on('draw.delete', updateMapMatch);
-    map.on('draw.update', updateMapMatch);
+    map.on("draw.create", updateMapMatch);
+    map.on("draw.delete", updateMapMatch);
+    map.on("draw.update", updateMapMatch);
 });
 
 function updateMapMatch(e) {
@@ -31,11 +31,13 @@ function updateMapMatch(e) {
     }
     console.log("Doing map matching");
 
+    let currentTime = new Date();
     let gpsMeasurements = data.features.map(element => {
-       return {
-           "tm": element.id,
-           "lonLat": [element.geometry.coordinates[0], element.geometry.coordinates[0]],
-       };
+        currentTime.setSeconds(currentTime.getSeconds() + 30); // artificial GPS timestamps
+        return {
+            "tm": moment(currentTime).format("YYYY-MM-DDTh:mm:ss"),
+            "lonLat": [element.geometry.coordinates[0], element.geometry.coordinates[1]],
+        };
     });
     
     let requestData = {
@@ -43,4 +45,16 @@ function updateMapMatch(e) {
         "stateRadius": 7,
         "gps": gpsMeasurements
     }
+    fetch("http://localhost:32800/api/v0.1.0/mapmatch", {
+        method: "post",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    }).then((response) => { 
+        console.log(response);
+        
+    });
+
 }

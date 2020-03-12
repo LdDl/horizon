@@ -112,6 +112,8 @@ Thanks for approach described in this paper:
 * Btree implementation - [btree](https://github.com/google/btree#btree-implementation-for-go). License is Apache-2.0
 * GeoJSON stuff - [go.geojson](https://github.com/paulmach/go.geojson#gogeojson). License is MIT
 * Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
+* MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license
+* moments.js for Front-end - [moment.js](https://github.com/moment/moment/). License is MIT
 
 ## License
 You can check it [here](https://github.com/LdDl/horizon/blob/master/LICENSE)

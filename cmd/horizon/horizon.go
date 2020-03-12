@@ -9,6 +9,7 @@ import (
 
 	"github.com/LdDl/horizon"
 	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/middleware"
 	geojson "github.com/paulmach/go.geojson"
 )
 
@@ -33,6 +34,7 @@ func main() {
 
 	// Init server
 	server := fiber.New()
+	server.Use(middleware.Cors())
 	api := server.Group("api")
 	v010 := api.Group("/v0.1.0")
 	v010.Post("/mapmatch", MapMatch(matcher))
