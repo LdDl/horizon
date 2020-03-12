@@ -1,5 +1,5 @@
 ## ROADMAP
-New ideas, thought about needed features will be store here.
+New ideas, thought about needed features will be store in this file.
 
 ### Done
 * Initial core
@@ -25,6 +25,8 @@ New ideas, thought about needed features will be store here.
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines
+* Think about: Add option for REST to provide GPS points without timestamp ???
+* Think about: Add sort for provided GPS points to avoid client's mistake ???
 
 ### Continuous activity
 * README
