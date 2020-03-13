@@ -19,11 +19,17 @@ var (
 	fileFlag        = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch)")
 	sigmaFlag       = flag.Float64("sigma", 50.0, "σ-parameter for evaluating emission probabilities")
 	betaFlag        = flag.Float64("beta", 30.0, "β-parameter for evaluationg transition probabilities")
+	lonFlag         = flag.Float64("maplon", 0.0, "initial longitude of front-end map")
+	latFlag         = flag.Float64("maplat", 0.0, "initial latitude of front-end map")
+	zoomFlag        = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")
 	timestampLayout = "2006-01-02T15:04:05"
 )
 
 func main() {
 	flag.Parse()
+
+	// Init web page
+	webPage = fmt.Sprintf(webPage, *lonFlag, *latFlag, *zoomFlag)
 
 	// Init map matcher engine
 	hmmParams := horizon.NewHmmProbabilities(*sigmaFlag, *betaFlag)
@@ -164,7 +170,7 @@ var (
                 position: absolute;
                 top: 0;
                 bottom: 0;
-                width: 100%;
+                width: 100%%;
             }
             #icons {
                 position: absolute;
@@ -182,8 +188,8 @@ var (
             var map = new mapboxgl.Map({
                 container: "map",
                 style: "mapbox://styles/dimahkiin/ck7q21t6z0ny71imt9v5valra",
-                center: [37.60011784074581, 55.74694688386492],
-                zoom: 17
+                center: [%f, %f],
+                zoom: %f
             });
 
             var textFieldProps = {
@@ -580,7 +586,7 @@ var (
                     ];
                     let animationStep = 100;
                     timerAnimatedRoute = setInterval(() => {
-                        step = (step + 1) % dashArraySeq.length;
+                        step = (step + 1) %% dashArraySeq.length;
                         if (map.getLayer(layerName)) {
                             map.setPaintProperty(layerName, "line-dasharray", dashArraySeq[step]);
                         }

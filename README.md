@@ -78,14 +78,15 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```shell
     osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
     ```
-4. Start **horizon** server. Provide bind address, port, filename for road graph, σ and β parameters of your needs.
+4. Start **horizon** server. Provide bind address, port, filename for road graph, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
     ```shell
-    horizon -p 32800 -h 0.0.0.0 -f map.csv -sigma 50.0 -beta 30.0
+    horizon.go -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
     ```
 5. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
         curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"maxStates":5,"stateRadius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lonLat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lonLat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lonLat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lonLat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lonLat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lonLat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lonLat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lonLat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lonLat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lonLat":[37.60038508556347,55.75559625596534]}]}'
     ```
+6. Open Front-end on link http://localhost:32800/
 
 ## Benchmark
 Please follow [link](BENCHMARK.md)

@@ -31,7 +31,8 @@ New ideas, thought about needed features will be store in this file.
 * REST server side (and store it in folder cmd/)
     * Service bringing MVT tiles of graph
     * Isochrones
-    
+* More screenshots in README
+
 ### Continuous activity
 * README
 * Benchmarks and tests
