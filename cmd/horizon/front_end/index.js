@@ -304,12 +304,6 @@ map.on("load", function() {
     map.on("draw.create", updateMapMatch);
     map.on("draw.update", updateMapMatch);
     map.on("draw.delete", updateMapMatch);
-    // map.loadImage("assets/img/location.png", function(error, image) {
-    //     if (error) {
-    //         throw error
-    //     };
-    //     map.addImage('loc-marker', image);
-    // });
 });
 
 function updateMapMatch(e) {
