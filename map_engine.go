@@ -48,7 +48,7 @@ func NewMapEngine(storageLevel int, degree int) *MapEngine {
 	}
 }
 
-// prepareGraph Insertes vertices and edges into MapEngine
+// prepareGraph Inserts vertices and edges into MapEngine
 /*
 	edges - set of edges (map[from_vertex]map[to_vertex]Edge)
 */
