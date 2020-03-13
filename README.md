@@ -88,6 +88,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```
 6. Open Front-end on link http://localhost:32800/
 
+    <img src="images/pic1.png" width="720">
+    <img src="images/pic2.png" width="720">
+
 ## Benchmark
 Please follow [link](BENCHMARK.md)
 
