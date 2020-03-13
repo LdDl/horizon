@@ -19,6 +19,7 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 
 
 ## Installation
+### notice: targeted for Linux users (no Windows/OSX instructions currenlty)
 ```shell
 go get -u github.com/LdDl/horizon/...
 go install github.com/LdDl/horizon/...
@@ -48,6 +49,7 @@ Output should be:
 ```
 
 ## Usage
+### notice: targeted for Linux users (no Windows/OSX instructions currenlty)
 Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 0. Installing Prerequisites
