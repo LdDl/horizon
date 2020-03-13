@@ -44,7 +44,7 @@ Output should be:
   -sigma float
         σ-parameter for evaluating emission probabilities (default 50)
   -beta float
-        β-parameter for evaluationg transition probabilities (default 30)
+        β-parameter for evaluating transition probabilities (default 30)
 ```
 
 ## Usage

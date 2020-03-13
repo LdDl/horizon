@@ -18,7 +18,7 @@ var (
 	portFlag        = flag.Int("p", 32800, "Port")
 	fileFlag        = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch)")
 	sigmaFlag       = flag.Float64("sigma", 50.0, "σ-parameter for evaluating emission probabilities")
-	betaFlag        = flag.Float64("beta", 30.0, "β-parameter for evaluationg transition probabilities")
+	betaFlag        = flag.Float64("beta", 30.0, "β-parameter for evaluating transition probabilities")
 	lonFlag         = flag.Float64("maplon", 0.0, "initial longitude of front-end map")
 	latFlag         = flag.Float64("maplat", 0.0, "initial latitude of front-end map")
 	zoomFlag        = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")

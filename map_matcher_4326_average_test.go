@@ -88,7 +88,7 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 }
 
 func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
-	b.Log("Please wait until inital data is loaded (SRID 4326, average graph)")
+	b.Log("Please wait until initial data is loaded (SRID 4326, average graph)")
 	var (
 		graphFileName   = "test_data/osm2ch_export.csv"
 		sigma           = 50.0

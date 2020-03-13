@@ -97,7 +97,7 @@ func TestMapMatcherSRID_0(t *testing.T) {
 }
 
 func BenchmarkMapMatcherSRID_0(b *testing.B) {
-	b.Log("Please wait until inital data is loaded (SRID 0, small graph)")
+	b.Log("Please wait until initial data is loaded (SRID 0, small graph)")
 	matcher := NewMapMatcherDefault()
 	gpsMeasurements := GPSMeasurements{
 		NewGPSMeasurementFromID(1, 10, 10, 0),
