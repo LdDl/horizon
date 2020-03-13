@@ -4,4 +4,4 @@
 *.geojson
 map.osm
 map.csv
-cmd/horizon/front_end
+cmd/horizon/front_end/
