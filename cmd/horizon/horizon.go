@@ -35,6 +35,7 @@ func main() {
 	// Init server
 	server := fiber.New()
 	server.Use(middleware.Cors())
+	server.Static("/", "/home/dimitrii/work/src/github.com/LdDl/horizon/cmd/horizon/front_end/index.html")
 	api := server.Group("api")
 	v010 := api.Group("/v0.1.0")
 	v010.Post("/mapmatch", MapMatch(matcher))

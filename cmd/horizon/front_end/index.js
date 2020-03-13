@@ -1,7 +1,7 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGltYWhraWluIiwiYSI6ImNqZmNqYWV3bjJxM2IzNG52M3cwNG9sbTEifQ.hBZWN6asfRuTVSKV6Ut1Bw'; // token from Mapbox docs (https://docs.mapbox.com/mapbox-gl-js/example/simple-map/)
 var map = new mapboxgl.Map({
     container: "map",
-    style: "mapbox://styles/mapbox/streets-v11",
+    style: "mapbox://styles/dimahkiin/ck7q21t6z0ny71imt9v5valra",
     center: [37.60011784074581, 55.74694688386492],
     zoom: 17
 });
@@ -11,115 +11,328 @@ var textFieldProps = {
     'property': 'num'
 };
 
+const theme = [
+    {
+        'id': 'gl-draw-polygon-fill-inactive',
+        'type': 'fill',
+        'filter': ['all',
+        ['==', 'active', 'false'],
+        ['==', '$type', 'Polygon'],
+        ['!=', 'mode', 'static']
+        ],
+        'paint': {
+        'fill-color': '#3bb2d0',
+        'fill-outline-color': '#3bb2d0',
+        'fill-opacity': 0.1
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-fill-active',
+        'type': 'fill',
+        'filter': ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+        'paint': {
+        'fill-color': '#fbb03b',
+        'fill-outline-color': '#fbb03b',
+        'fill-opacity': 0.1
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-midpoint',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', '$type', 'Point'],
+        ['==', 'meta', 'midpoint']],
+        'paint': {
+        'circle-radius': 3,
+        'circle-color': '#fbb03b'
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-stroke-inactive',
+        'type': 'line',
+        'filter': ['all',
+        ['==', 'active', 'false'],
+        ['==', '$type', 'Polygon'],
+        ['!=', 'mode', 'static']
+        ],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#3bb2d0',
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-stroke-active',
+        'type': 'line',
+        'filter': ['all', ['==', 'active', 'true'], ['==', '$type', 'Polygon']],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#fbb03b',
+        'line-dasharray': [0.2, 2],
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-line-inactive',
+        'type': 'line',
+        'filter': ['all',
+        ['==', 'active', 'false'],
+        ['==', '$type', 'LineString'],
+        ['!=', 'mode', 'static']
+        ],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#3bb2d0',
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-line-active',
+        'type': 'line',
+        'filter': ['all',
+        ['==', '$type', 'LineString'],
+        ['==', 'active', 'true']
+        ],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#fbb03b',
+        'line-dasharray': [0.2, 2],
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-and-line-vertex-stroke-inactive',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', 'meta', 'vertex'],
+        ['==', '$type', 'Point'],
+        ['!=', 'mode', 'static']
+        ],
+        'paint': {
+        'circle-radius': 5,
+        'circle-color': '#fff'
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-and-line-vertex-inactive',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', 'meta', 'vertex'],
+        ['==', '$type', 'Point'],
+        ['!=', 'mode', 'static']
+        ],
+        'paint': {
+        'circle-radius': 3,
+        'circle-color': '#fbb03b'
+        }
+    },
+    {
+        'id': 'gl-draw-point-point-stroke-inactive',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', 'active', 'false'],
+        ['==', '$type', 'Point'],
+        ['==', 'meta', 'feature'],
+        ['!=', 'mode', 'static']
+        ],
+        'paint': {
+        'circle-radius': 5,
+        'circle-opacity': 1,
+        'circle-color': '#fff'
+        }
+    },
+    {
+        'id': 'gl-draw-point-inactive',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', 'active', 'false'],
+        ['==', '$type', 'Point'],
+        ['==', 'meta', 'feature'],
+        ['!=', 'mode', 'static']
+        ],
+        'paint': {
+        'circle-radius': 3,
+        'circle-color': '#3bb2d0'
+        }
+    },
+    {
+        'id': 'gl-draw-point-stroke-active',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', '$type', 'Point'],
+        ['==', 'active', 'true'],
+        ['!=', 'meta', 'midpoint']
+        ],
+        'paint': {
+        'circle-radius': 7,
+        'circle-color': '#fff'
+        }
+    },
+    {
+        'id': 'gl-draw-point-active',
+        'type': 'circle',
+        'filter': ['all',
+        ['==', '$type', 'Point'],
+        ['!=', 'meta', 'midpoint'],
+        ['==', 'active', 'true']],
+        'paint': {
+        'circle-radius': 5,
+        'circle-color': '#fbb03b'
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-fill-static',
+        'type': 'fill',
+        'filter': ['all', ['==', 'mode', 'static'], ['==', '$type', 'Polygon']],
+        'paint': {
+        'fill-color': '#404040',
+        'fill-outline-color': '#404040',
+        'fill-opacity': 0.1
+        }
+    },
+    {
+        'id': 'gl-draw-polygon-stroke-static',
+        'type': 'line',
+        'filter': ['all', ['==', 'mode', 'static'], ['==', '$type', 'Polygon']],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#404040',
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-line-static',
+        'type': 'line',
+        'filter': ['all', ['==', 'mode', 'static'], ['==', '$type', 'LineString']],
+        'layout': {
+        'line-cap': 'round',
+        'line-join': 'round'
+        },
+        'paint': {
+        'line-color': '#404040',
+        'line-width': 2
+        }
+    },
+    {
+        'id': 'gl-draw-point-static',
+        'type': 'circle',
+        'filter': ['all', ['==', 'mode', 'static'], ['==', '$type', 'Point']],
+        'paint': {
+        'circle-radius': 5,
+        'circle-color': '#404040'
+        }
+    }
+];
+
+let modifiedStyles = theme.map(function(style) {
+    if (style.id === 'gl-draw-point-inactive') {
+        return carCreated(style);
+    } else if (style.id === 'gl-draw-point-active') {
+        return carClicked(style);
+    } else {
+        return style;
+    }
+});
+
+function carCreated(style) {
+    return {
+        id: style.id,
+        filter: style.filter,
+        type: "symbol",
+        layout: {
+            "text-field": ['get', 'id'],
+            "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
+            "text-radial-offset": 1.0,
+            "text-justify": "auto",
+            "icon-image": "loc_marker_placed",
+            "icon-size": 0.5,
+            "icon-allow-overlap": true,
+            "text-allow-overlap": true
+        }
+    };
+}
+
+function carClicked(style) {
+    return {
+        id: style.id,
+        filter: style.filter,
+        type: "symbol",
+        layout: {
+            "text-field": ['get', 'id'],
+            "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
+            "text-radial-offset": 1.0,
+            "text-justify": "auto",
+            "icon-image": "loc_marker",
+            "icon-size": 0.5,
+            "icon-allow-overlap": true,
+            "text-allow-overlap": true
+        }
+    };
+}
+
 var draw = new MapboxDraw({
     displayControlsDefault: false,
     userProperties: true,
     controls: {
-        point: true
+        point: true,
+        trash: true
     },
-    styles: [
-        {
-            'id': 'gl-draw-point-point-stroke-inactive',
-            'type': 'symbol',
-            'filter': ['all', ['==', 'active', 'false'],
-                ['==', '$type', 'Point'],
-                ['==', 'meta', 'feature'],
-                ['!=', 'mode', 'static']
-            ],
-            'layout': {
-                'text-field': textFieldProps,
-                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                'text-radial-offset': 0.5,
-                'text-justify': 'auto',
-                'icon-image': 'car-15',
-                'icon-allow-overlap': true,
-                'text-allow-overlap': true
-            }
-        },
-        {
-            'id': 'gl-draw-point-inactive',
-            'type': 'symbol',
-            'filter': ['all', ['==', 'active', 'false'],
-                ['==', '$type', 'Point'],
-                ['==', 'meta', 'feature'],
-                ['!=', 'mode', 'static']
-            ],
-            'layout': {
-                'text-field': textFieldProps,
-                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                'text-radial-offset': 0.5,
-                'text-justify': 'auto',
-                'icon-image': 'car-15',
-                'icon-allow-overlap': true,
-                'text-allow-overlap': true
-            }
-        },
-        {
-            'id': 'gl-draw-point-stroke-active',
-            'type': 'symbol',
-            'filter': ['all', ['==', '$type', 'Point'],
-                ['==', 'active', 'true'],
-                ['!=', 'meta', 'midpoint']
-            ],
-            'layout': {
-                'text-field': textFieldProps,
-                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                'text-radial-offset': 0.5,
-                'text-justify': 'auto',
-                'icon-image': 'car-15',
-                'icon-allow-overlap': true,
-                'text-allow-overlap': true
-            }
-        },
-        {
-            'id': 'gl-draw-point-active',
-            'type': 'symbol',
-            'filter': ['all', ['==', '$type', 'Point'],
-                ['!=', 'meta', 'midpoint'],
-                ['==', 'active', 'true']
-            ],
-            'layout': {
-                'text-field': textFieldProps,
-                'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                'text-radial-offset': 0.5,
-                'text-justify': 'auto',
-                'icon-image': 'car-15',
-                'icon-allow-overlap': true,
-                'text-allow-overlap': true
-            }
-        }
-    ]
+    styles: modifiedStyles
 });
 
 map.addControl(draw, "top-left");
 var timerAnimatedRoute = null;
+var pointsCounter = 0;
 
 map.on("load", function() {
     console.log("Map has been loaded");
     map.on("draw.create", updateMapMatch);
-    map.on("draw.delete", updateMapMatch);
     map.on("draw.update", updateMapMatch);
+    map.on("draw.delete", updateMapMatch);
+    // map.loadImage("assets/img/location.png", function(error, image) {
+    //     if (error) {
+    //         throw error
+    //     };
+    //     map.addImage('loc-marker', image);
+    // });
 });
 
-
 function updateMapMatch(e) {
-    
-    var data = draw.getAll();
-    // draw.changeMode("draw_point");
-    data.features.forEach((feature, index, arr) => {
-        // arr[index].properties.num = index;
-        // arr[index].num = index;
-        // arr[index].id = index;
-        draw.setFeatureProperty(arr[index].id, "num", index);
-        draw.add(draw.get(arr[index].id))
-    })
 
+    if (e.features && e.features.length === 1 && e.type === "draw.create") {
+        pointsCounter++;
+        // Tyring to play with ID
+        // Can't do text-field with properties ['get', 'property_name'] just doesn't work, when I do provide property)
+        draw.delete(e.features[0].id);
+        e.features[0].id = `GPS #${pointsCounter}`;
+        draw.add(e.features[0]);
+    }
+
+    var data = draw.getAll();
     if (data.features.length < 3) {
         console.log(`You need to provide another ${3-data.features.length} GPS points`);
+        if (map.getLayer("layer_matched_route")) { // Clear layer when 'draw.delete' fired
+            map.removeLayer("layer_matched_route");
+        }
         return
     }
-    console.log("Doing map matching");
 
+    console.log("Doing map matching");
     let currentTime = new Date();
     let gpsMeasurements = data.features.map(element => {
         currentTime.setSeconds(currentTime.getSeconds() + 30); // artificial GPS timestamps
@@ -162,7 +375,7 @@ function doMapMatch(gpsMeasurements) {
                 "data": jsoned.data
             });
         }
-        if (!this.map.getLayer(layerName)) {
+        if (!map.getLayer(layerName)) {
             map.addLayer({
                 "id": layerName,
                 "type": "line",
@@ -194,7 +407,9 @@ function doMapMatch(gpsMeasurements) {
         let animationStep = 100;
         timerAnimatedRoute = setInterval(() => {
             step = (step + 1) % dashArraySeq.length;
-            this.map.setPaintProperty(layerName, "line-dasharray", dashArraySeq[step]);
+            if (map.getLayer(layerName)) {
+                map.setPaintProperty(layerName, "line-dasharray", dashArraySeq[step]);
+            }
         }, animationStep);
 
     });

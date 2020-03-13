@@ -8,3 +8,8 @@ body {
     bottom: 0;
     width: 100%;
 }
+#icons {
+    position: absolute;
+    bottom: 0;
+    margin: 0 0 8px 140px;
+}
