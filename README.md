@@ -29,12 +29,18 @@ horizon -h
 ```
 Output should be:
 ```shell
-  -f string
-        Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch) (default "graph.csv")
   -h string
         Bind address (default "0.0.0.0")
   -p int
         Port (default 32800)
+  -f string
+        Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch) (default "graph.csv")
+  -maplat float
+        initial latitude of front-end map
+  -maplon float
+        initial longitude of front-end map
+  -mapzoom float
+        initial zoom of front-end map (default 1)
   -sigma float
         σ-parameter for evaluating emission probabilities (default 50)
   -beta float
