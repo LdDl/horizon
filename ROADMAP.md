@@ -14,13 +14,14 @@ New ideas, thought about needed features will be store in this file.
     * Main server application via [fasthttp](https://github.com/valyala/fasthttp#fasthttp-----)-based framework called [Fiber](https://github.com/gofiber/fiber)
     * Map matching service
 
+* Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
+
 ### W.I.P
 * REST server side (and store it in folder cmd/)
     * Shortest path finder (we are trying to avoid word "routing") service
 
 ### Planned
 * Stable core (need many tests as possible)
-* Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
 * Rewrite front-end on [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
 * gRPC server side (and store it in folder cmd/) with same features as REST
 * Some kind of wiki
@@ -38,3 +39,4 @@ New ideas, thought about needed features will be store in this file.
 * Benchmarks and tests
 * [Horizon](cmd/horizon) itself
 * Roadmap itself
+* Front-end improvements
