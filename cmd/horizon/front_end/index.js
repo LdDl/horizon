@@ -313,13 +313,13 @@ function updateMapMatch(e) {
         // Tyring to play with ID
         // Can't do text-field with properties ['get', 'property_name'] just doesn't work, when I do provide property)
         draw.delete(e.features[0].id);
-        e.features[0].id = `GPS #${pointsCounter}`;
+        e.features[0].id = "GPS #" + pointsCounter.toString();
         draw.add(e.features[0]);
     }
 
     var data = draw.getAll();
     if (data.features.length < 3) {
-        console.log(`You need to provide another ${3-data.features.length} GPS points`);
+        console.log("You need to provide another " + (3-data.features.length).toString() + " GPS points");
         if (map.getLayer("layer_matched_route")) { // Clear layer when 'draw.delete' fired
             map.removeLayer("layer_matched_route");
         }
