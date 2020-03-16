@@ -28,25 +28,8 @@ Check if **horizon** binary was installed properly:
 ```shell
 horizon -h
 ```
-Output should be:
-```shell
-  -h string
-        Bind address (default "0.0.0.0")
-  -p int
-        Port (default 32800)
-  -f string
-        Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch) (default "graph.csv")
-  -maplat float
-        initial latitude of front-end map
-  -maplon float
-        initial longitude of front-end map
-  -mapzoom float
-        initial zoom of front-end map (default 1)
-  -sigma float
-        σ-parameter for evaluating emission probabilities (default 50)
-  -beta float
-        β-parameter for evaluating transition probabilities (default 30)
-```
+
+<img src="images/inst1.png" width="720">
 
 ## Usage
 ### notice: targeted for Linux users (no Windows/OSX instructions currenlty)
@@ -64,7 +47,8 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```shell
         osm2ch -h
         ```
-
+        <img src="images/inst2.png" width="720">
+    
     * Install [osmconvert tool](https://wiki.openstreetmap.org/wiki/Osmconvert). It's needed for removing excess data from road graph and compressing *.osm file. You can follow the [link](https://wiki.openstreetmap.org/wiki/Osmconvert#Binaries) for theirs instruction.
     We advice to use this method (described in [Source](https://wiki.openstreetmap.org/wiki/Osmconvert#Source) paragraph):
         ```shell
@@ -74,27 +58,33 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```shell
         osmconvert -h
         ```
+        <img src="images/inst3.png" width="720">
 
 1. First of all (except previous step), you need to download road graph (OSM is most popular format, we guess). Notice: you must change bbox for your region (in this example we using central district of Moscow).
     ```shell
     wget 'https://overpass-api.de/api/map?bbox=37.5453,55.7237,37.7252,55.7837' -O map.osm
     ```
+    <img src="images/inst4.png" width="720">
 2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert). Drop author and version tags also (those not necessary for map matching). 
     ```shell
     osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
     ```
+    <img src="images/inst5.png" width="720">
 3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
     ```shell
     osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
     ```
+    <img src="images/inst6.png" width="720">
 4. Start **horizon** server. Provide bind address, port, filename for road graph, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
     ```shell
-    horizon.go -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
+    horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
     ```
+    <img src="images/inst7.png" width="720">
 5. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"maxStates":5,"stateRadius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lonLat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lonLat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lonLat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lonLat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lonLat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lonLat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lonLat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lonLat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lonLat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lonLat":[37.60038508556347,55.75559625596534]}]}'
     ```
+    <img src="images/inst8.png" width="720">
 6. Open Front-end on link http://localhost:32800/
 
     <img src="images/pic1.png" width="720">
