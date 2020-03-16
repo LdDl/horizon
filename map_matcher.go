@@ -69,15 +69,16 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			latLng := s2.LatLngFromPoint(proj)
 			_ = fraction
 			// @todo determine which vertex is better to use. something like below, maybe?
-			// choosenID := n
-			// if i != 0 {
-			// 	if fraction > 0.5 {
-			// 		choosenID = m
-			// 	} else {
-			// 		choosenID = n
-			// 	}
-			// }
-			roadPos := NewRoadPositionFromLonLat(stateID, n, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
+			// @upd: 16.03.2020 - done, but need to research side effect
+			choosenID := n
+			if i != 0 {
+				if fraction > 0.5 {
+					choosenID = m
+				} else {
+					choosenID = n
+				}
+			}
+			roadPos := NewRoadPositionFromLonLat(stateID, choosenID, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
 			localStates[j] = roadPos
 			stateID++
 		}
@@ -95,7 +96,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
 				chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
 			}
-
 			one2manyVertices := []int64{}
 			one2manyStatesIndices := []int{}
 			for n := range currentStates {
@@ -121,31 +121,29 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
 	//
-	/*
-		for i := 1; i < len(layers); i++ {
-			prevStates := layers[i-1]
-			currentStates := layers[i]
-			for m := range prevStates {
-				if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
-					chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
-				}
-				for n := range currentStates {
-					if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
-						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-					} else {
-						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
-						if ans == -1 {
-							ans = math.MaxFloat64
-						}
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-					}
-				}
-			}
-		}
-	*/
+	// for i := 1; i < len(layers); i++ {
+	// 	prevStates := layers[i-1]
+	// 	currentStates := layers[i]
+	// 	for m := range prevStates {
+	// 		if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
+	// 			chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
+	// 		}
+	// 		for n := range currentStates {
+	// 			if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
+	// 				ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+	// 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+	// 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+	// 			} else {
+	// 				ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
+	// 				if ans == -1 {
+	// 					ans = math.MaxFloat64
+	// 				}
+	// 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
+	// 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	v, err := matcher.PrepareViterbi(obsState, routeLengths, gpsMeasurements)
 	if err != nil {
