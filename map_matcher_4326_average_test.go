@@ -28,16 +28,16 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 
 		correctStates = MatcherResult{
 			Observations: []*ObservationResult{
-				&ObservationResult{Observation: gpsMeasurements[0]},
-				&ObservationResult{Observation: gpsMeasurements[1]},
-				&ObservationResult{Observation: gpsMeasurements[2]},
-				&ObservationResult{Observation: gpsMeasurements[3]},
-				&ObservationResult{Observation: gpsMeasurements[4]},
-				&ObservationResult{Observation: gpsMeasurements[5]},
-				&ObservationResult{Observation: gpsMeasurements[5]},
-				&ObservationResult{Observation: gpsMeasurements[7]},
-				&ObservationResult{Observation: gpsMeasurements[8]},
-				&ObservationResult{Observation: gpsMeasurements[9]},
+				{Observation: gpsMeasurements[0]},
+				{Observation: gpsMeasurements[1]},
+				{Observation: gpsMeasurements[2]},
+				{Observation: gpsMeasurements[3]},
+				{Observation: gpsMeasurements[4]},
+				{Observation: gpsMeasurements[5]},
+				{Observation: gpsMeasurements[5]},
+				{Observation: gpsMeasurements[7]},
+				{Observation: gpsMeasurements[8]},
+				{Observation: gpsMeasurements[9]},
 			},
 			Probability: -81.716795,
 		}

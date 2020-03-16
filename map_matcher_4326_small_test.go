@@ -21,10 +21,10 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 
 		correctStates = MatcherResult{
 			Observations: []*ObservationResult{
-				&ObservationResult{Observation: gpsMeasurements[0]},
-				&ObservationResult{Observation: gpsMeasurements[1]},
-				&ObservationResult{Observation: gpsMeasurements[2]},
-				&ObservationResult{Observation: gpsMeasurements[3]},
+				{Observation: gpsMeasurements[0]},
+				{Observation: gpsMeasurements[1]},
+				{Observation: gpsMeasurements[2]},
+				{Observation: gpsMeasurements[3]},
 			},
 			Probability: -47.251535,
 		}
