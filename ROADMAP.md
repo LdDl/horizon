@@ -15,6 +15,7 @@ New ideas, thought about needed features will be store in this file.
     * Map matching service
 
 * Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
+* More screenshots in README
 
 ### W.I.P
 * REST server side (and store it in folder cmd/)
@@ -32,7 +33,6 @@ New ideas, thought about needed features will be store in this file.
 * REST server side (and store it in folder cmd/)
     * Service bringing MVT tiles of graph
     * Isochrones
-* More screenshots in README
 
 ### Continuous activity
 * README
