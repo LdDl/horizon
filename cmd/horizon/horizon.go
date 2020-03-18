@@ -119,7 +119,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 		}
 
-		statesRadiusMeters := 7.0
+		statesRadiusMeters := 25.0
 		maxStates := 5
 		ans := Response{}
 
@@ -128,10 +128,10 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 		} else {
 			ans.Warnings = append(ans.Warnings, "maxStates either nil or not in range [1,10]. Using default value: 5")
 		}
-		if data.MaxStates != nil && *data.StateRadius >= 7 && *data.StateRadius <= 15 {
+		if data.MaxStates != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
 			statesRadiusMeters = *data.StateRadius
 		} else {
-			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,16]. Using default value: 7.0")
+			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
 		}
 
 		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
@@ -528,7 +528,7 @@ var (
                 
                 let requestData = {
                     "maxStates": 5,
-                    "stateRadius": 7,
+                    "stateRadius": 50,
                     "gps": gpsMeasurements
                 }
                 let sourceName = "source_matched_route";
