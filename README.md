@@ -21,7 +21,7 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 ## Installation
 ### notice: targeted for Linux users (no Windows/OSX instructions currenlty)
 ```shell
-go get github.com/LdDl/horizon
+go get -u github.com/LdDl/horizon/...
 go install github.com/LdDl/horizon/...
 ```
 Check if **horizon** binary was installed properly:
