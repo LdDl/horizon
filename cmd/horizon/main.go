@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/LdDl/horizon"
+	"github.com/gofiber/cors"
 	"github.com/gofiber/fiber"
-	"github.com/gofiber/fiber/middleware"
 	geojson "github.com/paulmach/go.geojson"
 )
 
@@ -40,7 +40,7 @@ func main() {
 
 	// Init server
 	server := fiber.New()
-	server.Use(middleware.Cors())
+	server.Use(cors.New())
 	server.Get("/", RenderPage())
 	api := server.Group("api")
 	v010 := api.Group("/v0.1.0")
