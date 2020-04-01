@@ -69,7 +69,7 @@ type Request struct {
 	Data []RequestDatum `json:"gps"`
 	// Max number of states for single GPS point (in range [1, 10], default is 5)
 	MaxStates *int `json:"maxStates"`
-	// Max radius of search for potential candidates (in range [7, 15], default is 7.0)
+	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"stateRadius"`
 }
 
