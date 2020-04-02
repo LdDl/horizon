@@ -56,12 +56,12 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	stateID := 0
 	obsState := make(map[int]*CandidateLayer)
 	layers := []RoadPositions{}
-	for i := range gpsMeasurements {
+	for i := 0; i < len(gpsMeasurements); i++ {
 		s2point := gpsMeasurements[i].Point
 		closest, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		if len(closest) == 0 {
-			// @todo need to handle this case
-
+			// @todo need to handle this case properly...
+			gpsMeasurements = append(gpsMeasurements[:i], gpsMeasurements[i+1:]...)
 		}
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
@@ -92,7 +92,33 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 	routeLengths := make(lengths)
 
+	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
+	// @todo NEED TO BLOCK OF CODE IN LINES 121-150, something interesting happens there. For now using slower version
 	for i := 1; i < len(layers); i++ {
+		prevStates := layers[i-1]
+		currentStates := layers[i]
+		for m := range prevStates {
+			if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
+				chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
+			}
+			for n := range currentStates {
+				if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
+					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+					routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+				} else {
+					ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
+					if ans == -1 {
+						ans = math.MaxFloat64
+					}
+					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
+					routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+				}
+			}
+		}
+	}
+
+	/* for i := 1; i < len(layers); i++ {
 		prevStates := layers[i-1]
 		currentStates := layers[i]
 		for m := range prevStates {
@@ -121,35 +147,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				routeLengths.AddRouteLength(prevStates[m], currentStates[one2manyStatesIndices[i]], answers[i])
 			}
 		}
-	}
-
-	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
-	//
-	/*
-		for i := 1; i < len(layers); i++ {
-			prevStates := layers[i-1]
-			currentStates := layers[i]
-			for m := range prevStates {
-				if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
-					chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
-				}
-				for n := range currentStates {
-					if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
-						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-					} else {
-						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
-						if ans == -1 {
-							ans = math.MaxFloat64
-						}
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-					}
-				}
-			}
-		}
-	*/
+	} */
 
 	v, err := matcher.PrepareViterbi(obsState, routeLengths, gpsMeasurements)
 	if err != nil {

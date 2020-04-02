@@ -90,3 +90,7 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 func (gp *GeoPoint) GeoJSON() *geojson.Feature {
 	return S2PointToGeoJSONFeature(&gp.Point)
 }
+
+func removePT(slice []*GPSMeasurement, s int) []*GPSMeasurement {
+	return append(slice[:s], slice[s+1:]...)
+}
