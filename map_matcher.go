@@ -59,6 +59,10 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	for i := range gpsMeasurements {
 		s2point := gpsMeasurements[i].Point
 		closest, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		if len(closest) == 0 {
+			// @todo need to handle this case
+
+		}
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
 			s2polyline := matcher.engine.s2Storage.edges[closest[j].edgeID]
