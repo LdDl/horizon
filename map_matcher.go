@@ -56,13 +56,23 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	stateID := 0
 	obsState := make(map[int]*CandidateLayer)
 	layers := []RoadPositions{}
+
+	engineGpsMeasurements := []*GPSMeasurement{}
+	closestSets := [][]NearestObject{}
+
 	for i := 0; i < len(gpsMeasurements); i++ {
-		s2point := gpsMeasurements[i].Point
 		closest, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		if len(closest) == 0 {
 			// @todo need to handle this case properly...
-			gpsMeasurements = append(gpsMeasurements[:i], gpsMeasurements[i+1:]...)
+			continue
 		}
+		engineGpsMeasurements = append(engineGpsMeasurements, gpsMeasurements[i])
+		closestSets = append(closestSets, closest)
+	}
+
+	for i := 0; i < len(engineGpsMeasurements); i++ {
+		s2point := engineGpsMeasurements[i].Point
+		closest := closestSets[i]
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
 			s2polyline := matcher.engine.s2Storage.edges[closest[j].edgeID]
@@ -86,7 +96,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			stateID++
 		}
 		layers = append(layers, localStates)
-		obsState[gpsMeasurements[i].id] = NewCandidateLayer(gpsMeasurements[i], localStates)
+		obsState[engineGpsMeasurements[i].id] = NewCandidateLayer(engineGpsMeasurements[i], localStates)
 	}
 	chRoutes := make(map[int]map[int][]int64)
 
@@ -149,18 +159,18 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		}
 	} */
 
-	v, err := matcher.PrepareViterbi(obsState, routeLengths, gpsMeasurements)
+	v, err := matcher.PrepareViterbi(obsState, routeLengths, engineGpsMeasurements)
 	if err != nil {
 		return MatcherResult{}, err
 	}
 
 	vpath := v.EvalPathLogProbabilities()
 
-	if len(vpath.Path) != len(gpsMeasurements) {
-		return MatcherResult{}, fmt.Errorf("Number of states in final path != number of observations. Should be unreachable error")
+	if len(vpath.Path) != len(engineGpsMeasurements) {
+		return MatcherResult{}, fmt.Errorf("Number of states in final path != number (%d and %d) of observations. Should be unreachable error", len(vpath.Path), len(engineGpsMeasurements))
 	}
 
-	result := matcher.prepareResult(vpath, gpsMeasurements, chRoutes)
+	result := matcher.prepareResult(vpath, engineGpsMeasurements, chRoutes)
 
 	return result, nil
 }
