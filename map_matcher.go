@@ -70,6 +70,10 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		closestSets = append(closestSets, closest)
 	}
 
+	if len(engineGpsMeasurements) == 0 {
+		return MatcherResult{}, fmt.Errorf("There is no a single GPS point having candidates")
+	}
+
 	for i := 0; i < len(engineGpsMeasurements); i++ {
 		s2point := engineGpsMeasurements[i].Point
 		closest := closestSets[i]
