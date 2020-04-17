@@ -26,6 +26,11 @@ func (gps *GPSMeasurement) ID() int {
 	return gps.id
 }
 
+// TM Returns generated (or provided) timestamp for GPS-point
+func (gps *GPSMeasurement) TM() time.Time {
+	return gps.dateTime
+}
+
 // GPSTrack Set of telematic data
 type GPSTrack []*GPSMeasurement
 
