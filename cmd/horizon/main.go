@@ -44,7 +44,9 @@ func main() {
 	server.Get("/", RenderPage())
 	api := server.Group("api")
 	v010 := api.Group("/v0.1.0")
+
 	v010.Post("/mapmatch", MapMatch(matcher))
+	v010.Post("/shortest", FindSP(matcher))
 
 	// Start server
 	server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag))
@@ -67,7 +69,7 @@ type H map[string]string
 type Request struct {
 	// Set of GPS data
 	Data []RequestDatum `json:"gps"`
-	// Max number of states for single GPS point (in range [1, 10], default is 5)
+	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
 	MaxStates *int `json:"maxStates"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"stateRadius"`
@@ -75,7 +77,7 @@ type Request struct {
 
 // RequestDatum Single row
 type RequestDatum struct {
-	// Timestamp
+	// Timestamp. Field would be ignored for request on '/shortest' service.
 	Timestamp string `json:"tm"`
 	// [Longitude, Latitude]
 	LonLat [2]float64 `json:"lonLat"`
@@ -88,7 +90,7 @@ type Response struct {
 	Warnings []string `json:"warnings"`
 }
 
-// MapMatch Do map match via GET-request
+// MapMatch Do map match via POST-request
 func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 	fn := func(ctx *fiber.Ctx) {
 
@@ -128,7 +130,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 		} else {
 			ans.Warnings = append(ans.Warnings, "maxStates either nil or not in range [1,10]. Using default value: 5")
 		}
-		if data.MaxStates != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
+		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
 			statesRadiusMeters = *data.StateRadius
 		} else {
 			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
@@ -141,6 +143,59 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 			ctx.JSON(H{"Error": "Something went wrong on server side"})
 		}
 
+		ans.Path = geojson.NewFeatureCollection()
+		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
+		ans.Path.AddFeature(f)
+
+		ctx.JSON(ans)
+	}
+	return fn
+}
+
+// FindSP Find shortest path via POST-request
+/*
+   Actually it can be done just by doing MapMatch for 2 proided points, but this just proof of concept
+   Services takes two points, snaps those to nearest vertices and finding path via Dijkstra's algorithm. Output is familiar to MapMatch()
+*/
+func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
+	fn := func(ctx *fiber.Ctx) {
+		bodyBytes := ctx.Fasthttp.PostBody()
+		data := Request{}
+		err := json.Unmarshal(bodyBytes, &data)
+		if err != nil {
+			ctx.SendStatus(400)
+			ctx.JSON(H{"Error": err.Error()})
+			return
+		}
+		if len(data.Data) != 2 {
+			ctx.SendStatus(400)
+			ctx.JSON(H{"Error": "Please provide 2 GPS points only"})
+			return
+		}
+
+		gpsMeasurements := horizon.GPSMeasurements{}
+		ut := time.Now().UTC().Unix()
+		for i := range data.Data {
+			gpsMeasurement := horizon.NewGPSMeasurementFromID(int(ut), data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326)
+			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
+			ut++
+		}
+
+		statesRadiusMeters := 25.0
+		ans := Response{}
+
+		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
+			statesRadiusMeters = *data.StateRadius
+		} else {
+			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
+		}
+
+		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
+		if err != nil {
+			log.Println(err)
+			ctx.SendStatus(500)
+			ctx.JSON(H{"Error": "Something went wrong on server side"})
+		}
 		ans.Path = geojson.NewFeatureCollection()
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
 		ans.Path.AddFeature(f)
