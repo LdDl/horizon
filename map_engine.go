@@ -66,7 +66,7 @@ func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) {
 
 func prepareEngine(graphFileName string) (*MapEngine, error) {
 	engine := NewMapEngineDefault()
-	fmt.Printf("Extractiong edges from '%s' file... ", graphFileName)
+	fmt.Printf("Extractiong edges from '%s' file...\n", graphFileName)
 	st := time.Now()
 	edges, err := extractEdgesFromCSV(graphFileName)
 	if err != nil {
