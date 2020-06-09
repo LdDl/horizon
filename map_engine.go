@@ -73,11 +73,11 @@ func prepareEngine(graphFileName string) (*MapEngine, error) {
 		return nil, err
 	}
 	fmt.Printf("Done in %v\n", time.Since(st))
-	fmt.Printf("Preparing graph... ")
+	fmt.Printf("Preparing graph...\n")
 	st = time.Now()
 	engine.prepareGraph(edges)
 	fmt.Printf("Done in %v\n", time.Since(st))
-	fmt.Printf("Preparing contracts... ")
+	fmt.Printf("Preparing contracts...\n")
 	st = time.Now()
 	engine.graph.PrepareContracts()
 	fmt.Printf("Done in %v\n", time.Since(st))
