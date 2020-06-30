@@ -1,7 +1,7 @@
 ---
 name: Documentation
 about: Question about documentation
-title: ''
+title: "[DOCUMENTATION]"
 labels: documentation, question
 assignees: LdDl
 
