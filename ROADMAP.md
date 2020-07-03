@@ -13,13 +13,14 @@ New ideas, thought about needed features will be store in this file.
 * REST server side (and store it in folder cmd/)
     * Main server application via [fasthttp](https://github.com/valyala/fasthttp#fasthttp-----)-based framework called [Fiber](https://github.com/gofiber/fiber)
     * Map matching service
+    * Shortest path finder (we are trying to avoid word "routing") service
 
 * Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
 * More screenshots in README
 
 ### W.I.P
 * REST server side (and store it in folder cmd/)
-    * Shortest path finder (we are trying to avoid word "routing") service
+    * Isochrones
 
 ### Planned
 * Stable core (need many tests as possible)
@@ -32,7 +33,8 @@ New ideas, thought about needed features will be store in this file.
 * Think about: Add sort for provided GPS points to avoid client's mistake ???
 * REST server side (and store it in folder cmd/)
     * Service bringing MVT tiles of graph
-    * Isochrones
+    * Need to integrate some good heuristics into FindShortestPath() function. Current implementation based on "nearest edge" for choosing source and target vertices.
+* Front-end shortest path builder (like current map match, but just different colors? don't know)
 
 ### Continuous activity
 * README
