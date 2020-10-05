@@ -9,17 +9,17 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/LdDl/ch"
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
 )
 
 // MapEngine Engine for solving finding shortest path and KNN problems
-/*
-	edges - set of edges (map[from_vertex]map[to_vertex]Edge)
-	s2Storage - datastore for B-tree. It is used for solving KNN problem
-	graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem
-*/
+// edges - set of edges (map[from_vertex]map[to_vertex]Edge)
+// s2Storage - datastore for B-tree. It is used for solving KNN problem
+// graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
 type MapEngine struct {
 	edges     map[int64]map[int64]*Edge
 	s2Storage *S2Storage
@@ -52,16 +52,27 @@ func NewMapEngine(storageLevel int, degree int) *MapEngine {
 /*
 	edges - set of edges (map[from_vertex]map[to_vertex]Edge)
 */
-func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) {
+func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) error {
 	engine.edges = edges
 	for i := range edges {
-		engine.graph.CreateVertex(i)
+		err := engine.graph.CreateVertex(i)
+		if err != nil {
+			return errors.Wrap(err, "Can not create Source vertex")
+		}
 		for j := range edges[i] {
-			engine.graph.CreateVertex(j)
-			engine.graph.AddEdge(i, j, edges[i][j].Weight)
+			err = engine.graph.CreateVertex(j)
+			if err != nil {
+				return errors.Wrap(err, "Can not create Target vertex")
+
+			}
+			err = engine.graph.AddEdge(i, j, edges[i][j].Weight)
+			if err != nil {
+				return errors.Wrap(err, "Can not wrap Source and Targed vertices as Edge")
+			}
 			engine.s2Storage.AddEdge(uint64(edges[i][j].ID), edges[i][j])
 		}
 	}
+	return nil
 }
 
 func prepareEngine(graphFileName string) (*MapEngine, error) {
@@ -75,7 +86,10 @@ func prepareEngine(graphFileName string) (*MapEngine, error) {
 	fmt.Printf("Done in %v\n", time.Since(st))
 	fmt.Printf("Preparing graph... ")
 	st = time.Now()
-	engine.prepareGraph(edges)
+	err = engine.prepareGraph(edges)
+	if err != nil {
+		return nil, errors.Wrap(err, "Can not prepare graph")
+	}
 	fmt.Printf("Done in %v\n", time.Since(st))
 	fmt.Printf("Preparing contracts... ")
 	st = time.Now()
