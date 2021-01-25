@@ -38,7 +38,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 0. Installing Prerequisites
 
 
-    * Install [osm2ch tool](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
+    * Install [osm2ch tool](https://github.com/LdDl/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
         ```shell
         go get github.com/LdDl/ch
         go install github.com/LdDl/ch/...
@@ -70,7 +70,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
     ```
     <img src="images/inst5.png" width="720">
-3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
+3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
     ```shell
     osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
     ```
