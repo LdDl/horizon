@@ -17,10 +17,10 @@ New ideas, thought about needed features will be store in this file.
 
 * Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
 * More screenshots in README
+* Migrate to Fiber v2
 
 ### W.I.P
-* REST server side (and store it in folder cmd/)
-    * Isochrones
+* Migrating to new version of CH (https://github.com/LdDl/ch)
 
 ### Planned
 * Stable core (need many tests as possible)
@@ -35,6 +35,8 @@ New ideas, thought about needed features will be store in this file.
     * Service bringing MVT tiles of graph
     * Need to integrate some good heuristics into FindShortestPath() function. Current implementation based on "nearest edge" for choosing source and target vertices.
 * Front-end shortest path builder (like current map match, but just different colors? don't know)
+* REST server side (and store it in folder cmd/)
+    * Isochrones
 
 ### Continuous activity
 * README
