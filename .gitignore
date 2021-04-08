@@ -10,3 +10,7 @@ cmd/horizon/front_end/
 cmd/horizon/map.osm
 cmd/horizon/map.osm.pbf
 cmd/horizon/map.csv
+cmd/horizon/horizon
+cmd/horizon/horizon.exe
+cmd/horizon/*.zip
+cmd/horizon/*.tar.gz
