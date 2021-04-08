@@ -8,15 +8,16 @@ import (
 	"time"
 
 	"github.com/LdDl/horizon"
-	"github.com/gofiber/cors"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	geojson "github.com/paulmach/go.geojson"
+	"github.com/valyala/fasthttp"
 )
 
 var (
 	addrFlag        = flag.String("h", "0.0.0.0", "Bind address")
 	portFlag        = flag.Int("p", 32800, "Port")
-	fileFlag        = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/ch/tree/master/cmd/osm2ch#osm2ch)")
+	fileFlag        = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/osm2ch#osm2ch)")
 	sigmaFlag       = flag.Float64("sigma", 50.0, "σ-parameter for evaluating emission probabilities")
 	betaFlag        = flag.Float64("beta", 30.0, "β-parameter for evaluating transition probabilities")
 	lonFlag         = flag.Float64("maplon", 0.0, "initial longitude of front-end map")
@@ -38,9 +39,26 @@ func main() {
 		log.Panicln(err)
 	}
 
+	config := fiber.Config{
+		DisableStartupMessage: true,
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			log.Println(err)
+			return ctx.Status(fasthttp.StatusInternalServerError).JSON(map[string]string{"Error": "undefined"})
+		},
+		IdleTimeout: 10 * time.Second,
+	}
+	allCors := cors.New(cors.Config{
+		AllowOrigins:     "*",
+		AllowHeaders:     "Origin, Authorization, Content-Type, Content-Length, Accept, Accept-Encoding, X-HttpRequest",
+		AllowMethods:     "GET, POST, PUT, DELETE",
+		ExposeHeaders:    "Content-Length",
+		AllowCredentials: true,
+		MaxAge:           5600,
+	})
+
 	// Init server
-	server := fiber.New()
-	server.Use(cors.New())
+	server := fiber.New(config)
+	server.Use(allCors)
 	server.Get("/", RenderPage())
 	api := server.Group("api")
 	v010 := api.Group("/v0.1.0")
@@ -53,11 +71,11 @@ func main() {
 }
 
 // RenderPage Render front-end
-func RenderPage() func(*fiber.Ctx) {
-	fn := func(ctx *fiber.Ctx) {
+func RenderPage() func(*fiber.Ctx) error {
+	fn := func(ctx *fiber.Ctx) error {
 		ctx.Set("Content-Type", "text/html")
 		// ctx.Fasthttp.Request.Header.Set("Content-type", "text/html")
-		ctx.SendString(webPage)
+		return ctx.SendString(webPage)
 	}
 	return fn
 }
@@ -91,31 +109,25 @@ type Response struct {
 }
 
 // MapMatch Do map match via POST-request
-func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
-	fn := func(ctx *fiber.Ctx) {
+func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
+	fn := func(ctx *fiber.Ctx) error {
 
-		bodyBytes := ctx.Fasthttp.PostBody()
+		bodyBytes := ctx.Context().PostBody()
 		data := Request{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
-			ctx.SendStatus(400)
-			ctx.JSON(H{"Error": err.Error()})
-			return
+			return ctx.Status(400).JSON(H{"Error": err.Error()})
 		}
 
 		if len(data.Data) < 3 {
-			ctx.SendStatus(400)
-			ctx.JSON(H{"Error": "Please provide 3 GPS points atleast"})
-			return
+			return ctx.Status(400).JSON(H{"Error": "Please provide 3 GPS points atleast"})
 		}
 
 		gpsMeasurements := horizon.GPSMeasurements{}
 		for i := range data.Data {
 			tm, err := time.Parse(timestampLayout, data.Data[i].Timestamp)
 			if err != nil {
-				ctx.SendStatus(400)
-				ctx.JSON(H{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
-				return
+				return ctx.Status(400).JSON(H{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
 			}
 			gpsMeasurement := horizon.NewGPSMeasurement(tm, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326)
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
@@ -147,7 +159,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
 		ans.Path.AddFeature(f)
 
-		ctx.JSON(ans)
+		return ctx.Status(200).JSON(ans)
 	}
 	return fn
 }
@@ -157,20 +169,16 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
    Actually it can be done just by doing MapMatch for 2 proided points, but this just proof of concept
    Services takes two points, snaps those to nearest vertices and finding path via Dijkstra's algorithm. Output is familiar to MapMatch()
 */
-func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
-	fn := func(ctx *fiber.Ctx) {
-		bodyBytes := ctx.Fasthttp.PostBody()
+func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
+	fn := func(ctx *fiber.Ctx) error {
+		bodyBytes := ctx.Context().PostBody()
 		data := Request{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
-			ctx.SendStatus(400)
-			ctx.JSON(H{"Error": err.Error()})
-			return
+			return ctx.Status(400).JSON(H{"Error": err.Error()})
 		}
 		if len(data.Data) != 2 {
-			ctx.SendStatus(400)
-			ctx.JSON(H{"Error": "Please provide 2 GPS points only"})
-			return
+			return ctx.Status(400).JSON(H{"Error": "Please provide 2 GPS points only"})
 		}
 
 		gpsMeasurements := horizon.GPSMeasurements{}
@@ -200,7 +208,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) {
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
 		ans.Path.AddFeature(f)
 
-		ctx.JSON(ans)
+		return ctx.Status(200).JSON(ans)
 	}
 	return fn
 }
