@@ -7,3 +7,6 @@ map.csv
 cmd/horizon/front_end/
 .vs
 .vs_code
+cmd/horizon/map.osm
+cmd/horizon/map.osm.pbf
+cmd/horizon/map.csv
