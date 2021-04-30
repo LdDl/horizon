@@ -40,7 +40,7 @@ func main() {
 	}
 
 	config := fiber.Config{
-		DisableStartupMessage: true,
+		DisableStartupMessage: false,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			log.Println(err)
 			return ctx.Status(fasthttp.StatusInternalServerError).JSON(map[string]string{"Error": "undefined"})
