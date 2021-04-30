@@ -1,5 +1,7 @@
 github.com/LdDl/ch v1.5.0 h1:7CM7oQvdEswjpyyZM2so8cxfXlMbSbgL9JzHUlfTXyA=
 github.com/LdDl/ch v1.5.0/go.mod h1:i6JXvviI4GnJRTctKKVo6A0PzqaxaTHKvXhHgqVwFRY=
+github.com/LdDl/ch v1.7.5 h1:LlbivvKO9CmYrmz0nMB5eGugyVJizBAGa+dn0Fo1Ofw=
+github.com/LdDl/ch v1.7.5/go.mod h1:i6JXvviI4GnJRTctKKVo6A0PzqaxaTHKvXhHgqVwFRY=
 github.com/LdDl/viterbi v1.0.0 h1:S8WclvqoF3QWS+U65g4hIbDt/snOyu1NRWJLAgV67Ts=
 github.com/LdDl/viterbi v1.0.0/go.mod h1:aRi/jFMBD9c+rhe0/iIlO1QAiQn6Yo5K79aKBzp1HMg=
 github.com/andybalholm/brotli v1.0.0 h1:7UCwP93aiSfvWpapti8g88vVVGp2qqtGyePsSuDafo4=
