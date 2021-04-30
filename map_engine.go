@@ -75,7 +75,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Read edges first
 	fileEdges, err := os.Open(edgesFname)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't open edges file '%s'", edgesFname))
 	}
 	defer fileEdges.Close()
 	readerEdges := csv.NewReader(fileEdges)
@@ -85,7 +85,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Skip header of CSV-file
 	_, err = readerEdges.Read()
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of edges file '%s'", edgesFname))
 	}
 	// Read file line by line
 	edgeID := int64(0)
@@ -96,15 +96,15 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		sourceVertex, err := strconv.ParseInt(record[0], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse source vertex in edges file. The vertex is '%s'", record[0]))
 		}
 		targetVertex, err := strconv.ParseInt(record[1], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse target vertex in edges file. The vertex is '%s'", record[1]))
 		}
 		weight, err := strconv.ParseFloat(record[2], 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse weight of an edge in edges file. The weight is '%s'", record[2]))
 		}
 		err = engine.graph.CreateVertex(sourceVertex)
 		if err != nil {
@@ -143,7 +143,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 
 		err = engine.s2Storage.AddEdge(uint64(edgeID), &edge)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't add s2-polyline to engine: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
 		edgeID++
 	}
@@ -153,7 +153,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Read vertices
 	fileVertices, err := os.Open(verticesFname)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't open vertices file '%s'", verticesFname))
 	}
 	defer fileVertices.Close()
 	readerVertices := csv.NewReader(fileVertices)
@@ -162,7 +162,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Skip header of CSV-file
 	_, err = readerVertices.Read()
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of vertices file '%s'", edgesFname))
 	}
 	// Read file line by line
 	for {
@@ -172,15 +172,15 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		vertexExternal, err := strconv.ParseInt(record[0], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse a vertex in vertices file. The vertex is '%s'", record[0]))
 		}
 		vertexOrderPos, err := strconv.Atoi(record[1])
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse order position of vertex in vertices file. The order pos is '%s'", record[1]))
 		}
 		vertexImportance, err := strconv.Atoi(record[2])
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse importance of vertex in vertices file. The importance is '%s'", record[2]))
 		}
 		vertexInternal, vertexFound := engine.graph.FindVertex(vertexExternal)
 		if !vertexFound {
@@ -194,7 +194,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Read contractions
 	fileShortcuts, err := os.Open(shortcutsFname)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't open shortcuts file '%s'", shortcutsFname))
 	}
 	defer fileShortcuts.Close()
 	readerShortcuts := csv.NewReader(fileShortcuts)
@@ -202,7 +202,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	// Skip header of CSV-file
 	_, err = readerShortcuts.Read()
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of shortcuts file '%s'", edgesFname))
 	}
 	// Read file line by line
 	for {
@@ -212,19 +212,19 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		sourceExternal, err := strconv.ParseInt(record[0], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse source vertex in shortcuts file. The vertex is '%s'", record[0]))
 		}
 		targetExternal, err := strconv.ParseInt(record[1], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse target vertex in shortcuts file. The vertex is '%s'", record[1]))
 		}
 		weight, err := strconv.ParseFloat(record[2], 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse weight of a shortcut in shortcuts file. The weight is '%s'", record[2]))
 		}
 		contractionExternal, err := strconv.ParseInt(record[3], 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse middle vertex of a shortcut in shortcuts file. The weight is '%s'", record[3]))
 		}
 		err = engine.graph.AddEdge(sourceExternal, targetExternal, weight)
 		if err != nil {
