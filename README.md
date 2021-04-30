@@ -19,10 +19,9 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 
 
 ## Installation
-### notice: targeted for Linux users (no Windows/OSX instructions currenlty)
 ```shell
-go get -u github.com/LdDl/horizon/...
-go install github.com/LdDl/horizon/...
+go get github.com/LdDl/horizon
+go install github.com/LdDl/horizon/cmd/horizon@v0.4.0
 ```
 Check if **horizon** binary was installed properly:
 ```shell
@@ -40,8 +39,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
     * Install [osm2ch tool](https://github.com/LdDl/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
         ```shell
-        go get github.com/LdDl/ch
-        go install github.com/LdDl/ch/...
+        go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.3.0
         ```
     * Check if **osm2ch** binary was installed properly:
         ```shell
@@ -63,23 +61,38 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 1. First of all (except previous step), you need to download road graph (OSM is most popular format, we guess). Notice: you must change bbox for your region (in this example we using central district of Moscow).
     ```shell
     wget 'https://overpass-api.de/api/map?bbox=37.5453,55.7237,37.7252,55.7837' -O map.osm
+    # or curl 'https://overpass-api.de/api/map?bbox=37.5453,55.7237,37.7252,55.7837' --output map.osm
     ```
     <img src="images/inst4.png" width="720">
-2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert). Drop author and version tags also (those not necessary for map matching). 
+
+2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert). Drop author and version tags also (those not necessary for map matching) to reduce file's size. 
     ```shell
     osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
     ```
     <img src="images/inst5.png" width="720">
-3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/osm2ch#osm2ch). Notice: osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also .
+
+3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/osm2ch#osm2ch).
+
+    Notice:
+    * osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also. 
+    * Don't forget to prepare contraction hierarchies via flag 'contract=true'
+
     ```shell
-    osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link
+    osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link --contract=true
     ```
     <img src="images/inst6.png" width="720">
-4. Start **horizon** server. Provide bind address, port, filename for road graph, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
+
+4. After step above there must be 3 files:
+    * map.csv - Information about edges and its geometries
+    * map_vertices.csv - Information about vertices and its geometries
+    * map_shortcuts.csv - Information about shortcuts which are obtained by contraction process
+
+4. Start **horizon** server. Provide bind address, port, filename for edges file, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
     ```shell
     horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
     ```
     <img src="images/inst7.png" width="720">
+
 5. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"maxStates":5,"stateRadius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lonLat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lonLat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lonLat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lonLat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lonLat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lonLat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lonLat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lonLat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lonLat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lonLat":[37.60038508556347,55.75559625596534]}]}'
@@ -89,6 +102,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/shortest' -d '{"stateRadius":10.0,"gps":[{"lonLat":[37.601249363208915,55.745374309126895]},{"lonLat":[37.600926871550165,55.752634490168425]}]}'
     ```
     <img src="images/inst8.png" width="720">
+    
 6. Open Front-end on link http://localhost:32800/
 
     <img src="images/pic1.png" width="720">
