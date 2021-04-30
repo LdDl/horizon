@@ -62,7 +62,7 @@ func prepareEngine(edgesFilename string) (*MapEngine, error) {
 		return nil, err
 	}
 	fmt.Printf("Done in %v\n", time.Since(st))
-	fmt.Printf("Loading graph and preparing engine... ")
+	fmt.Printf("Loading graph and preparing engine...\n")
 	st = time.Now()
 	fmt.Printf("Done in %v\n", time.Since(st))
 	return engine, nil
