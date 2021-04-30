@@ -50,13 +50,11 @@ func NewMapEngine(storageLevel int, degree int) *MapEngine {
 func prepareEngine(edgesFilename string) (*MapEngine, error) {
 	engine := NewMapEngineDefault()
 
-	/* Check if there are all three needed files */
+	/* Prepare filenames (output of 'osm2ch' CLI tool) */
 	fnamePart := strings.Split(edgesFilename, ".csv")
-
 	edgesFilename = fnamePart[0] + ".csv"
 	verticesFilename := fnamePart[0] + "_vertices.csv"
 	shortcutsFilename := fnamePart[0] + "_shortcuts.csv"
-
 	fmt.Printf("Extractiong edges from '%s' file...\n", edgesFilename)
 	st := time.Now()
 	err := engine.extractDataFromCSVs(edgesFilename, verticesFilename, shortcutsFilename)
@@ -66,9 +64,6 @@ func prepareEngine(edgesFilename string) (*MapEngine, error) {
 	fmt.Printf("Done in %v\n", time.Since(st))
 	fmt.Printf("Loading graph and preparing engine... ")
 	st = time.Now()
-	fmt.Printf("Done in %v\n", time.Since(st))
-	st = time.Now()
-	engine.graph.PrepareContractionHierarchies()
 	fmt.Printf("Done in %v\n", time.Since(st))
 	return engine, nil
 }
@@ -153,5 +148,92 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		edgeID++
 	}
 
+	/* Now prepare order position and importance of each vertex */
+	/* This helps to avade graph.PrepareContractionHierarchies() call */
+	// Read vertices
+	fileVertices, err := os.Open(verticesFname)
+	if err != nil {
+		return err
+	}
+	defer fileVertices.Close()
+	readerVertices := csv.NewReader(fileVertices)
+	readerVertices.Comma = ';'
+
+	// Skip header of CSV-file
+	_, err = readerVertices.Read()
+	if err != nil {
+		return err
+	}
+	// Read file line by line
+	for {
+		record, err := readerVertices.Read()
+		if err == io.EOF {
+			break
+		}
+		vertexExternal, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			return err
+		}
+		vertexOrderPos, err := strconv.Atoi(record[1])
+		if err != nil {
+			return err
+		}
+		vertexImportance, err := strconv.Atoi(record[2])
+		if err != nil {
+			return err
+		}
+		vertexInternal, vertexFound := engine.graph.FindVertex(vertexExternal)
+		if !vertexFound {
+			return fmt.Errorf("Vertex with Label = %d is not found in graph", vertexExternal)
+		}
+		engine.graph.Vertices[vertexInternal].SetOrderPos(vertexOrderPos)
+		engine.graph.Vertices[vertexInternal].SetImportance(vertexImportance)
+	}
+
+	/* After hierarchies prepared add shortcuts to graph */
+	// Read contractions
+	fileShortcuts, err := os.Open(shortcutsFname)
+	if err != nil {
+		return err
+	}
+	defer fileShortcuts.Close()
+	readerShortcuts := csv.NewReader(fileShortcuts)
+	readerShortcuts.Comma = ';'
+	// Skip header of CSV-file
+	_, err = readerShortcuts.Read()
+	if err != nil {
+		return err
+	}
+	// Read file line by line
+	for {
+		record, err := readerShortcuts.Read()
+		if err == io.EOF {
+			break
+		}
+		sourceExternal, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			return err
+		}
+		targetExternal, err := strconv.ParseInt(record[1], 10, 64)
+		if err != nil {
+			return err
+		}
+		weight, err := strconv.ParseFloat(record[2], 64)
+		if err != nil {
+			return err
+		}
+		contractionExternal, err := strconv.ParseInt(record[3], 10, 64)
+		if err != nil {
+			return err
+		}
+		err = engine.graph.AddEdge(sourceExternal, targetExternal, weight)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add shortcut with source_internal_ID = '%d' and target_internal_ID = '%d'", sourceExternal, targetExternal))
+		}
+		err = engine.graph.AddShortcut(sourceExternal, targetExternal, contractionExternal, weight)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add shortcut with source_internal_ID = '%d' and target_internal_ID = '%d' to internal map", sourceExternal, targetExternal))
+		}
+	}
 	return nil
 }
