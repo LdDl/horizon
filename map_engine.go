@@ -1,19 +1,18 @@
 package horizon
 
 import (
-	"bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
+	geojson "github.com/paulmach/go.geojson"
 	"github.com/pkg/errors"
 
 	"github.com/LdDl/ch"
-	"github.com/golang/geo/s2"
-	geojson "github.com/paulmach/go.geojson"
 )
 
 // MapEngine Engine for solving finding shortest path and KNN problems
@@ -48,153 +47,193 @@ func NewMapEngine(storageLevel int, degree int) *MapEngine {
 	}
 }
 
-// prepareGraph Inserts vertices and edges into MapEngine
-/*
-	edges - set of edges (map[from_vertex]map[to_vertex]Edge)
-*/
-func (engine *MapEngine) prepareGraph(edges map[int64]map[int64]*Edge) error {
-	engine.edges = edges
-	for i := range edges {
-		err := engine.graph.CreateVertex(i)
-		if err != nil {
-			return errors.Wrap(err, "Can not create Source vertex")
-		}
-		for j := range edges[i] {
-			err = engine.graph.CreateVertex(j)
-			if err != nil {
-				return errors.Wrap(err, "Can not create Target vertex")
-
-			}
-			err = engine.graph.AddEdge(i, j, edges[i][j].Weight)
-			if err != nil {
-				return errors.Wrap(err, "Can not wrap Source and Targed vertices as Edge")
-			}
-			engine.s2Storage.AddEdge(uint64(edges[i][j].ID), edges[i][j])
-		}
-	}
-	return nil
-}
-
-func prepareEngine(graphFileName string) (*MapEngine, error) {
+func prepareEngine(edgesFilename string) (*MapEngine, error) {
 	engine := NewMapEngineDefault()
-	fmt.Printf("Extractiong edges from '%s' file... ", graphFileName)
+
+	/* Prepare filenames (output of 'osm2ch' CLI tool) */
+	fnamePart := strings.Split(edgesFilename, ".csv")
+	edgesFilename = fnamePart[0] + ".csv"
+	verticesFilename := fnamePart[0] + "_vertices.csv"
+	shortcutsFilename := fnamePart[0] + "_shortcuts.csv"
+	fmt.Printf("Extractiong edges from '%s' file...\n", edgesFilename)
 	st := time.Now()
-	edges, err := extractEdgesFromCSV(graphFileName)
+	err := engine.extractDataFromCSVs(edgesFilename, verticesFilename, shortcutsFilename)
 	if err != nil {
 		return nil, err
 	}
 	fmt.Printf("Done in %v\n", time.Since(st))
-	fmt.Printf("Preparing graph... ")
+	fmt.Printf("Loading graph and preparing engine...\n")
 	st = time.Now()
-	err = engine.prepareGraph(edges)
-	if err != nil {
-		return nil, errors.Wrap(err, "Can not prepare graph")
-	}
-	fmt.Printf("Done in %v\n", time.Since(st))
-	fmt.Printf("Preparing contracts... ")
-	st = time.Now()
-	engine.graph.PrepareContracts()
 	fmt.Printf("Done in %v\n", time.Since(st))
 	return engine, nil
 }
 
-func extractEdgesFromCSV(fname string) (map[int64]map[int64]*Edge, error) {
-	file, err := os.Open(fname)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	reader := csv.NewReader(bufio.NewReader(file))
-	reader.Comma = ';'
-	reader.LazyQuotes = true
-	_, err = reader.Read()
-	if err != nil {
-		return nil, err
-	}
+func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcutsFname string) error {
+	// Allocate memory for edges
+	engine.edges = make(map[int64]map[int64]*Edge)
 
-	ans := make(map[int64]map[int64]*Edge)
+	// Read edges first
+	fileEdges, err := os.Open(edgesFname)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't open edges file '%s'", edgesFname))
+	}
+	defer fileEdges.Close()
+	readerEdges := csv.NewReader(fileEdges)
+	readerEdges.Comma = ';'
+
+	// Fill graph with edges informations
+	// Skip header of CSV-file
+	_, err = readerEdges.Read()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of edges file '%s'", edgesFname))
+	}
+	// Read file line by line
 	edgeID := int64(0)
 	for {
-		record, err := reader.Read()
+		record, err := readerEdges.Read()
 		if err == io.EOF {
 			break
 		}
-
-		source, err := strconv.ParseInt(record[0], 10, 64)
+		sourceVertex, err := strconv.ParseInt(record[0], 10, 64)
 		if err != nil {
-			return nil, err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse source vertex in edges file. The vertex is '%s'", record[0]))
 		}
-		target, err := strconv.ParseInt(record[1], 10, 64)
+		targetVertex, err := strconv.ParseInt(record[1], 10, 64)
 		if err != nil {
-			return nil, err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse target vertex in edges file. The vertex is '%s'", record[1]))
 		}
-		if source == target {
-			continue
+		weight, err := strconv.ParseFloat(record[2], 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse weight of an edge in edges file. The weight is '%s'", record[2]))
+		}
+		err = engine.graph.CreateVertex(sourceVertex)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add source vertex with from_vertex_id = '%d'", sourceVertex))
+		}
+		err = engine.graph.CreateVertex(targetVertex)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add target vertex with to_vertex_id = '%d'", targetVertex))
+		}
+		err = engine.graph.AddEdge(sourceVertex, targetVertex, weight)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add edge: from_vertex_id = '%d' | to_vertex_id = '%d'", sourceVertex, targetVertex))
 		}
 
-		oneway := record[2]
-		weight, err := strconv.ParseFloat(record[3], 64)
-		if err != nil {
-			return nil, err
-		}
-
-		coordinates := record[4]
+		coordinates := record[3]
 		bytesCoordinates := []byte(coordinates)
 		geojsonPolyline, err := geojson.UnmarshalGeometry(bytesCoordinates)
 		if err != nil {
-			return nil, err
+			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
-
 		s2Polyline, err := GeoJSONToS2PolylineFeature(geojsonPolyline)
 		if err != nil {
-			return nil, err
+			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-polyline edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
-
-		if _, ok := ans[source]; !ok {
-			ans[source] = make(map[int64]*Edge)
-			ans[source][target] = &Edge{
-				ID:       edgeID,
-				Source:   source,
-				Target:   target,
-				Weight:   weight,
-				Polyline: s2Polyline,
-			}
-		} else {
-			ans[source][target] = &Edge{
-				ID:       edgeID,
-				Source:   source,
-				Target:   target,
-				Weight:   weight,
-				Polyline: s2Polyline,
-			}
+		if _, ok := engine.edges[sourceVertex]; !ok {
+			engine.edges[sourceVertex] = make(map[int64]*Edge)
 		}
+		edge := Edge{
+			ID:       edgeID,
+			Source:   sourceVertex,
+			Target:   targetVertex,
+			Weight:   weight,
+			Polyline: s2Polyline,
+		}
+		engine.edges[sourceVertex][targetVertex] = &edge
 
-		if oneway == "B" {
-			reverseS2Polyline := make(s2.Polyline, len(*s2Polyline))
-			copy(reverseS2Polyline, *s2Polyline)
-			reverseS2Polyline.Reverse()
-
-			edgeID++
-			if _, ok := ans[target]; !ok {
-				ans[target] = make(map[int64]*Edge)
-				ans[target][source] = &Edge{
-					ID:       edgeID,
-					Source:   target,
-					Target:   source,
-					Weight:   weight,
-					Polyline: &reverseS2Polyline,
-				}
-			} else {
-				ans[target][source] = &Edge{
-					ID:       edgeID,
-					Source:   target,
-					Target:   source,
-					Weight:   weight,
-					Polyline: &reverseS2Polyline,
-				}
-			}
+		err = engine.s2Storage.AddEdge(uint64(edgeID), &edge)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add s2-polyline to engine: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
 		edgeID++
 	}
-	return ans, nil
+
+	/* Now prepare order position and importance of each vertex */
+	/* This helps to avade graph.PrepareContractionHierarchies() call */
+	// Read vertices
+	fileVertices, err := os.Open(verticesFname)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't open vertices file '%s'", verticesFname))
+	}
+	defer fileVertices.Close()
+	readerVertices := csv.NewReader(fileVertices)
+	readerVertices.Comma = ';'
+
+	// Skip header of CSV-file
+	_, err = readerVertices.Read()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of vertices file '%s'", edgesFname))
+	}
+	// Read file line by line
+	for {
+		record, err := readerVertices.Read()
+		if err == io.EOF {
+			break
+		}
+		vertexExternal, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse a vertex in vertices file. The vertex is '%s'", record[0]))
+		}
+		vertexOrderPos, err := strconv.Atoi(record[1])
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse order position of vertex in vertices file. The order pos is '%s'", record[1]))
+		}
+		vertexImportance, err := strconv.Atoi(record[2])
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse importance of vertex in vertices file. The importance is '%s'", record[2]))
+		}
+		vertexInternal, vertexFound := engine.graph.FindVertex(vertexExternal)
+		if !vertexFound {
+			return fmt.Errorf("Vertex with Label = %d is not found in graph", vertexExternal)
+		}
+		engine.graph.Vertices[vertexInternal].SetOrderPos(vertexOrderPos)
+		engine.graph.Vertices[vertexInternal].SetImportance(vertexImportance)
+	}
+
+	/* After hierarchies prepared add shortcuts to graph */
+	// Read contractions
+	fileShortcuts, err := os.Open(shortcutsFname)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't open shortcuts file '%s'", shortcutsFname))
+	}
+	defer fileShortcuts.Close()
+	readerShortcuts := csv.NewReader(fileShortcuts)
+	readerShortcuts.Comma = ';'
+	// Skip header of CSV-file
+	_, err = readerShortcuts.Read()
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("Can't read header of shortcuts file '%s'", edgesFname))
+	}
+	// Read file line by line
+	for {
+		record, err := readerShortcuts.Read()
+		if err == io.EOF {
+			break
+		}
+		sourceExternal, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse source vertex in shortcuts file. The vertex is '%s'", record[0]))
+		}
+		targetExternal, err := strconv.ParseInt(record[1], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse target vertex in shortcuts file. The vertex is '%s'", record[1]))
+		}
+		weight, err := strconv.ParseFloat(record[2], 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse weight of a shortcut in shortcuts file. The weight is '%s'", record[2]))
+		}
+		contractionExternal, err := strconv.ParseInt(record[3], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse middle vertex of a shortcut in shortcuts file. The weight is '%s'", record[3]))
+		}
+		err = engine.graph.AddEdge(sourceExternal, targetExternal, weight)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add shortcut with source_internal_ID = '%d' and target_internal_ID = '%d'", sourceExternal, targetExternal))
+		}
+		err = engine.graph.AddShortcut(sourceExternal, targetExternal, contractionExternal, weight)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't add shortcut with source_internal_ID = '%d' and target_internal_ID = '%d' to internal map", sourceExternal, targetExternal))
+		}
+	}
+	return nil
 }
