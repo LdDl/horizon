@@ -3,15 +3,15 @@ module github.com/LdDl/horizon
 go 1.13
 
 require (
-	github.com/LdDl/ch v1.3.4
+	github.com/LdDl/ch v1.7.5
 	github.com/LdDl/viterbi v1.0.0
-	github.com/fasthttp/websocket v1.4.2 // indirect
-	github.com/gofiber/cors v0.0.3
-	github.com/gofiber/fiber v1.9.6
-	github.com/gofiber/template v1.1.0 // indirect
-	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d
+	github.com/andybalholm/brotli v1.0.3 // indirect
+	github.com/gofiber/fiber/v2 v2.17.0
+	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
 	github.com/google/btree v1.0.0
-	github.com/google/uuid v1.1.1 // indirect
+	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/paulmach/go.geojson v1.4.0
-	github.com/valyala/fasttemplate v1.1.0 // indirect
+	github.com/pkg/errors v0.9.1
+	github.com/valyala/fasthttp v1.28.0
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 )

@@ -17,15 +17,22 @@ New ideas, thought about needed features will be store in this file.
 
 * Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
 * More screenshots in README
+* Migrate to Fiber v2
+* Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5
 
 ### W.I.P
+* gRPC server side
+    * generate protobuf structure
+    * Map matching service
+    * Isochrones service
+
 * REST server side (and store it in folder cmd/)
-    * Isochrones
+    * Isochrones service
+
+* Stabilization of core (need many tests as possible)
 
 ### Planned
-* Stable core (need many tests as possible)
 * Rewrite front-end on [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
-* gRPC server side (and store it in folder cmd/) with same features as REST
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines

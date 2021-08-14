@@ -9,7 +9,7 @@ import (
 func TestMapMatcherSRID_4326(t *testing.T) {
 
 	var (
-		graphFileName   = "test_data/matcher_4326_test.csv"
+		graphFileName   = "./test_data/matcher_4326_test.csv"
 		sigma           = 50.0
 		beta            = 2.0
 		gpsMeasurements = GPSMeasurements{
@@ -71,7 +71,7 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 func BenchmarkMapMatcherSRID_4326(b *testing.B) {
 	b.Log("Please wait until initial data is loaded (SRID 4326, small graph)")
 	var (
-		graphFileName   = "test_data/matcher_4326_test.csv"
+		graphFileName   = "./test_data/matcher_4326_test.csv"
 		sigma           = 50.0
 		beta            = 2.0
 		gpsMeasurements = GPSMeasurements{
