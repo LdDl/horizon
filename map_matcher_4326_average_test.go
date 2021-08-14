@@ -49,16 +49,16 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		t.Error(err)
 	}
 
-	correctStates.Observations[0].MatchedEdge = *matcher.engine.edges[10099][10100]
-	correctStates.Observations[1].MatchedEdge = *matcher.engine.edges[10109][10110]
-	correctStates.Observations[2].MatchedEdge = *matcher.engine.edges[10118][10119]
-	correctStates.Observations[3].MatchedEdge = *matcher.engine.edges[10120][10121]
-	correctStates.Observations[4].MatchedEdge = *matcher.engine.edges[10122][10123]
-	correctStates.Observations[5].MatchedEdge = *matcher.engine.edges[10123][10124]
-	correctStates.Observations[6].MatchedEdge = *matcher.engine.edges[10124][10125]
-	correctStates.Observations[7].MatchedEdge = *matcher.engine.edges[12276][12277]
-	correctStates.Observations[8].MatchedEdge = *matcher.engine.edges[12280][12281]
-	correctStates.Observations[9].MatchedEdge = *matcher.engine.edges[21764][21765]
+	correctStates.Observations[0].MatchedEdge = *matcher.engine.edges[13640][13641]
+	correctStates.Observations[1].MatchedEdge = *matcher.engine.edges[13650][13651]
+	correctStates.Observations[2].MatchedEdge = *matcher.engine.edges[13659][13660]
+	correctStates.Observations[3].MatchedEdge = *matcher.engine.edges[13661][13662]
+	correctStates.Observations[4].MatchedEdge = *matcher.engine.edges[13663][13664]
+	correctStates.Observations[5].MatchedEdge = *matcher.engine.edges[13664][13665]
+	correctStates.Observations[6].MatchedEdge = *matcher.engine.edges[13665][13666]
+	correctStates.Observations[7].MatchedEdge = *matcher.engine.edges[16784][16785]
+	correctStates.Observations[8].MatchedEdge = *matcher.engine.edges[16788][16789]
+	correctStates.Observations[9].MatchedEdge = *matcher.engine.edges[32639][32640]
 
 	statesRadiusMeters := 7.0
 	maxStates := 5
