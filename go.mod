@@ -7,7 +7,7 @@ require (
 	github.com/LdDl/viterbi v1.0.0
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/gofiber/fiber/v2 v2.17.0
-	github.com/golang/geo v0.0.0-20200730024412-e86565bf3f35
+	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
 	github.com/google/btree v1.0.0
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/paulmach/go.geojson v1.4.0
