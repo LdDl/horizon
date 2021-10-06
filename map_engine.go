@@ -55,7 +55,7 @@ func prepareEngine(edgesFilename string) (*MapEngine, error) {
 	edgesFilename = fnamePart[0] + ".csv"
 	verticesFilename := fnamePart[0] + "_vertices.csv"
 	shortcutsFilename := fnamePart[0] + "_shortcuts.csv"
-	fmt.Printf("Extractiong edges from '%s' file...\n", edgesFilename)
+	fmt.Printf("Extracting edges from '%s' file...\n", edgesFilename)
 	st := time.Now()
 	err := engine.extractDataFromCSVs(edgesFilename, verticesFilename, shortcutsFilename)
 	if err != nil {
