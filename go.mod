@@ -3,7 +3,7 @@ module github.com/LdDl/horizon
 go 1.13
 
 require (
-	github.com/LdDl/ch v1.7.5
+	github.com/LdDl/ch v1.7.7
 	github.com/LdDl/viterbi v1.0.0
 	github.com/andybalholm/brotli v1.0.3 // indirect
 	github.com/gofiber/fiber/v2 v2.17.0

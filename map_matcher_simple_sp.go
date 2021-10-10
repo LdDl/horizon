@@ -15,21 +15,21 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, statesRadiusMeters, 1)
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
-		return MatcherResult{}, fmt.Errorf("Can't find closest edge for 'source' point")
+		return MatcherResult{}, ErrSourceNotFound
 	}
 	if len(closestSource) > 1 {
 		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
-		return MatcherResult{}, fmt.Errorf("More than 1 edge for 'source' point")
+		return MatcherResult{}, ErrSourceHasMoreEdges
 	}
 
 	closestTarget, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(target.Point, statesRadiusMeters, 1)
 	if len(closestTarget) == 0 {
 		// @todo need to handle this case properly...
-		return MatcherResult{}, fmt.Errorf("Can't find closest edge for 'target' point")
+		return MatcherResult{}, ErrTargetNotFound
 	}
 	if len(closestTarget) > 1 {
 		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
-		return MatcherResult{}, fmt.Errorf("More than 1 edge for 'target' point")
+		return MatcherResult{}, ErrTargetHasMoreEdges
 	}
 
 	s2polylineSource := matcher.engine.s2Storage.edges[closestSource[0].edgeID]
@@ -65,7 +65,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 
 	ans, path := matcher.engine.graph.ShortestPath(choosenSourceVertex, choosenTargetVertex)
 	if ans == -1.0 {
-		return MatcherResult{}, fmt.Errorf("Path not found")
+		return MatcherResult{}, ErrPathNotFound
 	}
 	edges := []Edge{}
 	result := MatcherResult{

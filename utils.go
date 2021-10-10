@@ -46,7 +46,7 @@ func GeoJSONToS2PolylineFeature(pts *geojson.Geometry) (*s2.Polyline, error) {
 			latLngs = append(latLngs, latLng)
 		}
 	} else {
-		return nil, fmt.Errorf("Type of geometry is: %s. Expected: 'LineString'", pts.Type)
+		return nil, fmt.Errorf("type of geometry is: %s. Expected: 'LineString'", pts.Type)
 	}
 	return s2.PolylineFromLatLngs(latLngs), nil
 }

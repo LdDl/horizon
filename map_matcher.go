@@ -50,7 +50,7 @@ func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, 
 func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMeters float64, maxStates int) (MatcherResult, error) {
 
 	if len(gpsMeasurements) < 3 {
-		return MatcherResult{}, fmt.Errorf("Number of gps measurements need to be 3 atleast")
+		return MatcherResult{}, ErrMinumimGPSMeasurements
 	}
 
 	stateID := 0
@@ -71,7 +71,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	}
 
 	if len(engineGpsMeasurements) == 0 {
-		return MatcherResult{}, fmt.Errorf("There is no a single GPS point having candidates")
+		return MatcherResult{}, ErrCandidatesNotFound
 	}
 
 	for i := 0; i < len(engineGpsMeasurements); i++ {
@@ -171,7 +171,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	vpath := v.EvalPathLogProbabilities()
 
 	if len(vpath.Path) != len(engineGpsMeasurements) {
-		return MatcherResult{}, fmt.Errorf("Number of states in final path != number (%d and %d) of observations. Should be unreachable error", len(vpath.Path), len(engineGpsMeasurements))
+		return MatcherResult{}, fmt.Errorf("number of states in final path != number (%d and %d) of observations. Should be unreachable error", len(vpath.Path), len(engineGpsMeasurements))
 	}
 
 	result := matcher.prepareResult(vpath, engineGpsMeasurements, chRoutes)

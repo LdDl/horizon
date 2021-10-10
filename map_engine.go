@@ -174,7 +174,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse a vertex in vertices file. The vertex is '%s'", record[0]))
 		}
-		vertexOrderPos, err := strconv.Atoi(record[1])
+		vertexOrderPos, err := strconv.ParseInt(record[1], 10, 64)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse order position of vertex in vertices file. The order pos is '%s'", record[1]))
 		}
@@ -184,7 +184,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		vertexInternal, vertexFound := engine.graph.FindVertex(vertexExternal)
 		if !vertexFound {
-			return fmt.Errorf("Vertex with Label = %d is not found in graph", vertexExternal)
+			return fmt.Errorf("vertex with Label = %d is not found in graph", vertexExternal)
 		}
 		engine.graph.Vertices[vertexInternal].SetOrderPos(vertexOrderPos)
 		engine.graph.Vertices[vertexInternal].SetImportance(vertexImportance)

@@ -50,13 +50,10 @@ func NewGPSMeasurement(t time.Time, lon, lat float64, srid ...int) *GPSMeasureme
 		switch srid[0] {
 		case 0:
 			gps.GeoPoint = NewEuclideanPoint(lon, lat)
-			break
 		case 4326:
 			gps.GeoPoint = NewWGS84Point(lon, lat)
-			break
 		default:
 			gps.GeoPoint = NewWGS84Point(lon, lat)
-			break
 		}
 	}
 	return &gps
@@ -79,13 +76,10 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 		switch srid[0] {
 		case 0:
 			gps.GeoPoint = NewEuclideanPoint(lon, lat)
-			break
 		case 4326:
 			gps.GeoPoint = NewWGS84Point(lon, lat)
-			break
 		default:
 			gps.GeoPoint = NewWGS84Point(lon, lat)
-			break
 		}
 	}
 	return &gps
@@ -94,8 +88,4 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 // GeoJSON Returns GeoJSON representation of GeoPoint
 func (gp *GeoPoint) GeoJSON() *geojson.Feature {
 	return S2PointToGeoJSONFeature(&gp.Point)
-}
-
-func removePT(slice []*GPSMeasurement, s int) []*GPSMeasurement {
-	return append(slice[:s], slice[s+1:]...)
 }

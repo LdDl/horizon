@@ -1,7 +1,6 @@
 package horizon
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -61,7 +60,7 @@ func (hp *HmmProbabilities) TransitionLogProbability(routeLength, linearDistance
 // normalizedTransitionMetric
 func (hp *HmmProbabilities) normalizedTransitionMetric(routeLength, linearDistance, timeDiff float64) (float64, error) {
 	if timeDiff < 0.0 {
-		return 0.0, fmt.Errorf("Time difference between subsequent location measurements must be >= 0")
+		return 0.0, ErrTimeDifference
 	}
 	// return math.Abs(linearDistance-routeLength) / (timeDiff * timeDiff), nil
 	return math.Abs(linearDistance - routeLength), nil

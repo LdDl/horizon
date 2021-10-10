@@ -42,13 +42,10 @@ func NewRoadPositionFromLonLat(stateID int, graphVertex int64, e *Edge, lon, lat
 		switch srid[0] {
 		case 0:
 			state.Projected = NewEuclideanPoint(lon, lat)
-			break
 		case 4326:
 			state.Projected = NewWGS84Point(lon, lat)
-			break
 		default:
 			state.Projected = NewWGS84Point(lon, lat)
-			break
 		}
 	}
 	return &state
@@ -73,13 +70,10 @@ func NewRoadPositionFromS2LatLng(stateID int, graphVertex int64, e *Edge, latLng
 		switch srid[0] {
 		case 0:
 			state.Projected = NewEuclideanPoint(latLng.Lng.Degrees(), latLng.Lat.Degrees())
-			break
 		case 4326:
 			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
-			break
 		default:
 			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
-			break
 		}
 	}
 	return &state
