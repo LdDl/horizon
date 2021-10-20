@@ -22,12 +22,12 @@ New ideas, thought about needed features will be store in this file.
 
 ### W.I.P
 * gRPC server side
-    * generate protobuf structure
+    * generate protobuf structure_W.I.P_
     * Map matching service
     * Isochrones service
 
 * REST server side (and store it in folder cmd/)
-    * Isochrones service
+    * Isochrones service_W.I.P._
 
 * Stabilization of core (need many tests as possible)
 
