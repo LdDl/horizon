@@ -26,8 +26,8 @@ New ideas, thought about needed features will be store in this file.
     * Map matching service
     * Isochrones service
 
-* REST server side (and store it in folder cmd/)
-    * Isochrones service_W.I.P._
+* REST server side (and store it in folder cmd/) _W.I.P._
+    * Isochrones service _W.I.P._
 
 * Stabilization of core (need many tests as possible)
 
