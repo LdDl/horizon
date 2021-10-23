@@ -15,7 +15,7 @@ type ObservationResult struct {
 	MatchedEdge Edge
 }
 
-// MatcherResult Representation of map mathicng algorithm's output
+// MatcherResult Representation of map matching algorithm's output
 /*
 	Observations - set of ObservationResult
 	Probability - probability got from Viterbi's algotithm

@@ -65,6 +65,7 @@ func main() {
 
 	v010.Post("/mapmatch", MapMatch(matcher))
 	v010.Post("/shortest", FindSP(matcher))
+	v010.Post("/isochrones", FindIsochrones(matcher))
 
 	// Start server
 	server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag))
@@ -209,6 +210,44 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		ans.Path.AddFeature(f)
 
 		return ctx.Status(200).JSON(ans)
+	}
+	return fn
+}
+
+// IsochronesRequest User's request for isochrones
+type IsochronesRequest struct {
+	// [Longitude, Latitude]
+	LonLat [2]float64 `json:"lonLat"`
+	// Max cost restrictions for single isochrone. Minumim is 0
+	MaxCost *float64 `json:"maxCost"`
+}
+
+// FindIsochrones Find possible isochrones via POST-request
+func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
+	fn := func(ctx *fiber.Ctx) error {
+		bodyBytes := ctx.Context().PostBody()
+		data := IsochronesRequest{}
+		err := json.Unmarshal(bodyBytes, &data)
+		if err != nil {
+			return ctx.Status(400).JSON(H{"Error": err.Error()})
+		}
+
+		gpsMeasurement := horizon.NewGPSMeasurementFromID(0, data.LonLat[0], data.LonLat[1], 4326)
+		maxCost := 0.0
+		ans := Response{}
+		if data.MaxCost != nil && *data.MaxCost >= 0 {
+			maxCost = *data.MaxCost
+		} else {
+			ans.Warnings = append(ans.Warnings, "maxCost either nil or not in range [0,+Inf]. Using default value: 0.0")
+		}
+		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost)
+		if err != nil {
+			log.Println(err)
+			ctx.SendStatus(500)
+			ctx.JSON(H{"Error": "Something went wrong on server side"})
+		}
+		_ = result
+		return ctx.Status(200).JSON("{\"status\": \"w.i.p\"}")
 	}
 	return fn
 }
