@@ -218,8 +218,10 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 type IsochronesRequest struct {
 	// [Longitude, Latitude]
 	LonLat [2]float64 `json:"lonLat"`
-	// Max cost restrictions for single isochrone. Minumim is 0
+	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
 	MaxCost *float64 `json:"maxCost"`
+	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
+	MaxNearestRadius *float64 `json:"nearestRadius"`
 }
 
 // FindIsochrones Find possible isochrones via POST-request
@@ -240,7 +242,15 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		} else {
 			ans.Warnings = append(ans.Warnings, "maxCost either nil or not in range [0,+Inf]. Using default value: 0.0")
 		}
-		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost)
+
+		maxNearestRadius := 25.0
+		if data.MaxNearestRadius != nil && *data.MaxNearestRadius >= 0 {
+			maxNearestRadius = *data.MaxNearestRadius
+		} else {
+			ans.Warnings = append(ans.Warnings, "nearestRadius either nil or not in range [0,+Inf]. Using default value: 0.0")
+		}
+
+		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)
 			ctx.SendStatus(500)
