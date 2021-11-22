@@ -27,7 +27,7 @@ New ideas, thought about needed features will be store in this file.
     * Isochrones service
 
 * REST server side (and store it in folder cmd/) _W.I.P._
-    * Isochrones service _W.I.P._
+    * Isochrones service _W.I.P._ (need a bit of time)
 
 * Stabilization of core (need many tests as possible)
 
