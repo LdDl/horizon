@@ -18,10 +18,12 @@ import (
 // MapEngine Engine for solving finding shortest path and KNN problems
 // edges - set of edges (map[from_vertex]map[to_vertex]Edge)
 // s2Storage - datastore for B-tree. It is used for solving KNN problem
+// s2StorageVertices - datastore for graph vertices (with geometry property)
 // graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
 type MapEngine struct {
 	edges     map[int64]map[int64]*Edge
 	s2Storage *S2Storage
+	vertices  map[int64]*Vertex
 	graph     ch.Graph
 }
 
@@ -30,6 +32,7 @@ func NewMapEngineDefault() *MapEngine {
 	index := NewS2Storage(17, 35)
 	return &MapEngine{
 		edges:     make(map[int64]map[int64]*Edge),
+		vertices:  make(map[int64]*Vertex),
 		s2Storage: index,
 	}
 }
@@ -188,6 +191,20 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		engine.graph.Vertices[vertexInternal].SetOrderPos(vertexOrderPos)
 		engine.graph.Vertices[vertexInternal].SetImportance(vertexImportance)
+
+		coordinates := record[3]
+		geoJSONPoint, err := geojson.UnmarshalGeometry([]byte(coordinates))
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the vertex '%d' | geom = '%s'", vertexExternal, coordinates))
+		}
+		s2Point, err := GeoJSONToS2PointFeature(geoJSONPoint)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-point vertex '%d' | geom = '%s'", vertexExternal, coordinates))
+		}
+		engine.vertices[vertexExternal] = &Vertex{
+			ID:    vertexExternal,
+			Point: &s2Point,
+		}
 	}
 
 	/* After hierarchies prepared add shortcuts to graph */
