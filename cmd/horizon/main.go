@@ -168,8 +168,6 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 type SPRequest struct {
 	// Set of GPS data
 	Data []RequestDatum `json:"gps"`
-	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
-	MaxStates *int `json:"maxStates"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"stateRadius"`
 }
