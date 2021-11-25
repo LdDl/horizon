@@ -83,8 +83,8 @@ func RenderPage() func(*fiber.Ctx) error {
 // H Just alias to map[stirng]string
 type H map[string]string
 
-// Request User's request
-type Request struct {
+// MapMatchRequest User's request for map matching
+type MapMatchRequest struct {
 	// Set of GPS data
 	Data []RequestDatum `json:"gps"`
 	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
@@ -101,8 +101,8 @@ type RequestDatum struct {
 	LonLat [2]float64 `json:"lonLat"`
 }
 
-// Response Server's response
-type Response struct {
+// MapMatchResponse Server's response for map matching request
+type MapMatchResponse struct {
 	Path *geojson.FeatureCollection `json:"data"`
 	// Warnings
 	Warnings []string `json:"warnings"`
@@ -113,7 +113,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 
 		bodyBytes := ctx.Context().PostBody()
-		data := Request{}
+		data := MapMatchRequest{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
 			return ctx.Status(400).JSON(H{"Error": err.Error()})
@@ -135,7 +135,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 
 		statesRadiusMeters := 25.0
 		maxStates := 5
-		ans := Response{}
+		ans := MapMatchResponse{}
 
 		if data.MaxStates != nil && *data.MaxStates > 0 && *data.MaxStates < 10 {
 			maxStates = *data.MaxStates
@@ -151,8 +151,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 		if err != nil {
 			log.Println(err)
-			ctx.SendStatus(500)
-			ctx.JSON(H{"Error": "Something went wrong on server side"})
+			ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
 		}
 
 		ans.Path = geojson.NewFeatureCollection()
@@ -164,6 +163,23 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	return fn
 }
 
+// SPRequest User's request for finding shortest path
+type SPRequest struct {
+	// Set of GPS data
+	Data []RequestDatum `json:"gps"`
+	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
+	MaxStates *int `json:"maxStates"`
+	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+	StateRadius *float64 `json:"stateRadius"`
+}
+
+// SPResponse Server's response for shortest path request
+type SPResponse struct {
+	Path *geojson.FeatureCollection `json:"data"`
+	// Warnings
+	Warnings []string `json:"warnings"`
+}
+
 // FindSP Find shortest path via POST-request
 /*
    Actually it can be done just by doing MapMatch for 2 proided points, but this just proof of concept
@@ -172,7 +188,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 		bodyBytes := ctx.Context().PostBody()
-		data := Request{}
+		data := SPRequest{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
 			return ctx.Status(400).JSON(H{"Error": err.Error()})
@@ -190,7 +206,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		}
 
 		statesRadiusMeters := 25.0
-		ans := Response{}
+		ans := SPResponse{}
 
 		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
 			statesRadiusMeters = *data.StateRadius
@@ -201,8 +217,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {
 			log.Println(err)
-			ctx.SendStatus(500)
-			ctx.JSON(H{"Error": "Something went wrong on server side"})
+			ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
 		}
 		ans.Path = geojson.NewFeatureCollection()
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
