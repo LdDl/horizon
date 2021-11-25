@@ -224,6 +224,13 @@ type IsochronesRequest struct {
 	MaxNearestRadius *float64 `json:"nearestRadius"`
 }
 
+// IsochronesResponse Server's response for isochrones request
+type IsochronesResponse struct {
+	Isochrones *geojson.FeatureCollection `json:"data"`
+	// Warnings
+	Warnings []string `json:"warnings"`
+}
+
 // FindIsochrones Find possible isochrones via POST-request
 func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
@@ -236,7 +243,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 
 		gpsMeasurement := horizon.NewGPSMeasurementFromID(0, data.LonLat[0], data.LonLat[1], 4326)
 		maxCost := 0.0
-		ans := Response{}
+		ans := IsochronesResponse{}
 		if data.MaxCost != nil && *data.MaxCost >= 0 {
 			maxCost = *data.MaxCost
 		} else {
@@ -256,8 +263,13 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			ctx.SendStatus(500)
 			ctx.JSON(H{"Error": "Something went wrong on server side"})
 		}
-		_ = result
-		return ctx.Status(200).JSON("{\"status\": \"w.i.p\"}")
+		ans.Isochrones = geojson.NewFeatureCollection()
+		for _, isochrone := range result {
+			f := horizon.S2PointToGeoJSONFeature(isochrone.Vertex.Point)
+			f.Properties["cost"] = isochrone.Cost
+			ans.Isochrones.AddFeature(f)
+		}
+		return ctx.Status(200).JSON(ans)
 	}
 	return fn
 }

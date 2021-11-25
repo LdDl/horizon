@@ -1,11 +1,20 @@
 package horizon
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+
+	"github.com/pkg/errors"
+)
 
 // IsochronesResult Representation of isochrones algorithm's output
 /*
  */
-type IsochronesResult struct {
+type IsochronesResult []*Isochrone
+
+type Isochrone struct {
+	Vertex *Vertex
+	Cost   float64
 }
 
 // FindIsochrones Find shortest path between two obserations (not necessary GPS points).
@@ -15,11 +24,11 @@ type IsochronesResult struct {
 	maxCost - max cost restriction for single isochrone line
 	maxNearestRadius - max radius of search for nearest vertex
 */
-func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float64, maxNearestRadius float64) (*IsochronesResult, error) {
+func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float64, maxNearestRadius float64) (IsochronesResult, error) {
 	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, maxNearestRadius, 1)
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
-		return &IsochronesResult{}, ErrSourceNotFound
+		return nil, ErrSourceNotFound
 	}
 	// Find corresponding edge
 	s2polylineSource := matcher.engine.s2Storage.edges[closestSource[0].edgeID]
@@ -27,7 +36,7 @@ func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float6
 	m, n := s2polylineSource.Source, s2polylineSource.Target
 	edgeSource := matcher.engine.edges[m][n]
 	if edgeSource == nil {
-		return &IsochronesResult{}, fmt.Errorf("Edge 'source' not found in graph")
+		return nil, fmt.Errorf("Edge 'source' not found in graph")
 	}
 	_, fractionSource := calcProjection(*edgeSource.Polyline, source.Point)
 	choosenSourceVertex := n
@@ -36,6 +45,21 @@ func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float6
 	} else {
 		choosenSourceVertex = n
 	}
-	_ = choosenSourceVertex
-	return nil, nil
+
+	ans, err := matcher.engine.graph.Isochrones(choosenSourceVertex, maxCost)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Can't call isochrones for vertex with id '%d'", choosenSourceVertex)
+	}
+	isochrones := make(IsochronesResult, 0, len(ans))
+	for vertexID, cost := range ans {
+		vertex, ok := matcher.engine.vertices[vertexID]
+		if !ok {
+			log.Printf("[WARNING]; No such vertex in storage: %d\n", vertexID)
+		}
+		isochrones = append(isochrones, &Isochrone{
+			Vertex: vertex,
+			Cost:   cost,
+		})
+	}
+	return isochrones, nil
 }
