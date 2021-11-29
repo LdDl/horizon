@@ -152,7 +152,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 		if err != nil {
 			log.Println(err)
-			ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
 		}
 
 		ans.Path = geojson.NewFeatureCollection()
@@ -216,7 +216,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {
 			log.Println(err)
-			ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
 		}
 		ans.Path = geojson.NewFeatureCollection()
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
@@ -273,8 +273,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)
-			ctx.SendStatus(500)
-			ctx.JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
 		}
 		ans.Isochrones = geojson.NewFeatureCollection()
 		for _, isochrone := range result {
