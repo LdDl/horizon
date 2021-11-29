@@ -33,7 +33,7 @@ New ideas, thought about needed features will be store in this file.
 * Stabilization of core (need many tests as possible)
 
 ### Planned
-* Rewrite front-end on [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
+* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines
