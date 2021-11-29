@@ -43,6 +43,7 @@ New ideas, thought about needed features will be store in this file.
     * Service bringing MVT tiles of graph
     * Need to integrate some good heuristics into FindShortestPath() function. Current implementation based on "nearest edge" for choosing source and target vertices.
 * Front-end shortest path builder (like current map match, but just different colors? don't know)
+* Front-end isochrones
 
 ### Continuous activity
 * README
