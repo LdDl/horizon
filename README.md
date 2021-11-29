@@ -103,12 +103,18 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```shell
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"maxStates":5,"stateRadius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lonLat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lonLat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lonLat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lonLat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lonLat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lonLat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lonLat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lonLat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lonLat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lonLat":[37.60038508556347,55.75559625596534]}]}'
     ```
-    For shortest path finding (notice: edge selection based just on "first nearest found" method, so results may make you upset:
-    ```
+    For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
+    ```shell
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/shortest' -d '{"stateRadius":10.0,"gps":[{"lonLat":[37.601249363208915,55.745374309126895]},{"lonLat":[37.600926871550165,55.752634490168425]}]}'
     ```
     <img src="images/inst8.png" width="720">
     
+    For isochrones estimation (_note: maxCost => it represents meters in current example_):
+    ```shell
+    curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/isochrones' -d '{"maxCost":2100.0,"nearestRadius": 25.0, "lonLat":[37.601249363208915,55.745374309126895]}'
+    ```
+    <img src="images/inst9.png" width="720">
+
 6. Open Front-end on link http://localhost:32800/
 
     <img src="images/pic1.png" width="720">

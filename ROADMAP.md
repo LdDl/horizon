@@ -14,6 +14,7 @@ New ideas, thought about needed features will be store in this file.
     * Main server application via [fasthttp](https://github.com/valyala/fasthttp#fasthttp-----)-based framework called [Fiber](https://github.com/gofiber/fiber)
     * Map matching service
     * Shortest path finder (we are trying to avoid word "routing") service
+    * Isochrones service
 
 * Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
 * More screenshots in README
@@ -27,7 +28,7 @@ New ideas, thought about needed features will be store in this file.
     * Isochrones service
 
 * REST server side (and store it in folder cmd/) _W.I.P._
-    * Isochrones service _W.I.P._ (need a bit of time)
+    * w.i.p
 
 * Stabilization of core (need many tests as possible)
 
