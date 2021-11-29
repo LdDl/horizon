@@ -26,9 +26,9 @@ New ideas, thought about needed features will be store in this file.
     * generate protobuf structure_W.I.P_
     * Map matching service
     * Isochrones service
+    * gRPC docs (autogen)
 
-* REST server side (and store it in folder cmd/) _W.I.P._
-    * w.i.p
+* Swagger docs (autogen)
 
 * Stabilization of core (need many tests as possible)
 
