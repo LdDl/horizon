@@ -1,31 +1,29 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/LdDl/horizon"
+	"github.com/LdDl/horizon/rest"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	geojson "github.com/paulmach/go.geojson"
 	"github.com/valyala/fasthttp"
 )
 
 var (
-	addrFlag        = flag.String("h", "0.0.0.0", "Bind address")
-	portFlag        = flag.Int("p", 32800, "Port")
-	fileFlag        = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/osm2ch#osm2ch)")
-	sigmaFlag       = flag.Float64("sigma", 50.0, "σ-parameter for evaluating emission probabilities")
-	betaFlag        = flag.Float64("beta", 30.0, "β-parameter for evaluating transition probabilities")
-	lonFlag         = flag.Float64("maplon", 0.0, "initial longitude of front-end map")
-	latFlag         = flag.Float64("maplat", 0.0, "initial latitude of front-end map")
-	zoomFlag        = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")
-	timestampLayout = "2006-01-02T15:04:05"
-	apiPath         = "api"
-	apiVersion      = "0.1.0"
+	addrFlag   = flag.String("h", "0.0.0.0", "Bind address")
+	portFlag   = flag.Int("p", 32800, "Port")
+	fileFlag   = flag.String("f", "graph.csv", "Filename of *.csv file (you can get one using https://github.com/LdDl/osm2ch#osm2ch)")
+	sigmaFlag  = flag.Float64("sigma", 50.0, "σ-parameter for evaluating emission probabilities")
+	betaFlag   = flag.Float64("beta", 30.0, "β-parameter for evaluating transition probabilities")
+	lonFlag    = flag.Float64("maplon", 0.0, "initial longitude of front-end map")
+	latFlag    = flag.Float64("maplat", 0.0, "initial latitude of front-end map")
+	zoomFlag   = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")
+	apiPath    = "api"
+	apiVersion = "0.1.0"
 )
 
 func main() {
@@ -61,230 +59,19 @@ func main() {
 	// Init server
 	server := fiber.New(config)
 	server.Use(allCors)
-	server.Get("/", RenderPage())
+	server.Get("/", rest.RenderPage(webPage))
 	apiGroup := server.Group(apiPath)
 	apiVersionGroup := apiGroup.Group(fmt.Sprintf("/v%s", apiVersion))
 
-	apiVersionGroup.Post("/mapmatch", MapMatch(matcher))
-	apiVersionGroup.Post("/shortest", FindSP(matcher))
-	apiVersionGroup.Post("/isochrones", FindIsochrones(matcher))
+	apiVersionGroup.Post("/mapmatch", rest.MapMatch(matcher))
+	apiVersionGroup.Post("/shortest", rest.FindSP(matcher))
+	apiVersionGroup.Post("/isochrones", rest.FindIsochrones(matcher))
 
 	// Start server
 	if err := server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag)); err != nil {
 		fmt.Println(err)
 		return
 	}
-}
-
-// RenderPage Render front-end
-func RenderPage() func(*fiber.Ctx) error {
-	fn := func(ctx *fiber.Ctx) error {
-		ctx.Set("Content-Type", "text/html")
-		return ctx.SendString(webPage)
-	}
-	return fn
-}
-
-// MapMatchRequest User's request for map matching
-type MapMatchRequest struct {
-	// Set of GPS data
-	Data []RequestDatum `json:"gps"`
-	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
-	MaxStates *int `json:"maxStates"`
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"stateRadius"`
-}
-
-// RequestDatum Single row
-type RequestDatum struct {
-	// Timestamp. Field would be ignored for request on '/shortest' service.
-	Timestamp string `json:"tm"`
-	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat"`
-}
-
-// MapMatchResponse Server's response for map matching request
-type MapMatchResponse struct {
-	Path *geojson.FeatureCollection `json:"data"`
-	// Warnings
-	Warnings []string `json:"warnings"`
-}
-
-// MapMatch Do map match via POST-request
-func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
-	fn := func(ctx *fiber.Ctx) error {
-
-		bodyBytes := ctx.Context().PostBody()
-		data := MapMatchRequest{}
-		err := json.Unmarshal(bodyBytes, &data)
-		if err != nil {
-			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
-		}
-
-		if len(data.Data) < 3 {
-			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 3 GPS points atleast"})
-		}
-
-		gpsMeasurements := horizon.GPSMeasurements{}
-		for i := range data.Data {
-			tm, err := time.Parse(timestampLayout, data.Data[i].Timestamp)
-			if err != nil {
-				return ctx.Status(400).JSON(fiber.Map{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
-			}
-			gpsMeasurement := horizon.NewGPSMeasurement(tm, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326)
-			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
-		}
-
-		statesRadiusMeters := 25.0
-		maxStates := 5
-		ans := MapMatchResponse{}
-
-		if data.MaxStates != nil && *data.MaxStates > 0 && *data.MaxStates < 10 {
-			maxStates = *data.MaxStates
-		} else {
-			ans.Warnings = append(ans.Warnings, "maxStates either nil or not in range [1,10]. Using default value: 5")
-		}
-		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
-			statesRadiusMeters = *data.StateRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
-		}
-
-		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
-		if err != nil {
-			log.Println(err)
-			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
-		}
-
-		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
-		ans.Path.AddFeature(f)
-
-		return ctx.Status(200).JSON(ans)
-	}
-	return fn
-}
-
-// SPRequest User's request for finding shortest path
-type SPRequest struct {
-	// Set of GPS data
-	Data []RequestDatum `json:"gps"`
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"stateRadius"`
-}
-
-// SPResponse Server's response for shortest path request
-type SPResponse struct {
-	Path *geojson.FeatureCollection `json:"data"`
-	// Warnings
-	Warnings []string `json:"warnings"`
-}
-
-// FindSP Find shortest path via POST-request
-/*
-   Actually it can be done just by doing MapMatch for 2 proided points, but this just proof of concept
-   Services takes two points, snaps those to nearest vertices and finding path via Dijkstra's algorithm. Output is familiar to MapMatch()
-*/
-func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
-	fn := func(ctx *fiber.Ctx) error {
-		bodyBytes := ctx.Context().PostBody()
-		data := SPRequest{}
-		err := json.Unmarshal(bodyBytes, &data)
-		if err != nil {
-			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
-		}
-		if len(data.Data) != 2 {
-			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 2 GPS points only"})
-		}
-
-		gpsMeasurements := horizon.GPSMeasurements{}
-		ut := time.Now().UTC().Unix()
-		for i := range data.Data {
-			gpsMeasurement := horizon.NewGPSMeasurementFromID(int(ut), data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326)
-			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
-			ut++
-		}
-
-		statesRadiusMeters := 25.0
-		ans := SPResponse{}
-
-		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
-			statesRadiusMeters = *data.StateRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
-		}
-
-		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
-		if err != nil {
-			log.Println(err)
-			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
-		}
-		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
-		ans.Path.AddFeature(f)
-
-		return ctx.Status(200).JSON(ans)
-	}
-	return fn
-}
-
-// IsochronesRequest User's request for isochrones
-type IsochronesRequest struct {
-	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat"`
-	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
-	MaxCost *float64 `json:"maxCost"`
-	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
-	MaxNearestRadius *float64 `json:"nearestRadius"`
-}
-
-// IsochronesResponse Server's response for isochrones request
-type IsochronesResponse struct {
-	Isochrones *geojson.FeatureCollection `json:"data"`
-	// Warnings
-	Warnings []string `json:"warnings"`
-}
-
-// FindIsochrones Find possible isochrones via POST-request
-func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
-	fn := func(ctx *fiber.Ctx) error {
-		bodyBytes := ctx.Context().PostBody()
-		data := IsochronesRequest{}
-		err := json.Unmarshal(bodyBytes, &data)
-		if err != nil {
-			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
-		}
-
-		gpsMeasurement := horizon.NewGPSMeasurementFromID(0, data.LonLat[0], data.LonLat[1], 4326)
-		maxCost := 0.0
-		ans := IsochronesResponse{}
-		if data.MaxCost != nil && *data.MaxCost >= 0 {
-			maxCost = *data.MaxCost
-		} else {
-			ans.Warnings = append(ans.Warnings, "maxCost either nil or not in range [0,+Inf]. Using default value: 0.0")
-		}
-
-		maxNearestRadius := 25.0
-		if data.MaxNearestRadius != nil && *data.MaxNearestRadius >= 0 {
-			maxNearestRadius = *data.MaxNearestRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "nearestRadius either nil or not in range [0,+Inf]. Using default value: 0.0")
-		}
-
-		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
-		if err != nil {
-			log.Println(err)
-			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
-		}
-		ans.Isochrones = geojson.NewFeatureCollection()
-		for _, isochrone := range result {
-			f := horizon.S2PointToGeoJSONFeature(isochrone.Vertex.Point)
-			f.Properties["cost"] = isochrone.Cost
-			ans.Isochrones.AddFeature(f)
-		}
-		return ctx.Status(200).JSON(ans)
-	}
-	return fn
 }
 
 var (
