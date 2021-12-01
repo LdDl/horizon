@@ -24,6 +24,8 @@ var (
 	latFlag         = flag.Float64("maplat", 0.0, "initial latitude of front-end map")
 	zoomFlag        = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")
 	timestampLayout = "2006-01-02T15:04:05"
+	apiPath         = "api"
+	apiVersion      = "0.1.0"
 )
 
 func main() {
@@ -60,15 +62,18 @@ func main() {
 	server := fiber.New(config)
 	server.Use(allCors)
 	server.Get("/", RenderPage())
-	api := server.Group("api")
-	v010 := api.Group("/v0.1.0")
+	apiGroup := server.Group(apiPath)
+	apiVersionGroup := apiGroup.Group(fmt.Sprintf("/v%s", apiVersion))
 
-	v010.Post("/mapmatch", MapMatch(matcher))
-	v010.Post("/shortest", FindSP(matcher))
-	v010.Post("/isochrones", FindIsochrones(matcher))
+	apiVersionGroup.Post("/mapmatch", MapMatch(matcher))
+	apiVersionGroup.Post("/shortest", FindSP(matcher))
+	apiVersionGroup.Post("/isochrones", FindIsochrones(matcher))
 
 	// Start server
-	server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag))
+	if err := server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag)); err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // RenderPage Render front-end
