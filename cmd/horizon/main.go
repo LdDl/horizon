@@ -80,14 +80,10 @@ func main() {
 func RenderPage() func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 		ctx.Set("Content-Type", "text/html")
-		// ctx.Fasthttp.Request.Header.Set("Content-type", "text/html")
 		return ctx.SendString(webPage)
 	}
 	return fn
 }
-
-// H Just alias to map[stirng]string
-type H map[string]string
 
 // MapMatchRequest User's request for map matching
 type MapMatchRequest struct {
@@ -122,18 +118,18 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		data := MapMatchRequest{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
-			return ctx.Status(400).JSON(H{"Error": err.Error()})
+			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
 
 		if len(data.Data) < 3 {
-			return ctx.Status(400).JSON(H{"Error": "Please provide 3 GPS points atleast"})
+			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 3 GPS points atleast"})
 		}
 
 		gpsMeasurements := horizon.GPSMeasurements{}
 		for i := range data.Data {
 			tm, err := time.Parse(timestampLayout, data.Data[i].Timestamp)
 			if err != nil {
-				return ctx.Status(400).JSON(H{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
+				return ctx.Status(400).JSON(fiber.Map{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
 			}
 			gpsMeasurement := horizon.NewGPSMeasurement(tm, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326)
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
@@ -157,7 +153,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 		if err != nil {
 			log.Println(err)
-			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 
 		ans.Path = geojson.NewFeatureCollection()
@@ -195,10 +191,10 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		data := SPRequest{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
-			return ctx.Status(400).JSON(H{"Error": err.Error()})
+			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
 		if len(data.Data) != 2 {
-			return ctx.Status(400).JSON(H{"Error": "Please provide 2 GPS points only"})
+			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 2 GPS points only"})
 		}
 
 		gpsMeasurements := horizon.GPSMeasurements{}
@@ -221,7 +217,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {
 			log.Println(err)
-			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Path = geojson.NewFeatureCollection()
 		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
@@ -256,7 +252,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		data := IsochronesRequest{}
 		err := json.Unmarshal(bodyBytes, &data)
 		if err != nil {
-			return ctx.Status(400).JSON(H{"Error": err.Error()})
+			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
 
 		gpsMeasurement := horizon.NewGPSMeasurementFromID(0, data.LonLat[0], data.LonLat[1], 4326)
@@ -278,7 +274,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)
-			return ctx.Status(500).JSON(H{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Isochrones = geojson.NewFeatureCollection()
 		for _, isochrone := range result {
