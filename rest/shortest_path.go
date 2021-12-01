@@ -13,9 +13,17 @@ import (
 // SPRequest User's request for finding shortest path
 type SPRequest struct {
 	// Set of GPS data
-	Data []RequestDatum `json:"gps"`
+	Data []GPSToShortestPath `json:"gps"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"stateRadius"`
+}
+
+// GPSToShortestPath Representation of GPS data
+type GPSToShortestPath struct {
+	// Timestamp. Field would be ignored for request on '/shortest' service.
+	Timestamp string `json:"tm"`
+	// [Longitude, Latitude]
+	LonLat [2]float64 `json:"lonLat"`
 }
 
 // SPResponse Server's response for shortest path request

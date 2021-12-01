@@ -17,15 +17,15 @@ var (
 // MapMatchRequest User's request for map matching
 type MapMatchRequest struct {
 	// Set of GPS data
-	Data []RequestDatum `json:"gps"`
+	Data []GPSToMapMatch `json:"gps"`
 	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
 	MaxStates *int `json:"maxStates"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"stateRadius"`
 }
 
-// RequestDatum Single row
-type RequestDatum struct {
+// GPSToMapMatch Representation of GPS data
+type GPSToMapMatch struct {
 	// Timestamp. Field would be ignored for request on '/shortest' service.
 	Timestamp string `json:"tm"`
 	// [Longitude, Latitude]
