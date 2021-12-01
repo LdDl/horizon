@@ -33,7 +33,7 @@ New ideas, thought about needed features will be store in this file.
 * Stabilization of core (need many tests as possible)
 
 ### Planned
-* Rewrite front-end on [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
+* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction)
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines
@@ -43,6 +43,7 @@ New ideas, thought about needed features will be store in this file.
     * Service bringing MVT tiles of graph
     * Need to integrate some good heuristics into FindShortestPath() function. Current implementation based on "nearest edge" for choosing source and target vertices.
 * Front-end shortest path builder (like current map match, but just different colors? don't know)
+* Front-end isochrones
 
 ### Continuous activity
 * README
