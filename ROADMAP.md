@@ -30,6 +30,8 @@ New ideas, thought about needed features will be store in this file.
 
 * Swagger docs (autogen)
 
+* Snake case for JSON's
+
 * Stabilization of core (need many tests as possible)
 
 ### Planned
