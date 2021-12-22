@@ -8,6 +8,7 @@ import (
 
 	"github.com/LdDl/horizon"
 	"github.com/LdDl/horizon/rest"
+	"github.com/LdDl/horizon/rest/docs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/valyala/fasthttp"
@@ -26,6 +27,16 @@ var (
 	apiVersion = "0.1.0"
 )
 
+// @title API for working with Horizon
+// @version 0.1.0
+
+// @contact.name API support
+// @contact.url https://github.com/LdDl/horizon#table-of-contents
+// @contact.email sexykdi@gmail.com
+
+// @BasePath /
+
+// @schemes http https
 func main() {
 	flag.Parse()
 
@@ -42,7 +53,7 @@ func main() {
 	config := fiber.Config{
 		DisableStartupMessage: false,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			log.Println(err)
+			log.Println("error:", err)
 			return ctx.Status(fasthttp.StatusInternalServerError).JSON(map[string]string{"Error": "undefined"})
 		},
 		IdleTimeout: 10 * time.Second,
@@ -66,6 +77,12 @@ func main() {
 	apiVersionGroup.Post("/mapmatch", rest.MapMatch(matcher))
 	apiVersionGroup.Post("/shortest", rest.FindSP(matcher))
 	apiVersionGroup.Post("/isochrones", rest.FindIsochrones(matcher))
+
+	docsStaticGroup := apiVersionGroup.Group("/docs-static")
+	docsStaticGroup.Use("/", docs.PrepareStaticAssets())
+
+	docsGroup := apiVersionGroup.Group("/docs")
+	docsGroup.Use("/", docs.PrepareStaticPage())
 
 	// Start server
 	if err := server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag)); err != nil {

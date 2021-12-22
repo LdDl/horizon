@@ -15,31 +15,43 @@ var (
 )
 
 // MapMatchRequest User's request for map matching
+// swagger:model
 type MapMatchRequest struct {
 	// Set of GPS data
 	Data []GPSToMapMatch `json:"gps"`
 	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
-	MaxStates *int `json:"maxStates"`
+	MaxStates *int `json:"maxStates" example:"5"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"stateRadius"`
+	StateRadius *float64 `json:"stateRadius" example:"7.0"`
 }
 
 // GPSToMapMatch Representation of GPS data
+// swagger:model
 type GPSToMapMatch struct {
 	// Timestamp. Field would be ignored for request on '/shortest' service.
-	Timestamp string `json:"tm"`
+	Timestamp string `json:"tm" example:"2020-03-11T00:00:00"`
 	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat"`
+	LonLat [2]float64 `json:"lonLat" example:"37.601249363208915,55.745374309126895"`
 }
 
 // MapMatchResponse Server's response for map matching request
+// swagger:model
 type MapMatchResponse struct {
-	Path *geojson.FeatureCollection `json:"data"`
+	// GeoJSON Data
+	Path *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
 	// Warnings
-	Warnings []string `json:"warnings"`
+	Warnings []string `json:"warnings" example:"Warning"`
 }
 
 // MapMatch Do map match via POST-request
+// @Summary Do map match via POST-request
+// @Tags Map matching
+// @Produce json
+// @Param POST-body body rest.MapMatchRequest true "Example of request"
+// @Success 200 {object} rest.MapMatchResponse
+// @Failure 424 {object} codes.Error424
+// @Failure 500 {object} codes.Error500
+// @Router /api/v0.1.0/mapmatch [POST]
 func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 

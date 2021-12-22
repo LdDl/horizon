@@ -1,0 +1,141 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "title": "API for working with Horizon",
+        "contact": {
+            "name": "API support",
+            "url": "https://github.com/LdDl/horizon#table-of-contents",
+            "email": "sexykdi@gmail.com"
+        },
+        "version": "0.1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/v0.1.0/mapmatch": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Map matching"
+                ],
+                "summary": "Do map match via POST-request",
+                "parameters": [
+                    {
+                        "description": "Example of request",
+                        "name": "POST-body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.MapMatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.MapMatchResponse"
+                        }
+                    },
+                    "424": {
+                        "description": "Failed Dependency",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error424"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error500"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "codes.Error424": {
+            "type": "object",
+            "properties": {
+                "Error": {
+                    "description": "Error text",
+                    "type": "string",
+                    "example": "Failed Dependency"
+                }
+            }
+        },
+        "codes.Error500": {
+            "type": "object",
+            "properties": {
+                "Error": {
+                    "description": "Error text",
+                    "type": "string",
+                    "example": "Internal Server Error"
+                }
+            }
+        },
+        "rest.GPSToMapMatch": {
+            "type": "object",
+            "properties": {
+                "lonLat": {
+                    "description": "[Longitude, Latitude]",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "example": [
+                        37.601249363208915,
+                        55.745374309126895
+                    ]
+                },
+                "tm": {
+                    "description": "Timestamp. Field would be ignored for request on '/shortest' service.",
+                    "type": "string",
+                    "example": "2020-03-11T00:00:00"
+                }
+            }
+        },
+        "rest.MapMatchRequest": {
+            "type": "object",
+            "properties": {
+                "gps": {
+                    "description": "Set of GPS data",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.GPSToMapMatch"
+                    }
+                },
+                "maxStates": {
+                    "description": "Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.",
+                    "type": "integer",
+                    "example": 5
+                },
+                "stateRadius": {
+                    "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
+                    "type": "number",
+                    "example": 7
+                }
+            }
+        },
+        "rest.MapMatchResponse": {
+            "type": "object",
+            "properties": {
+                "warnings": {
+                    "description": "Warnings",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Warning"
+                    ]
+                }
+            }
+        }
+    }
+}

@@ -1,6 +1,6 @@
 module github.com/LdDl/horizon
 
-go 1.13
+go 1.16
 
 require (
 	github.com/LdDl/ch v1.7.7
