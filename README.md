@@ -147,6 +147,7 @@ Thanks for approach described in this paper:
 * Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
 * MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license
 * moments.js for Front-end - [moment.js](https://github.com/moment/moment/). License is MIT
+* rapidoc for [swagger](https://en.wikipedia.org/wiki/Swagger_(software)) visualization - [rapidoc](https://github.com/mrin9/RapiDoc/blob/master/LICENSE.txt). License is MIT
 
 ## License
 You can check it [here](https://github.com/LdDl/horizon/blob/master/LICENSE)

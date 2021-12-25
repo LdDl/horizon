@@ -20,6 +20,7 @@ New ideas, thought about needed features will be store in this file.
 * More screenshots in README
 * Migrate to Fiber v2
 * Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5
+* Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
 
 ### W.I.P
 * gRPC server side
@@ -27,8 +28,6 @@ New ideas, thought about needed features will be store in this file.
     * Map matching service
     * Isochrones service
     * gRPC docs (autogen)
-
-* Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
 
 * Snake case for JSON's
 

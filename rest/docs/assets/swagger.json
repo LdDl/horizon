@@ -15,6 +15,48 @@
     },
     "basePath": "/",
     "paths": {
+        "/api/v0.1.0/isochrones": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Isochrones"
+                ],
+                "summary": "Find possible isochrones via POST-request",
+                "parameters": [
+                    {
+                        "description": "Example of request",
+                        "name": "POST-body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.IsochronesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.IsochronesResponse"
+                        }
+                    },
+                    "424": {
+                        "description": "Failed Dependency",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error424"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error500"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v0.1.0/mapmatch": {
             "post": {
                 "produces": [
@@ -97,6 +139,47 @@
                     "description": "Timestamp. Field would be ignored for request on '/shortest' service.",
                     "type": "string",
                     "example": "2020-03-11T00:00:00"
+                }
+            }
+        },
+        "rest.IsochronesRequest": {
+            "type": "object",
+            "properties": {
+                "lonLat": {
+                    "description": "[Longitude, Latitude]",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "example": [
+                        37.601249363208915,
+                        55.745374309126895
+                    ]
+                },
+                "maxCost": {
+                    "description": "Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.",
+                    "type": "number",
+                    "example": 2100
+                },
+                "nearestRadius": {
+                    "description": "Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])",
+                    "type": "number",
+                    "example": 25
+                }
+            }
+        },
+        "rest.IsochronesResponse": {
+            "type": "object",
+            "properties": {
+                "warnings": {
+                    "description": "Warnings",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Warning"
+                    ]
                 }
             }
         },
