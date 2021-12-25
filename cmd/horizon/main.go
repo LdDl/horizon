@@ -47,7 +47,8 @@ func main() {
 	hmmParams := horizon.NewHmmProbabilities(*sigmaFlag, *betaFlag)
 	matcher, err := horizon.NewMapMatcher(hmmParams, *fileFlag)
 	if err != nil {
-		log.Panicln(err)
+		fmt.Println(err)
+		return
 	}
 
 	config := fiber.Config{

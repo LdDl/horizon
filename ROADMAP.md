@@ -28,7 +28,7 @@ New ideas, thought about needed features will be store in this file.
     * Isochrones service
     * gRPC docs (autogen)
 
-* Swagger docs (autogen)
+* Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
 
 * Snake case for JSON's
 
