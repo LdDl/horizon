@@ -98,6 +98,48 @@
                     }
                 }
             }
+        },
+        "/api/v0.1.0/shortest": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Routing"
+                ],
+                "summary": "Find shortest path via POST-request",
+                "parameters": [
+                    {
+                        "description": "Example of request",
+                        "name": "POST-body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/rest.SPRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rest.SPResponse"
+                        }
+                    },
+                    "424": {
+                        "description": "Failed Dependency",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error424"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/codes.Error500"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -139,6 +181,22 @@
                     "description": "Timestamp. Field would be ignored for request on '/shortest' service.",
                     "type": "string",
                     "example": "2020-03-11T00:00:00"
+                }
+            }
+        },
+        "rest.GPSToShortestPath": {
+            "type": "object",
+            "properties": {
+                "lonLat": {
+                    "description": "[Longitude, Latitude]",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "example": [
+                        37.601249363208915,
+                        55.745374309126895
+                    ]
                 }
             }
         },
@@ -206,6 +264,38 @@
             }
         },
         "rest.MapMatchResponse": {
+            "type": "object",
+            "properties": {
+                "warnings": {
+                    "description": "Warnings",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Warning"
+                    ]
+                }
+            }
+        },
+        "rest.SPRequest": {
+            "type": "object",
+            "properties": {
+                "gps": {
+                    "description": "Set of GPS data",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.GPSToShortestPath"
+                    }
+                },
+                "stateRadius": {
+                    "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
+                    "type": "number",
+                    "example": 10
+                }
+            }
+        },
+        "rest.SPResponse": {
             "type": "object",
             "properties": {
                 "warnings": {
