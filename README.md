@@ -120,6 +120,12 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     <img src="images/pic1.png" width="720">
     <img src="images/pic2.png" width="720">
 
+7. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
+
+    If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
+    
+    <img src="images/swagger1.png" width="720">
+
 ## Benchmark
 Please follow [link](BENCHMARK.md)
 
