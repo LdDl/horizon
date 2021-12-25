@@ -1,4 +1,4 @@
-# Horizon v0.5.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.5.1 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -22,12 +22,12 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.5.0
+go install github.com/LdDl/horizon/cmd/horizon@v0.5.1
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.5.0/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.5.0/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.5.1/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.5.1/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
@@ -120,6 +120,12 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     <img src="images/pic1.png" width="720">
     <img src="images/pic2.png" width="720">
 
+7. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
+
+    If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
+    
+    <img src="images/swagger1.png" width="720">
+
 ## Benchmark
 Please follow [link](BENCHMARK.md)
 
@@ -147,6 +153,7 @@ Thanks for approach described in this paper:
 * Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
 * MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license
 * moments.js for Front-end - [moment.js](https://github.com/moment/moment/). License is MIT
+* rapidoc for [swagger](https://en.wikipedia.org/wiki/Swagger_(software)) visualization - [rapidoc](https://github.com/mrin9/RapiDoc/blob/master/LICENSE.txt). License is MIT
 
 ## License
 You can check it [here](https://github.com/LdDl/horizon/blob/master/LICENSE)

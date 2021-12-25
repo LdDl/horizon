@@ -1,6 +1,6 @@
 *.osm
 *.pbf
-*.json
+!*.json
 *.geojson
 map.osm
 map.csv
@@ -19,3 +19,8 @@ cmd/horizon/horizon.exe
 cmd/horizon/*.zip
 cmd/horizon/*.tar.gz
 .build.sh
+.swag-gen.sh
+docs/*
+rest/docs/docs.go
+rest/docs/swagger.json
+rest/docs/swagger.yaml

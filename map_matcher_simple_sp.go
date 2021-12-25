@@ -67,6 +67,9 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if ans == -1.0 {
 		return MatcherResult{}, ErrPathNotFound
 	}
+	if len(path) < 2 {
+		return MatcherResult{}, ErrSameVertex
+	}
 	edges := []Edge{}
 	result := MatcherResult{
 		Observations: make([]*ObservationResult, 2),

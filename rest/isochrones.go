@@ -10,23 +10,33 @@ import (
 )
 
 // IsochronesRequest User's request for isochrones
+// swagger:model
 type IsochronesRequest struct {
 	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat"`
+	LonLat [2]float64 `json:"lonLat" example:"37.601249363208915,55.745374309126895"`
 	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
-	MaxCost *float64 `json:"maxCost"`
+	MaxCost *float64 `json:"maxCost" example:"2100.0"`
 	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
-	MaxNearestRadius *float64 `json:"nearestRadius"`
+	MaxNearestRadius *float64 `json:"nearestRadius" example:"25.0"`
 }
 
 // IsochronesResponse Server's response for isochrones request
+// swagger:model
 type IsochronesResponse struct {
-	Isochrones *geojson.FeatureCollection `json:"data"`
+	Isochrones *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
 	// Warnings
-	Warnings []string `json:"warnings"`
+	Warnings []string `json:"warnings" example:"Warning"`
 }
 
 // FindIsochrones Find possible isochrones via POST-request
+// @Summary Find possible isochrones via POST-request
+// @Tags Isochrones
+// @Produce json
+// @Param POST-body body rest.IsochronesRequest true "Example of request"
+// @Success 200 {object} rest.IsochronesResponse
+// @Failure 424 {object} codes.Error424
+// @Failure 500 {object} codes.Error500
+// @Router /api/v0.1.0/isochrones [POST]
 func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 		bodyBytes := ctx.Context().PostBody()

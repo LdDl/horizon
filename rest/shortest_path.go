@@ -11,26 +11,27 @@ import (
 )
 
 // SPRequest User's request for finding shortest path
+// swagger:model
 type SPRequest struct {
 	// Set of GPS data
 	Data []GPSToShortestPath `json:"gps"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"stateRadius"`
+	StateRadius *float64 `json:"stateRadius" example:"10.0"`
 }
 
 // GPSToShortestPath Representation of GPS data
+// swagger:model
 type GPSToShortestPath struct {
-	// Timestamp. Field would be ignored for request on '/shortest' service.
-	Timestamp string `json:"tm"`
 	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat"`
+	LonLat [2]float64 `json:"lonLat" example:"37.601249363208915,55.745374309126895"`
 }
 
 // SPResponse Server's response for shortest path request
+// swagger:model
 type SPResponse struct {
-	Path *geojson.FeatureCollection `json:"data"`
+	Path *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
 	// Warnings
-	Warnings []string `json:"warnings"`
+	Warnings []string `json:"warnings" example:"Warning"`
 }
 
 // FindSP Find shortest path via POST-request
@@ -38,6 +39,14 @@ type SPResponse struct {
    Actually it can be done just by doing MapMatch for 2 proided points, but this just proof of concept
    Services takes two points, snaps those to nearest vertices and finding path via Dijkstra's algorithm. Output is familiar to MapMatch()
 */
+// @Summary Find shortest path via POST-request
+// @Tags Routing
+// @Produce json
+// @Param POST-body body rest.SPRequest true "Example of request"
+// @Success 200 {object} rest.SPResponse
+// @Failure 424 {object} codes.Error424
+// @Failure 500 {object} codes.Error500
+// @Router /api/v0.1.0/shortest [POST]
 func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 	fn := func(ctx *fiber.Ctx) error {
 		bodyBytes := ctx.Context().PostBody()

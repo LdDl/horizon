@@ -13,4 +13,5 @@ var (
 	ErrTargetNotFound         = fmt.Errorf("can't find closest edge for 'target' point")
 	ErrTargetHasMoreEdges     = fmt.Errorf("more than 1 edge for 'target' point")
 	ErrPathNotFound           = fmt.Errorf("path not found")
+	ErrSameVertex             = fmt.Errorf("same vertex")
 )
