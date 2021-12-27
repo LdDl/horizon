@@ -24,16 +24,16 @@ New ideas, thought about needed features will be store in this file.
 
 ### W.I.P
 * gRPC server side
-    * generate protobuf structure_W.I.P_
+    * generate protobuf structure _W.I.P_
     * Map matching service
     * Isochrones service
     * gRPC docs (autogen)
 
-* Snake case for JSON's
+* Snake case for JSON's (do we need those minor-ish thing?)
 
 * Stabilization of core (need many tests as possible)
 
-* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction) [AS SEPARATE REPOSITORY]
+* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction) [AS SEPARATE REPOSITORY + design Figma]
 
 ### Planned
 * Some kind of wiki
