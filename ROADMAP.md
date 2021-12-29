@@ -23,11 +23,6 @@ New ideas, thought about needed features will be store in this file.
 * Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
 
 ### W.I.P
-* gRPC server side
-    * generate protobuf structure _W.I.P_
-    * Map matching service
-    * Isochrones service
-    * gRPC docs (autogen)
 
 * Snake case for JSON's (do we need those minor-ish thing?)
 
@@ -36,6 +31,12 @@ New ideas, thought about needed features will be store in this file.
 * Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction) [AS SEPARATE REPOSITORY + design Figma]
 
 ### Planned
+* gRPC server side
+    * generate protobuf structure _DELAYED_
+    * Map matching service
+    * Isochrones service
+    * gRPC docs (autogen)
+
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines
