@@ -11,7 +11,6 @@ import (
 	"github.com/LdDl/horizon/rest/docs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/valyala/fasthttp"
 )
 
 var (
@@ -55,7 +54,7 @@ func main() {
 		DisableStartupMessage: false,
 		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			log.Println("error:", err)
-			return ctx.Status(fasthttp.StatusInternalServerError).JSON(map[string]string{"Error": "undefined"})
+			return ctx.Status(500).JSON(map[string]string{"Error": "undefined"})
 		},
 		IdleTimeout: 10 * time.Second,
 	}
