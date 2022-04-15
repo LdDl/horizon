@@ -71,9 +71,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```
     <img src="images/inst4.png" width="720">
 
-2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert). Drop author and version tags also (those not necessary for map matching) to reduce file's size. 
+2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert).
     ```shell
-    osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
+    osmconvert map.osm --out-pbf -o=map.osm.pbf
     ```
     <img src="images/inst5.png" width="720">
 
@@ -93,13 +93,13 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     * map_vertices.csv - Information about vertices and its geometries
     * map_shortcuts.csv - Information about shortcuts which are obtained by contraction process
 
-4. Start **horizon** server. Provide bind address, port, filename for edges file, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
+5. Start **horizon** server. Provide bind address, port, filename for edges file, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
     ```shell
     horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
     ```
     <img src="images/inst7.png" width="720">
 
-5. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
+6. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
     curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"maxStates":5,"stateRadius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lonLat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lonLat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lonLat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lonLat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lonLat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lonLat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lonLat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lonLat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lonLat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lonLat":[37.60038508556347,55.75559625596534]}]}'
     ```
@@ -115,12 +115,12 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```
     <img src="images/inst9.png" width="720">
 
-6. Open Front-end on link http://localhost:32800/
+7. Open Front-end on link http://localhost:32800/
 
     <img src="images/pic1.png" width="720">
     <img src="images/pic2.png" width="720">
 
-7. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
+8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
     If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
     
