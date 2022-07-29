@@ -96,6 +96,8 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			// 	}
 			// }
 			roadPos := NewRoadPositionFromLonLat(stateID, n, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
+			roadPos.beforeProjection = edge.Weight * fraction
+			roadPos.afterProjection = edge.Weight * (1 - fraction)
 			localStates[j] = roadPos
 			stateID++
 		}
@@ -109,6 +111,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
 	// @todo NEED TO BLOCK OF CODE IN LINES 121-150, something interesting happens there. For now using slower version
 	for i := 1; i < len(layers); i++ {
+		// fmt.Println("Layer", i)
 		prevStates := layers[i-1]
 		currentStates := layers[i]
 		for m := range prevStates {
@@ -134,6 +137,11 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
 					if ans == -1 {
 						ans = math.MaxFloat64
+					} else {
+						// Since we are doing Edge(target)-Edge(target) Dijkstra's call we should:
+						// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
+						// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
+						ans = (ans + prevStates[m].afterProjection) - currentStates[n].afterProjection
 					}
 					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
 					routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)

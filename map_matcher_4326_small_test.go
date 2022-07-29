@@ -26,7 +26,7 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 				{Observation: gpsMeasurements[2]},
 				{Observation: gpsMeasurements[3]},
 			},
-			Probability: -47.251535,
+			Probability: -48.239713,
 		}
 	)
 

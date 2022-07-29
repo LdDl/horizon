@@ -17,10 +17,12 @@ type RoadPositions []*RoadPosition
 	Projected - point (Observation) project onto edge, pointer to GeoPoint
 */
 type RoadPosition struct {
-	RoadPositionID int
-	GraphEdge      *Edge
-	GraphVertex    int64
-	Projected      *GeoPoint
+	RoadPositionID   int
+	GraphEdge        *Edge
+	GraphVertex      int64
+	Projected        *GeoPoint
+	beforeProjection float64
+	afterProjection  float64
 }
 
 // NewRoadPositionFromLonLat Returns pointer to created State
