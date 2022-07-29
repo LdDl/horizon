@@ -117,9 +117,19 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			}
 			for n := range currentStates {
 				if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
-					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-					routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
+						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					} else {
+						// We should jump to source vertex of current state, since edges are not the same
+						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphEdge.Source)
+						if ans == -1 {
+							ans = math.MaxFloat64
+						}
+						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
+						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					}
 				} else {
 					ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
 					if ans == -1 {
