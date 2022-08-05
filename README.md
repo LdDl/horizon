@@ -119,8 +119,8 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 7. Open Front-end on link http://localhost:32800/
 
-    <img src="images/pic1.png" width="720">
-    <img src="images/pic2.png" width="720">
+    <img src="images/maplibre1.png" width="720">
+    <img src="images/maplibre2.png" width="720">
 
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
