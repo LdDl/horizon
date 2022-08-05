@@ -16,7 +16,9 @@ New ideas, thought about needed features will be store in this file.
     * Shortest path finder (we are trying to avoid word "routing") service
     * Isochrones service
 
-* Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).
+* ~~Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).~~
+Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.maptiler.com/) due Mapbox [changed license](https://github.com/mapbox/mapbox-gl-js/releases/tag/v2.0.0)
+
 * More screenshots in README
 * Migrate to Fiber v2
 * Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5

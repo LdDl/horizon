@@ -119,8 +119,8 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 7. Open Front-end on link http://localhost:32800/
 
-    <img src="images/pic1.png" width="720">
-    <img src="images/pic2.png" width="720">
+    <img src="images/maplibre1.png" width="720">
+    <img src="images/maplibre2.png" width="720">
 
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
@@ -153,7 +153,8 @@ Thanks for approach described in this paper:
 * Btree implementation - [btree](https://github.com/google/btree#btree-implementation-for-go). License is Apache-2.0
 * GeoJSON stuff - [go.geojson](https://github.com/paulmach/go.geojson#gogeojson). License is MIT
 * Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
-* MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license
+* ~~MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license~~
+Replaced with Maplibre due Mapbox [changed license](https://github.com/mapbox/mapbox-gl-js/releases/tag/v2.0.0). License is modified 3-Clause BSD license, please see [ref. link](https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt)
 * moments.js for Front-end - [moment.js](https://github.com/moment/moment/). License is MIT
 * rapidoc for [swagger](https://en.wikipedia.org/wiki/Swagger_(software)) visualization - [rapidoc](https://github.com/mrin9/RapiDoc/blob/master/LICENSE.txt). License is MIT
 

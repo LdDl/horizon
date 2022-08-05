@@ -93,14 +93,14 @@ func main() {
 
 var (
 	webPage = `
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8" />
         <title>Horizon client</title>
         <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-        <script src="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js"></script>
-        <link href="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css" rel="stylesheet" />
+        <script src='https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.js'></script>
+        <link href='https://unpkg.com/maplibre-gl@2.1.9/dist/maplibre-gl.css' rel='stylesheet' />
         <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js'></script>
         <style>
             body {
@@ -125,18 +125,49 @@ var (
         <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.1.0/mapbox-gl-draw.css' type='text/css' />
         <div id="map"></div>
         <script>
-            mapboxgl.accessToken = 'pk.eyJ1IjoiZGltYWhraWluIiwiYSI6ImNqZmNqYWV3bjJxM2IzNG52M3cwNG9sbTEifQ.hBZWN6asfRuTVSKV6Ut1Bw'; // token from Mapbox docs (https://docs.mapbox.com/mapbox-gl-js/example/simple-map/)
-            var map = new mapboxgl.Map({
-                container: "map",
-                style: "mapbox://styles/dimahkiin/ck7q21t6z0ny71imt9v5valra",
+            maplibregl.setRTLTextPlugin('https://cdn.maptiler.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js');
+            var map = window.map = new maplibregl.Map({
+                container: 'map',
                 center: [%f, %f],
-                zoom: %f
+                zoom: %f,
+                style: 'https://api.maptiler.com/maps/bff50186-2623-47cc-9108-f6d014566cbf/style.json?key=dznzK4GQ1Lj5U7XsI22j'
             });
 
-            var textFieldProps = {
-                'type': 'identity',
-                'property': 'num'
-            };
+            function carCreated(style) {
+                return {
+                    id: style.id,
+                    filter: style.filter,
+                    type: "symbol",
+                    layout: {
+                        "text-field": ['get', 'id'],
+                        "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
+                        "text-radial-offset": 1.0,
+                        "text-justify": "auto",
+                        "icon-image": "loc_marker_placed",
+                        "icon-size": 1.0,
+                        "icon-allow-overlap": true,
+                        "text-allow-overlap": true
+                    }
+                };
+            }
+
+            function carClicked(style) {
+                return {
+                    id: style.id,
+                    filter: style.filter,
+                    type: "symbol",
+                    layout: {
+                        "text-field": ['get', 'id'],
+                        "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
+                        "text-radial-offset": 1.0,
+                        "text-justify": "auto",
+                        "icon-image": "loc_marker",
+                        "icon-size": 1.0,
+                        "icon-allow-overlap": true,
+                        "text-allow-overlap": true
+                    }
+                };
+            }
 
             const theme = [
                 {
@@ -376,42 +407,6 @@ var (
                 }
             });
 
-            function carCreated(style) {
-                return {
-                    id: style.id,
-                    filter: style.filter,
-                    type: "symbol",
-                    layout: {
-                        "text-field": ['get', 'id'],
-                        "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
-                        "text-radial-offset": 1.0,
-                        "text-justify": "auto",
-                        "icon-image": "loc_marker_placed",
-                        "icon-size": 0.5,
-                        "icon-allow-overlap": true,
-                        "text-allow-overlap": true
-                    }
-                };
-            }
-
-            function carClicked(style) {
-                return {
-                    id: style.id,
-                    filter: style.filter,
-                    type: "symbol",
-                    layout: {
-                        "text-field": ['get', 'id'],
-                        "text-variable-anchor": ['top', 'bottom', 'left', 'right'],
-                        "text-radial-offset": 1.0,
-                        "text-justify": "auto",
-                        "icon-image": "loc_marker",
-                        "icon-size": 0.5,
-                        "icon-allow-overlap": true,
-                        "text-allow-overlap": true
-                    }
-                };
-            }
-
             var draw = new MapboxDraw({
                 displayControlsDefault: false,
                 userProperties: true,
@@ -421,7 +416,8 @@ var (
                 },
                 styles: modifiedStyles
             });
-
+            
+            map.addControl(new maplibregl.NavigationControl());
             map.addControl(draw, "top-left");
             var timerAnimatedRoute = null;
             var pointsCounter = 0;
@@ -434,7 +430,6 @@ var (
             });
 
             function updateMapMatch(e) {
-
                 if (e.features && e.features.length === 1 && e.type === "draw.create") {
                     pointsCounter++;
                     // Tyring to play with ID
@@ -466,7 +461,6 @@ var (
             }
 
             function doMapMatch(gpsMeasurements) {
-                
                 let requestData = {
                     "maxStates": 5,
                     "stateRadius": 50,
@@ -474,8 +468,7 @@ var (
                 }
                 let sourceName = "source_matched_route";
                 let layerName = "layer_matched_route";
-
-                fetch("http://localhost:32800/api/v0.1.0/mapmatch", {
+                fetch("/api/v0.1.0/mapmatch", {
                     method: "post",
                     headers: {
                         'Accept': 'application/json',
@@ -485,9 +478,7 @@ var (
                 })
                 .then(response => response.json())
                 .then(function(jsoned) {
-
                     clearInterval(timerAnimatedRoute);
-
                     if (map.getSource(sourceName)) {
                         map.getSource(sourceName).setData(jsoned.data);
                     } else {
@@ -513,17 +504,16 @@ var (
                             }
                         });
                     }
-
                     // Animation - https://stackoverflow.com/a/45817976/6026885
                     let step = 0;
                     let dashArraySeq = [
-                    [0, 4, 3],
-                    [1, 4, 2],
-                    [2, 4, 1],
-                    [3, 4, 0],
-                    [0, 1, 3, 3],
-                    [0, 2, 3, 2],
-                    [0, 3, 3, 1]
+                        [0, 4, 3],
+                        [1, 4, 2],
+                        [2, 4, 1],
+                        [3, 4, 0],
+                        [0, 1, 3, 3],
+                        [0, 2, 3, 2],
+                        [0, 3, 3, 1]
                     ];
                     let animationStep = 100;
                     timerAnimatedRoute = setInterval(() => {
@@ -532,7 +522,6 @@ var (
                             map.setPaintProperty(layerName, "line-dasharray", dashArraySeq[step]);
                         }
                     }, animationStep);
-
                 });
             }
         </script>
