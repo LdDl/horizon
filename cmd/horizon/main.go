@@ -130,7 +130,7 @@ var (
                 container: 'map',
                 center: [%f, %f],
                 zoom: %f,
-                style: 'https://api.maptiler.com/maps/b2e35f90-f0fb-4562-808c-c20c52f63572/style.json?key=dznzK4GQ1Lj5U7XsI22j'
+                style: 'https://api.maptiler.com/maps/bff50186-2623-47cc-9108-f6d014566cbf/style.json?key=dznzK4GQ1Lj5U7XsI22j'
             });
 
             function carCreated(style) {
@@ -144,7 +144,7 @@ var (
                         "text-radial-offset": 1.0,
                         "text-justify": "auto",
                         "icon-image": "loc_marker_placed",
-                        "icon-size": 0.5,
+                        "icon-size": 1.0,
                         "icon-allow-overlap": true,
                         "text-allow-overlap": true
                     }
@@ -162,7 +162,7 @@ var (
                         "text-radial-offset": 1.0,
                         "text-justify": "auto",
                         "icon-image": "loc_marker",
-                        "icon-size": 0.5,
+                        "icon-size": 1.0,
                         "icon-allow-overlap": true,
                         "text-allow-overlap": true
                     }
