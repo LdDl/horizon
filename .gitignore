@@ -18,6 +18,7 @@ cmd/horizon/horizon
 cmd/horizon/horizon.exe
 cmd/horizon/*.zip
 cmd/horizon/*.tar.gz
+cmd/horizon/index.html
 .build.sh
 .swag-gen.sh
 docs/*
