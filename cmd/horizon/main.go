@@ -424,12 +424,6 @@ var (
 
             map.on("load", function() {
                 console.log("Map has been loaded");
-                // let imgMarker = new Image(64, 64);
-                // imgMarker.src = 'loc_marker.svg';
-                // map.addImage('loc_marker',  imgMarker, {pixelRatio: window.devicePixelRatio});
-                // let imgMarkerPlaced = new Image(64, 64);
-                // imgMarkerPlaced.src = 'loc_marker_placed.svg';
-                // map.addImage('loc_marker_placed',  imgMarkerPlaced, {pixelRatio: window.devicePixelRatio});
                 map.on("draw.create", updateMapMatch);
                 map.on("draw.update", updateMapMatch);
                 map.on("draw.delete", updateMapMatch);
