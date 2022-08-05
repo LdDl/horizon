@@ -17,7 +17,7 @@ New ideas, thought about needed features will be store in this file.
     * Isochrones service
 
 * ~~Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).~~
-Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.maptiler.com/)
+Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.maptiler.com/) due Mapbox [changed license](https://github.com/mapbox/mapbox-gl-js/releases/tag/v2.0.0)
 
 * More screenshots in README
 * Migrate to Fiber v2

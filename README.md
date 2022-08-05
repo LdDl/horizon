@@ -154,7 +154,7 @@ Thanks for approach described in this paper:
 * GeoJSON stuff - [go.geojson](https://github.com/paulmach/go.geojson#gogeojson). License is MIT
 * Fiber framework (used for server app) - [Fiber](https://github.com/gofiber/fiber). License is MIT
 * ~~MapboxGL for Front-end - [mapboxgl](https://github.com/mapbox/mapbox-gl-js). License is 3-Clause BSD license~~
-Replaced with Maplibre. License is modified 3-Clause BSD license, please see [ref. link](https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt)
+Replaced with Maplibre due Mapbox [changed license](https://github.com/mapbox/mapbox-gl-js/releases/tag/v2.0.0). License is modified 3-Clause BSD license, please see [ref. link](https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt)
 * moments.js for Front-end - [moment.js](https://github.com/moment/moment/). License is MIT
 * rapidoc for [swagger](https://en.wikipedia.org/wiki/Swagger_(software)) visualization - [rapidoc](https://github.com/mrin9/RapiDoc/blob/master/LICENSE.txt). License is MIT
 
