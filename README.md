@@ -45,9 +45,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
     * Install [osm2ch tool](https://github.com/LdDl/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
         ```shell
-        go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.4.0
+        go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.0
         # for disabling zlib:
-        export CGO_ENABLED=0 && go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.4.0
+        export CGO_ENABLED=0 && go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.0
         ```
     * Check if **osm2ch** binary was installed properly:
         ```shell
