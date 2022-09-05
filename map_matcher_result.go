@@ -43,9 +43,10 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		gpsMeasurements[0],
 		*rpPath[0].GraphEdge,
 	}
-	// Cut first graph edge [next vertext to projected point : last_vertex]
+	// Cut first graph edge [next vertex to projected point : last_vertex]
 	// And then prepend projected point to given slice
 	result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
+	// Iterate other states
 	for i := 1; i < len(rpPath); i++ {
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
@@ -70,6 +71,10 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			}
 		}
 	}
-
+	// Cut whole geometry [first vertex : previous vertex to projected point]
+	// And then append projected point to given slice
+	// @todo: I believe there is a better way to handle this case since projected point has been calculated in Run() function
+	_, _, next := calcProjection(result.Path, rpPath[len(rpPath)-1].Projected.Point)
+	result.Path = append(result.Path[:(next-1)], rpPath[len(rpPath)-1].Projected.Point)
 	return result
 }
