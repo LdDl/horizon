@@ -41,7 +41,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if edgeSource == nil {
 		return MatcherResult{}, fmt.Errorf("Edge 'source' not found in graph")
 	}
-	_, fractionSource := calcProjection(*edgeSource.Polyline, source.Point)
+	_, fractionSource, _ := calcProjection(*edgeSource.Polyline, source.Point)
 	choosenSourceVertex := n
 	if fractionSource > 0.5 {
 		choosenSourceVertex = m
@@ -55,7 +55,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if edgeTarget == nil {
 		return MatcherResult{}, fmt.Errorf("Edge 'target' not found in graph")
 	}
-	_, fractionTarget := calcProjection(*edgeTarget.Polyline, target.Point)
+	_, fractionTarget, _ := calcProjection(*edgeTarget.Polyline, target.Point)
 	choosenTargetVertex := n
 	if fractionTarget > 0.5 {
 		choosenTargetVertex = m

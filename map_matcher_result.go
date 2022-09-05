@@ -43,8 +43,9 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		gpsMeasurements[0],
 		*rpPath[0].GraphEdge,
 	}
-	result.Path = append(result.Path, *rpPath[0].GraphEdge.Polyline...)
-
+	// Cut first graph edge [next vertext to projected point : last_vertex]
+	// And then prepend projected point to given slice
+	result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
 	for i := 1; i < len(rpPath); i++ {
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
@@ -68,7 +69,6 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 				}
 			}
 		}
-
 	}
 
 	return result

@@ -83,7 +83,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			m := s2polyline.Source
 			n := s2polyline.Target
 			edge := matcher.engine.edges[m][n]
-			proj, fraction := calcProjection(*edge.Polyline, s2point)
+			proj, fraction, next := calcProjection(*edge.Polyline, s2point)
 			latLng := s2.LatLngFromPoint(proj)
 			_ = fraction
 			// @todo determine which vertex is better to use. something like below, maybe?
@@ -98,6 +98,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			roadPos := NewRoadPositionFromLonLat(stateID, n, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
 			roadPos.beforeProjection = edge.Weight * fraction
 			roadPos.afterProjection = edge.Weight * (1 - fraction)
+			roadPos.next = next
 			localStates[j] = roadPos
 			stateID++
 		}

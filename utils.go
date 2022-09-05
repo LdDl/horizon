@@ -15,15 +15,16 @@ import (
 
 	projected - projection of point on line
 	fraction - number in [0;1], describes how far projected point from first point of polyline
+	next - index of the next vertex after the projected point
 */
-func calcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64) {
+func calcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64, next int) {
 	pr, next := line.Project(point)
 	subs := s2.Polyline{}
 	for i := 0; i < next; i++ {
 		subs = append(subs, line[i])
 	}
 	subs = append(subs, pr)
-	return pr, (subs.Length() / line.Length()).Radians()
+	return pr, (subs.Length() / line.Length()).Radians(), next
 }
 
 // round Round float64

@@ -17,6 +17,7 @@ type RoadPositions []*RoadPosition
 	Projected - point (Observation) project onto edge, pointer to GeoPoint
 	beforeProjection - distance from starting point to projected one
 	afterProjection - distance from projected point to last one
+	next - index of the next vertex in s2.Polyline after the projected point
 */
 type RoadPosition struct {
 	RoadPositionID   int
@@ -25,6 +26,7 @@ type RoadPosition struct {
 	Projected        *GeoPoint
 	beforeProjection float64
 	afterProjection  float64
+	next             int
 }
 
 // NewRoadPositionFromLonLat Returns pointer to created State
