@@ -20,6 +20,7 @@ type ObservationResult struct {
 	Observations - set of ObservationResult
 	Probability - probability got from Viterbi's algotithm
 	Path - final path as s2.Polyline
+	VerticesPath - IDs of graph vertices corresponding to traveled path
 */
 type MatcherResult struct {
 	Observations []*ObservationResult
