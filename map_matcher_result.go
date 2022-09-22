@@ -1,6 +1,8 @@
 package horizon
 
 import (
+	"fmt"
+
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
 )
@@ -66,7 +68,11 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			sourceVertex := path[e-1]
 			targetVertex := path[e]
 			edge := matcher.engine.edges[sourceVertex][targetVertex]
-			result.Path = append(result.Path, *edge.Polyline...)
+			if len(*edge.Polyline) < 2 {
+				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
+			}
+			result.Path = append(result.Path, (*edge.Polyline)[1:]...)
+			// result.Path = append(result.Path, *edge.Polyline...) // Cause duplicates in geometry
 			result.VerticesPath = append(result.VerticesPath, targetVertex)
 			if e == len(path)-1 {
 				result.Observations[i] = &ObservationResult{
