@@ -1,4 +1,4 @@
-# Horizon v0.5.5 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.5.6 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -22,12 +22,12 @@ Horizon is targeted to make map matching as [OSRM](https://github.com/Project-OS
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.5.5
+go install github.com/LdDl/horizon/cmd/horizon@v0.5.6
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.5.5/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.5.5/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.5.6/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.5.6/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
