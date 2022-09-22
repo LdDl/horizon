@@ -25,6 +25,7 @@ type MatcherResult struct {
 	Observations []*ObservationResult
 	Probability  float64
 	Path         s2.Polyline
+	VerticesPath []int64
 }
 
 // prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
@@ -32,6 +33,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	result := MatcherResult{
 		Observations: make([]*ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
+		VerticesPath: []int64{},
 	}
 
 	rpPath := make(RoadPositions, len(vpath.Path))
@@ -43,6 +45,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		gpsMeasurements[0],
 		*rpPath[0].GraphEdge,
 	}
+	result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
 	// Cut first graph edge [next vertex to projected point : last_vertex]
 	// And then prepend projected point to given slice
 	result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
@@ -63,6 +66,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			targetVertex := path[e]
 			edge := matcher.engine.edges[sourceVertex][targetVertex]
 			result.Path = append(result.Path, *edge.Polyline...)
+			result.VerticesPath = append(result.VerticesPath, targetVertex)
 			if e == len(path)-1 {
 				result.Observations[i] = &ObservationResult{
 					gpsMeasurements[i],
@@ -71,6 +75,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			}
 		}
 	}
+
 	// Cut whole geometry [first vertex : previous vertex to projected point]
 	// And then append projected point to given slice
 	// @todo: I believe there is a better way to handle this case since projected point has been calculated in Run() function
