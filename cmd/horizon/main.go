@@ -454,7 +454,7 @@ var (
                     currentTime.setSeconds(currentTime.getSeconds() + 30); // artificial GPS timestamps
                     return {
                         "tm": moment(currentTime).format("YYYY-MM-DDTh:mm:ss"),
-                        "lonLat": [element.geometry.coordinates[0], element.geometry.coordinates[1]],
+                        "lon_lat": [element.geometry.coordinates[0], element.geometry.coordinates[1]],
                     };
                 });
                 doMapMatch(gpsMeasurements)
@@ -462,8 +462,8 @@ var (
 
             function doMapMatch(gpsMeasurements) {
                 let requestData = {
-                    "maxStates": 5,
-                    "stateRadius": 50,
+                    "max_states": 5,
+                    "state_radius": 50,
                     "gps": gpsMeasurements
                 }
                 let sourceName = "source_matched_route";

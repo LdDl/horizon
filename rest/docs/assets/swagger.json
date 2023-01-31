@@ -166,7 +166,7 @@
         "rest.GPSToMapMatch": {
             "type": "object",
             "properties": {
-                "lonLat": {
+                "lon_lat": {
                     "description": "[Longitude, Latitude]",
                     "type": "array",
                     "items": {
@@ -187,7 +187,7 @@
         "rest.GPSToShortestPath": {
             "type": "object",
             "properties": {
-                "lonLat": {
+                "lon_lat": {
                     "description": "[Longitude, Latitude]",
                     "type": "array",
                     "items": {
@@ -203,7 +203,7 @@
         "rest.IsochronesRequest": {
             "type": "object",
             "properties": {
-                "lonLat": {
+                "lon_lat": {
                     "description": "[Longitude, Latitude]",
                     "type": "array",
                     "items": {
@@ -214,12 +214,12 @@
                         55.745374309126895
                     ]
                 },
-                "maxCost": {
+                "max_cost": {
                     "description": "Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.",
                     "type": "number",
                     "example": 2100
                 },
-                "nearestRadius": {
+                "nearest_radius": {
                     "description": "Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])",
                     "type": "number",
                     "example": 25
@@ -251,12 +251,12 @@
                         "$ref": "#/definitions/rest.GPSToMapMatch"
                     }
                 },
-                "maxStates": {
+                "max_states": {
                     "description": "Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.",
                     "type": "integer",
                     "example": 5
                 },
-                "stateRadius": {
+                "state_radius": {
                     "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
                     "type": "number",
                     "example": 7
@@ -288,7 +288,7 @@
                         "$ref": "#/definitions/rest.GPSToShortestPath"
                     }
                 },
-                "stateRadius": {
+                "state_radius": {
                     "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
                     "type": "number",
                     "example": 10

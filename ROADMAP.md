@@ -23,14 +23,13 @@ Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.mapti
 * Migrate to Fiber v2
 * Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5
 * Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
+* Snake case for JSON's
 
 ### W.I.P
 
-* Snake case for JSON's (do we need those minor-ish thing?)
-
 * Stabilization of core (need many tests as possible)
 
-* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) framework (+ update installation instruction) [AS SEPARATE REPOSITORY + design Figma]
+* Rewrite front-end in [VueJS](https://github.com/vuejs/vue) or [Svelte](https://svelte.dev/) framework (+ update installation instruction) [AS SEPARATE REPOSITORY + design Figma]
 
 ### Planned
 * gRPC server side

@@ -13,11 +13,11 @@ import (
 // swagger:model
 type IsochronesRequest struct {
 	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat" example:"37.601249363208915,55.745374309126895"`
+	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
 	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
-	MaxCost *float64 `json:"maxCost" example:"2100.0"`
+	MaxCost *float64 `json:"max_cost" example:"2100.0"`
 	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
-	MaxNearestRadius *float64 `json:"nearestRadius" example:"25.0"`
+	MaxNearestRadius *float64 `json:"nearest_radius" example:"25.0"`
 }
 
 // IsochronesResponse Server's response for isochrones request
@@ -52,14 +52,14 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		if data.MaxCost != nil && *data.MaxCost >= 0 {
 			maxCost = *data.MaxCost
 		} else {
-			ans.Warnings = append(ans.Warnings, "maxCost either nil or not in range [0,+Inf]. Using default value: 0.0")
+			ans.Warnings = append(ans.Warnings, "max_cost either nil or not in range [0,+Inf]. Using default value: 0.0")
 		}
 
 		maxNearestRadius := 25.0
 		if data.MaxNearestRadius != nil && *data.MaxNearestRadius >= 0 {
 			maxNearestRadius = *data.MaxNearestRadius
 		} else {
-			ans.Warnings = append(ans.Warnings, "nearestRadius either nil or not in range [0,+Inf]. Using default value: 0.0")
+			ans.Warnings = append(ans.Warnings, "nearest_radius either nil or not in range [0,+Inf]. Using default value: 0.0")
 		}
 
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)

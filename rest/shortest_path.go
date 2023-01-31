@@ -16,14 +16,14 @@ type SPRequest struct {
 	// Set of GPS data
 	Data []GPSToShortestPath `json:"gps"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"stateRadius" example:"10.0"`
+	StateRadius *float64 `json:"state_radius" example:"10.0"`
 }
 
 // GPSToShortestPath Representation of GPS data
 // swagger:model
 type GPSToShortestPath struct {
 	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lonLat" example:"37.601249363208915,55.745374309126895"`
+	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
 }
 
 // SPResponse Server's response for shortest path request
