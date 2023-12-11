@@ -12,12 +12,12 @@ import (
 // IsochronesRequest User's request for isochrones
 // swagger:model
 type IsochronesRequest struct {
-	// [Longitude, Latitude]
-	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
 	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
 	MaxCost *float64 `json:"max_cost" example:"2100.0"`
 	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
 	MaxNearestRadius *float64 `json:"nearest_radius" example:"25.0"`
+	// [Longitude, Latitude]
+	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
 }
 
 // IsochronesResponse Server's response for isochrones request

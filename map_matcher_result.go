@@ -26,9 +26,9 @@ type ObservationResult struct {
 */
 type MatcherResult struct {
 	Observations []*ObservationResult
-	Probability  float64
 	Path         s2.Polyline
 	VerticesPath []int64
+	Probability  float64
 }
 
 // prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths

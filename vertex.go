@@ -10,6 +10,6 @@ import (
 	Point - geometry of vertex, pointer to s2.Point (wrapper)
 */
 type Vertex struct {
-	ID int64
 	*s2.Point
+	ID int64
 }

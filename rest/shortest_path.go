@@ -13,10 +13,10 @@ import (
 // SPRequest User's request for finding shortest path
 // swagger:model
 type SPRequest struct {
-	// Set of GPS data
-	Data []GPSToShortestPath `json:"gps"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"state_radius" example:"10.0"`
+	// Set of GPS data
+	Data []GPSToShortestPath `json:"gps"`
 }
 
 // GPSToShortestPath Representation of GPS data

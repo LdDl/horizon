@@ -16,9 +16,9 @@ type GPSMeasurements []*GPSMeasurement
 	GeoPoint - latitude(Y)/longitude(X), pointer to GeoPoint (wrapper)
 */
 type GPSMeasurement struct {
-	id       int
-	dateTime time.Time
 	*GeoPoint
+	dateTime time.Time
+	id       int
 }
 
 // ID Returns generated identifier for GPS-point

@@ -20,12 +20,12 @@ type RoadPositions []*RoadPosition
 	next - index of the next vertex in s2.Polyline after the projected point
 */
 type RoadPosition struct {
-	RoadPositionID   int
-	GraphEdge        *Edge
-	GraphVertex      int64
 	Projected        *GeoPoint
+	GraphEdge        *Edge
 	beforeProjection float64
 	afterProjection  float64
+	GraphVertex      int64
+	RoadPositionID   int
 	next             int
 }
 
