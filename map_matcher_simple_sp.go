@@ -72,7 +72,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	}
 	edges := []Edge{}
 	result := MatcherResult{
-		Observations: make([]*ObservationResult, 2),
+		Observations: make([]ObservationResult, 2),
 		Probability:  100.0,
 	}
 	for i := 1; i < len(path); i++ {
@@ -83,12 +83,12 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		result.Path = append(result.Path, *edge.Polyline...)
 	}
 
-	result.Observations[0] = &ObservationResult{
+	result.Observations[0] = ObservationResult{
 		Observation: source,
 		MatchedEdge: edges[0],
 	}
 
-	result.Observations[1] = &ObservationResult{
+	result.Observations[1] = ObservationResult{
 		Observation: target,
 		MatchedEdge: edges[len(edges)-1],
 	}

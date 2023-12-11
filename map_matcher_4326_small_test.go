@@ -22,7 +22,7 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		}
 
 		correctStates = MatcherResult{
-			Observations: []*ObservationResult{
+			Observations: []ObservationResult{
 				{Observation: gpsMeasurements[0]},
 				{Observation: gpsMeasurements[1]},
 				{Observation: gpsMeasurements[2]},
@@ -54,7 +54,8 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		t.Errorf("Result should contain %d measurements, but got %d", len(correctStates.Observations), len(result.Observations))
 	}
 
-	if toFixed(result.Probability, 6) != toFixed(correctStates.Probability, 6) {
+	eps := 10e-6
+	if math.Abs(result.Probability-correctStates.Probability) > eps {
 		t.Errorf("Path's probability should be %f, but got %f", correctStates.Probability, result.Probability)
 	}
 

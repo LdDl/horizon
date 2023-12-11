@@ -2,7 +2,6 @@ package horizon
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
@@ -25,17 +24,6 @@ func calcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fract
 	}
 	subs = append(subs, pr)
 	return pr, (subs.Length() / line.Length()).Radians(), next
-}
-
-// round Round float64
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
-}
-
-// toFixed Round float64 to N decimal places
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
 }
 
 // GeoJSONToS2PolylineFeature Returns *s2.Polyline representation of *geojson.Geometry (of LineString type)

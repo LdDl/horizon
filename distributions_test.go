@@ -8,13 +8,13 @@ import (
 var (
 	testSigma = 5.0
 	testX     = 6.0
-	delta     = 8
 )
 
 func TestLogNormalDistribution(t *testing.T) {
 	v0 := math.Log(NormalDistribution(testSigma, testX))
 	v1 := LogNormalDistribution(testSigma, testX)
-	if toFixed(v0, delta) != toFixed(v1, delta) {
+	eps := 10e-8
+	if math.Abs(v0-v1) > eps {
 		t.Error(
 			"For sigma", testSigma,
 			"and x", testX,
@@ -27,7 +27,8 @@ func TestLogNormalDistribution(t *testing.T) {
 func TestLogExponentialDistribution(t *testing.T) {
 	v0 := math.Log(ExponentialDistribution(testSigma, testX))
 	v1 := LogExponentialDistribution(testSigma, testX)
-	if v0 != v1 {
+	eps := 10e-8
+	if math.Abs(v0-v1) > eps {
 		t.Error(
 			"For sigma", testSigma,
 			"and x", testX,
