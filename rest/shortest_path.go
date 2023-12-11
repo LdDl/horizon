@@ -76,7 +76,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
+		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
 		ans.Path.AddFeature(f)
 		return ctx.Status(200).JSON(ans)
 	}
