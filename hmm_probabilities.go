@@ -18,7 +18,6 @@ func HmmProbabilitiesDefault() *HmmProbabilities {
 		sigma: 4.07,
 		beta:  0.00959442,
 	}
-
 }
 
 // NewHmmProbabilities Constructor for creating HmmProbabilities with provided values

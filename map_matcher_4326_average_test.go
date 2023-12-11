@@ -14,16 +14,16 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		sigma           = 50.0
 		beta            = 30.0
 		gpsMeasurements = GPSMeasurements{
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 1, 0, time.UTC), 37.601249363208915, 55.745374309126895, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 2, 0, time.UTC), 37.600552781226014, 55.746223820101498, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 3, 0, time.UTC), 37.599959396573908, 55.747450858855984, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 4, 0, time.UTC), 37.600526981893317, 55.748017171419498, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 5, 0, time.UTC), 37.600655978556816, 55.748728680680564, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 6, 0, time.UTC), 37.600372185897115, 55.749454697162832, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 7, 0, time.UTC), 37.600694677555865, 55.750521916863391, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 8, 0, time.UTC), 37.600965570549214, 55.751371315759044, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 9, 0, time.UTC), 37.600926871550165, 55.752634490168425, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 10, 0, time.UTC), 37.60001599788666, 55.75607875029978, 4326),
+			NewGPSMeasurement(1, 37.601249363208915, 55.745374309126895, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 1, 0, time.UTC))),
+			NewGPSMeasurement(2, 37.600552781226014, 55.746223820101498, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 2, 0, time.UTC))),
+			NewGPSMeasurement(3, 37.599959396573908, 55.747450858855984, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 3, 0, time.UTC))),
+			NewGPSMeasurement(4, 37.600526981893317, 55.748017171419498, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 4, 0, time.UTC))),
+			NewGPSMeasurement(5, 37.600655978556816, 55.748728680680564, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 5, 0, time.UTC))),
+			NewGPSMeasurement(6, 37.600372185897115, 55.749454697162832, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 6, 0, time.UTC))),
+			NewGPSMeasurement(7, 37.600694677555865, 55.750521916863391, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 7, 0, time.UTC))),
+			NewGPSMeasurement(8, 37.600965570549214, 55.751371315759044, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 8, 0, time.UTC))),
+			NewGPSMeasurement(9, 37.600926871550165, 55.752634490168425, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 9, 0, time.UTC))),
+			NewGPSMeasurement(10, 37.60001599788666, 55.75607875029978, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 10, 0, time.UTC))),
 		}
 
 		correctStates = MatcherResult{
@@ -96,16 +96,16 @@ func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
 		sigma           = 50.0
 		beta            = 30.0
 		gpsMeasurements = GPSMeasurements{
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 1, 0, time.UTC), 37.601249363208915, 55.745374309126895, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 2, 0, time.UTC), 37.600552781226014, 55.746223820101498, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 3, 0, time.UTC), 37.599959396573908, 55.747450858855984, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 4, 0, time.UTC), 37.600526981893317, 55.748017171419498, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 5, 0, time.UTC), 37.600655978556816, 55.748728680680564, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 6, 0, time.UTC), 37.600372185897115, 55.749454697162832, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 7, 0, time.UTC), 37.600694677555865, 55.750521916863391, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 8, 0, time.UTC), 37.600965570549214, 55.751371315759044, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 9, 0, time.UTC), 37.600926871550165, 55.752634490168425, 4326),
-			NewGPSMeasurement(time.Date(1, 1, 1, 1, 1, 10, 0, time.UTC), 37.600385085563467, 55.755596255965337, 4326),
+			NewGPSMeasurement(1, 37.601249363208915, 55.745374309126895, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 1, 0, time.UTC))),
+			NewGPSMeasurement(2, 37.600552781226014, 55.746223820101498, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 2, 0, time.UTC))),
+			NewGPSMeasurement(3, 37.599959396573908, 55.747450858855984, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 3, 0, time.UTC))),
+			NewGPSMeasurement(4, 37.600526981893317, 55.748017171419498, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 4, 0, time.UTC))),
+			NewGPSMeasurement(5, 37.600655978556816, 55.748728680680564, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 5, 0, time.UTC))),
+			NewGPSMeasurement(6, 37.600372185897115, 55.749454697162832, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 6, 0, time.UTC))),
+			NewGPSMeasurement(7, 37.600694677555865, 55.750521916863391, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 7, 0, time.UTC))),
+			NewGPSMeasurement(8, 37.600965570549214, 55.751371315759044, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 8, 0, time.UTC))),
+			NewGPSMeasurement(9, 37.600926871550165, 55.752634490168425, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 9, 0, time.UTC))),
+			NewGPSMeasurement(10, 37.600385085563467, 55.755596255965337, 4326, WithGPSTime(time.Date(1, 1, 1, 1, 1, 10, 0, time.UTC))),
 		}
 	)
 

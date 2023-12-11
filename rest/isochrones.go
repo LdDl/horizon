@@ -45,7 +45,6 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		if err != nil {
 			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
-
 		gpsMeasurement := horizon.NewGPSMeasurementFromID(0, data.LonLat[0], data.LonLat[1], 4326)
 		maxCost := 0.0
 		ans := IsochronesResponse{}
@@ -54,14 +53,12 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		} else {
 			ans.Warnings = append(ans.Warnings, "max_cost either nil or not in range [0,+Inf]. Using default value: 0.0")
 		}
-
 		maxNearestRadius := 25.0
 		if data.MaxNearestRadius != nil && *data.MaxNearestRadius >= 0 {
 			maxNearestRadius = *data.MaxNearestRadius
 		} else {
 			ans.Warnings = append(ans.Warnings, "nearest_radius either nil or not in range [0,+Inf]. Using default value: 0.0")
 		}
-
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)

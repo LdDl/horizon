@@ -64,7 +64,7 @@ func S2PolylineToGeoJSONFeature(pts *s2.Polyline) *geojson.Feature {
 
 // GeoJSONToS2PointFeature Returns s2.Point representation of *geojson.Geometry (of Point type)
 func GeoJSONToS2PointFeature(pts *geojson.Geometry) (s2.Point, error) {
-	latLng := s2.LatLng{}
+	var latLng s2.LatLng
 	if pts.Type == "Point" {
 		latLng = s2.LatLngFromDegrees(pts.Point[1], pts.Point[0])
 	} else {
