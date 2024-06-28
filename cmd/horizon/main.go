@@ -59,12 +59,12 @@ func main() {
 		IdleTimeout: 10 * time.Second,
 	}
 	allCors := cors.New(cors.Config{
-		AllowOrigins:     "*",
-		AllowHeaders:     "Origin, Authorization, Content-Type, Content-Length, Accept, Accept-Encoding, X-HttpRequest",
-		AllowMethods:     "GET, POST, PUT, DELETE",
-		ExposeHeaders:    "Content-Length",
-		AllowCredentials: true,
-		MaxAge:           5600,
+		AllowOrigins:  "*",
+		AllowHeaders:  "Origin, Authorization, Content-Type, Content-Length, Accept, Accept-Encoding, X-HttpRequest",
+		AllowMethods:  "GET, POST, PUT, DELETE",
+		ExposeHeaders: "Content-Length",
+		// AllowCredentials: true,
+		MaxAge: 5600,
 	})
 
 	// Init server
