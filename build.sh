@@ -1,0 +1,2 @@
+export GOOS=linux && export GOARCH=amd64 && export CGO_ENABLED=0 && go build -ldflags "-s -w" -o horizon -gcflags "all=-trimpath=$GOPATH" -trimpath cmd/horizon/main.go && tar -czvf linux-amd64-horizon.tar.gz horizon
+export GOOS=windows && export GOARCH=amd64 && export CGO_ENABLED=0 && go build -ldflags "-s -w" -o horizon.exe -gcflags "all=-trimpath=$GOPATH" -trimpath cmd/horizon/main.go && zip windows-horizon.zip horizon.exe

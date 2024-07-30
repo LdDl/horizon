@@ -64,9 +64,11 @@ func TestMapMatcherSRID_0(t *testing.T) {
 		t.Error(err)
 	}
 	vpath := v.EvalPathLogProbabilities()
-	if vpath.Probability != -1926.893407386203 {
-		t.Error(
-			"probability has to be -1926.893407386203, but got", vpath.Probability,
+	correctProb := -1926.893407386203
+	eps := 10e-6
+	if math.Abs(vpath.Probability-correctProb) > eps {
+		t.Errorf(
+			"probability has to be %f, but got %f", correctProb, vpath.Probability,
 		)
 	}
 	if len(vpath.Path) != 4 {

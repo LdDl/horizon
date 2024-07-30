@@ -15,9 +15,9 @@ import (
 	BTree - b-tree (wraps)
 */
 type S2Storage struct {
-	storageLevel int
-	edges        map[uint64]*Edge
 	*btree.BTree
+	edges        map[uint64]*Edge
+	storageLevel int
 }
 
 // NewS2Storage Returns pointer to created S2Storage
@@ -35,8 +35,8 @@ func NewS2Storage(storageLevel int, degree int) *S2Storage {
 
 // indexedItem Object in datastore
 type indexedItem struct {
-	s2.CellID
 	edgesInCell []uint64
+	s2.CellID
 }
 
 // Less Method to feet b-tree

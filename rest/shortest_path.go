@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"log"
 	"time"
 
 	"github.com/LdDl/horizon"
@@ -13,10 +12,10 @@ import (
 // SPRequest User's request for finding shortest path
 // swagger:model
 type SPRequest struct {
-	// Set of GPS data
-	Data []GPSToShortestPath `json:"gps"`
 	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
 	StateRadius *float64 `json:"state_radius" example:"10.0"`
+	// Set of GPS data
+	Data []GPSToShortestPath `json:"gps"`
 }
 
 // GPSToShortestPath Representation of GPS data
@@ -58,7 +57,6 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		if len(data.Data) != 2 {
 			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 2 GPS points only"})
 		}
-
 		gpsMeasurements := horizon.GPSMeasurements{}
 		ut := time.Now().UTC().Unix()
 		for i := range data.Data {
@@ -66,25 +64,20 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 			ut++
 		}
-
 		statesRadiusMeters := 25.0
 		ans := SPResponse{}
-
 		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
 			statesRadiusMeters = *data.StateRadius
 		} else {
 			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
 		}
-
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {
-			log.Println(err)
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(&result.Path)
+		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
 		ans.Path.AddFeature(f)
-
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn

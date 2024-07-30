@@ -4,23 +4,25 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 )
 
 func TestMapMatcherSRID_4326(t *testing.T) {
 
 	var (
+		currentTime     = time.Now()
 		graphFileName   = "./test_data/matcher_4326_test.csv"
 		sigma           = 50.0
 		beta            = 2.0
 		gpsMeasurements = GPSMeasurements{
-			NewGPSMeasurementFromID(1, 37.662745994981435, 55.77323867786974, 4326),
-			NewGPSMeasurementFromID(2, 37.66373679411533, 55.77352528537278, 4326),
-			NewGPSMeasurementFromID(3, 37.6634658408828, 55.77408712095024, 4326),
-			NewGPSMeasurementFromID(4, 37.66271768643477, 55.77491052526131, 4326),
+			NewGPSMeasurement(1, 37.662745994981435, 55.77323867786974, 4326, WithGPSTime(currentTime.Add(1*time.Second))),
+			NewGPSMeasurement(2, 37.66373679411533, 55.77352528537278, 4326, WithGPSTime(currentTime.Add(2*time.Second))),
+			NewGPSMeasurement(3, 37.6634658408828, 55.77408712095024, 4326, WithGPSTime(currentTime.Add(3*time.Second))),
+			NewGPSMeasurement(4, 37.66271768643477, 55.77491052526131, 4326, WithGPSTime(currentTime.Add(4*time.Second))),
 		}
 
 		correctStates = MatcherResult{
-			Observations: []*ObservationResult{
+			Observations: []ObservationResult{
 				{Observation: gpsMeasurements[0]},
 				{Observation: gpsMeasurements[1]},
 				{Observation: gpsMeasurements[2]},
@@ -52,7 +54,8 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		t.Errorf("Result should contain %d measurements, but got %d", len(correctStates.Observations), len(result.Observations))
 	}
 
-	if toFixed(result.Probability, 6) != toFixed(correctStates.Probability, 6) {
+	eps := 10e-6
+	if math.Abs(result.Probability-correctStates.Probability) > eps {
 		t.Errorf("Path's probability should be %f, but got %f", correctStates.Probability, result.Probability)
 	}
 

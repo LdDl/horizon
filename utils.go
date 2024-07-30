@@ -2,7 +2,6 @@ package horizon
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
@@ -27,17 +26,6 @@ func calcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fract
 	return pr, (subs.Length() / line.Length()).Radians(), next
 }
 
-// round Round float64
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
-}
-
-// toFixed Round float64 to N decimal places
-func toFixed(num float64, precision int) float64 {
-	output := math.Pow(10, float64(precision))
-	return float64(round(num*output)) / output
-}
-
 // GeoJSONToS2PolylineFeature Returns *s2.Polyline representation of *geojson.Geometry (of LineString type)
 func GeoJSONToS2PolylineFeature(pts *geojson.Geometry) (*s2.Polyline, error) {
 	latLngs := []s2.LatLng{}
@@ -53,10 +41,10 @@ func GeoJSONToS2PolylineFeature(pts *geojson.Geometry) (*s2.Polyline, error) {
 }
 
 // S2PolylineToGeoJSONFeature Returns GeoJSON representation of *s2.Polyline
-func S2PolylineToGeoJSONFeature(pts *s2.Polyline) *geojson.Feature {
-	coordinates := make([][]float64, len(*pts))
-	for i := range *pts {
-		latLng := s2.LatLngFromPoint((*pts)[i])
+func S2PolylineToGeoJSONFeature(pts s2.Polyline) *geojson.Feature {
+	coordinates := make([][]float64, len(pts))
+	for i := range pts {
+		latLng := s2.LatLngFromPoint(pts[i])
 		coordinates[i] = []float64{latLng.Lng.Degrees(), latLng.Lat.Degrees()}
 	}
 	return geojson.NewLineStringFeature(coordinates)
@@ -64,7 +52,7 @@ func S2PolylineToGeoJSONFeature(pts *s2.Polyline) *geojson.Feature {
 
 // GeoJSONToS2PointFeature Returns s2.Point representation of *geojson.Geometry (of Point type)
 func GeoJSONToS2PointFeature(pts *geojson.Geometry) (s2.Point, error) {
-	latLng := s2.LatLng{}
+	var latLng s2.LatLng
 	if pts.Type == "Point" {
 		latLng = s2.LatLngFromDegrees(pts.Point[1], pts.Point[0])
 	} else {

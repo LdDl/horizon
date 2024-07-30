@@ -1,6 +1,7 @@
 package horizon
 
 import (
+	"math"
 	"testing"
 )
 
@@ -21,7 +22,8 @@ func TestGeoPointDistance(t *testing.T) {
 
 	d4326 := euPt1_4326.DistanceTo(euPt2_4326)
 	actualDistance4326 := 742.605185
-	if toFixed(d4326, 6) != actualDistance4326 {
+	eps := 10e-6
+	if math.Abs(d4326-actualDistance4326) > eps {
 		t.Errorf("SRID = 4326, Has to be %f, but got %0.10f", actualDistance4326, d4326)
 	}
 }

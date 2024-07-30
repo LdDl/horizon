@@ -1,6 +1,8 @@
 package horizon
 
 import (
+	"fmt"
+
 	"github.com/golang/geo/r3"
 	"github.com/golang/geo/s2"
 )
@@ -24,6 +26,11 @@ type GeoPoint struct {
 // SRID Returns SRID of point
 func (gp *GeoPoint) SRID() int {
 	return gp.srid
+}
+
+// String Pretty print
+func (gp *GeoPoint) String() string {
+	return fmt.Sprintf("Point{s2: %v, srid: %d}", gp.Point, gp.srid)
 }
 
 // SetSRID Sets SRID for point

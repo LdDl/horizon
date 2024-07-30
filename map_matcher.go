@@ -6,6 +6,7 @@ import (
 
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
+	"github.com/pkg/errors"
 )
 
 // MapMatcher Engine for solving map matching problem
@@ -61,7 +62,10 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	closestSets := [][]NearestObject{}
 
 	for i := 0; i < len(gpsMeasurements); i++ {
-		closest, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		closest, err := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "Can't find neighbors for point: '%s' (states radius = %f, max states = %d)", gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		}
 		if len(closest) == 0 {
 			// @todo need to handle this case properly...
 			continue

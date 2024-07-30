@@ -25,16 +25,16 @@ type ObservationResult struct {
 	VerticesPath - IDs of graph vertices corresponding to traveled path
 */
 type MatcherResult struct {
-	Observations []*ObservationResult
-	Probability  float64
+	Observations []ObservationResult
 	Path         s2.Polyline
 	VerticesPath []int64
+	Probability  float64
 }
 
 // prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
 func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, chRoutes map[int]map[int][]int64) MatcherResult {
 	result := MatcherResult{
-		Observations: make([]*ObservationResult, len(gpsMeasurements)),
+		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
 		VerticesPath: []int64{},
 	}
@@ -44,7 +44,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		rpPath[i] = vpath.Path[i].(*RoadPosition)
 	}
 
-	result.Observations[0] = &ObservationResult{
+	result.Observations[0] = ObservationResult{
 		gpsMeasurements[0],
 		*rpPath[0].GraphEdge,
 	}
@@ -57,7 +57,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
-			result.Observations[i] = &ObservationResult{
+			result.Observations[i] = ObservationResult{
 				gpsMeasurements[i],
 				*previousState.GraphEdge,
 			}
@@ -75,7 +75,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			// result.Path = append(result.Path, *edge.Polyline...) // Cause duplicates in geometry
 			result.VerticesPath = append(result.VerticesPath, targetVertex)
 			if e == len(path)-1 {
-				result.Observations[i] = &ObservationResult{
+				result.Observations[i] = ObservationResult{
 					gpsMeasurements[i],
 					*edge,
 				}
