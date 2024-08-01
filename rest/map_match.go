@@ -37,10 +37,20 @@ type GPSToMapMatch struct {
 // MapMatchResponse Server's response for map matching request
 // swagger:model
 type MapMatchResponse struct {
-	// GeoJSON Data
-	Path *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
+	// GeoJSON data
+	Path *geojson.FeatureCollection `json:"path" swaggerignore:"true"`
+	// Set of matched edges for each observation
+	Data []ObservationEdgeResponse `json:"data" `
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
+}
+
+// Relation between observation and matched edge
+type ObservationEdgeResponse struct {
+	// Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+	ObservationIdx int `json:"obs_idx" example:"0"`
+	// Matched edge identifier
+	EdgeID int64 `json:"edge_id" example:"3149"`
 }
 
 // MapMatch Do map match via POST-request
@@ -90,6 +100,14 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		if err != nil {
 			log.Println(err)
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
+		}
+		ans.Data = make([]ObservationEdgeResponse, len(result.Observations))
+		for i := range result.Observations {
+			observation := result.Observations[i]
+			ans.Data[i] = ObservationEdgeResponse{
+				ObservationIdx: observation.Observation.ID(),
+				EdgeID:         observation.MatchedEdge.ID,
+			}
 		}
 		ans.Path = geojson.NewFeatureCollection()
 		f := horizon.S2PolylineToGeoJSONFeature(result.Path)

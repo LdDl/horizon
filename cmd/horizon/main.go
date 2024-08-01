@@ -480,11 +480,11 @@ var (
                 .then(function(jsoned) {
                     clearInterval(timerAnimatedRoute);
                     if (map.getSource(sourceName)) {
-                        map.getSource(sourceName).setData(jsoned.data);
+                        map.getSource(sourceName).setData(jsoned.path);
                     } else {
                         map.addSource(sourceName, {
                             "type": "geojson",
-                            "data": jsoned.data
+                            "data": jsoned.path
                         });
                     }
                     if (!map.getLayer(layerName)) {
