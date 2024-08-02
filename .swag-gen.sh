@@ -1,3 +1,4 @@
+go install github.com/swaggo/swag/cmd/swag@latest && \
 swag init --generalInfo cmd/horizon/main.go --output rest/docs && \
 rm rest/docs/docs.go && \
 rm rest/docs/swagger.yaml && \

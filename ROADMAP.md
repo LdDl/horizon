@@ -21,9 +21,9 @@ Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.mapti
 
 * More screenshots in README
 * ~~Migrate to Fiber v2~~
-* Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5
-* Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10
-* Snake case for JSON's
+* ~~Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5~~
+* ~~Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10~~
+* ~~Snake case for JSON's~~
 
 ### W.I.P
 
