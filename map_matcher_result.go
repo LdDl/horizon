@@ -45,8 +45,8 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	}
 
 	result.Observations[0] = ObservationResult{
-		gpsMeasurements[0],
-		*rpPath[0].GraphEdge,
+		Observation: gpsMeasurements[0],
+		MatchedEdge: *rpPath[0].GraphEdge,
 	}
 	result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
 	// Cut first graph edge [next vertex to projected point : last_vertex]
@@ -58,8 +58,8 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		currentState := rpPath[i]
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
 			result.Observations[i] = ObservationResult{
-				gpsMeasurements[i],
-				*previousState.GraphEdge,
+				Observation: gpsMeasurements[i],
+				MatchedEdge: *previousState.GraphEdge,
 			}
 			continue
 		}
@@ -76,8 +76,8 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			result.VerticesPath = append(result.VerticesPath, targetVertex)
 			if e == len(path)-1 {
 				result.Observations[i] = ObservationResult{
-					gpsMeasurements[i],
-					*edge,
+					Observation: gpsMeasurements[i],
+					MatchedEdge: *edge,
 				}
 			}
 		}
