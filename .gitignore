@@ -4,6 +4,7 @@
 *.geojson
 map.osm
 map.csv
+map2.csv
 map_shortcuts.csv
 map_vertices.csv
 cmd/horizon/front_end/

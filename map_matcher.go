@@ -162,7 +162,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		return MatcherResult{}, err
 	}
 
-	vpath := v.EvalPath()
+	vpath := v.EvalPathLogProbabilities()
 	if viterbiDebug {
 		fmt.Println("prob:", vpath.Probability)
 		fmt.Println("path:")
