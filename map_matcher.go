@@ -132,7 +132,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphEdge.Source, currentStates[n].GraphEdge.Source)
+						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphEdge.Source)
 						if ans < 0 {
 							ans = math.MaxFloat64
 						}
