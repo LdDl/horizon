@@ -1,6 +1,8 @@
 package horizon
 
 import (
+	"fmt"
+
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
 )
@@ -80,6 +82,9 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 			sourceVertex := path[j-1]
 			targetVertex := path[j]
 			edge := matcher.engine.edges[sourceVertex][targetVertex]
+			if len(*edge.Polyline) < 2 {
+				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
+			}
 			result.Path = append(result.Path, (*edge.Polyline)...)
 		}
 		// if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
