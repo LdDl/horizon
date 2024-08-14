@@ -261,9 +261,6 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 				fmt.Printf(`v.PutTransitionProbability(incStates[%d], incStates[%d], %.15f)%s`, statesIndx[step.TransitionLogProbabilities[i].from.ID()], statesIndx[step.TransitionLogProbabilities[i].to.ID()], step.TransitionLogProbabilities[i].prob, "\n")
 			}
 			v.PutTransitionProbability(step.TransitionLogProbabilities[i].from, step.TransitionLogProbabilities[i].to, step.TransitionLogProbabilities[i].prob)
-			// fmt.Println(emsSoft[step.TransitionLogProbabilities[i].from.ID()])
-			// fmt.Printf(`v.PutTransitionProbability(incStates[%d], incStates[%d], %.15f)%s`, statesIndx[step.TransitionLogProbabilities[i].from.ID()], statesIndx[step.TransitionLogProbabilities[i].to.ID()], emsFrom[step.TransitionLogProbabilities[i].from.ID()][i], "\n")
-			// v.PutTransitionProbability(step.TransitionLogProbabilities[i].from, step.TransitionLogProbabilities[i].to, emsFrom[step.TransitionLogProbabilities[i].from.ID()][i])
 		}
 	}
 
@@ -279,16 +276,8 @@ func (matcher *MapMatcher) computeEmissionLogProbabilities(layer *CandidateLayer
 	for i := range layer.States {
 		distance := layer.States[i].Projected.DistanceTo(layer.Observation.GeoPoint)
 		ems[i] = matcher.hmmParams.EmissionLogProbability(distance)
-		// https://stackoverflow.com/questions/17187507/why-use-softmax-as-opposed-to-standard-normalization
 		layer.AddEmissionProbability(layer.States[i], matcher.hmmParams.EmissionLogProbability(distance))
 	}
-
-	// emsSoft := Softmax(ems)
-	// for i := range layer.States {
-	// layer.AddEmissionProbability(layer.States[i], emsSoft[i])
-	// }
-	// fmt.Println(emsSoft)
-	// os.Exit(1)
 }
 
 // computeTransitionLogProbabilities Computes emission probablities between States of current Observation and States of next Observation
