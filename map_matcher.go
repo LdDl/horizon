@@ -191,7 +191,6 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 	statesIndx := make(map[int]int)
 	idx := 0
 	for i := range obsStates {
-		// Но ведь нет сортировка
 		for j := range obsStates[i].States {
 			v.AddState(obsStates[i].States[j])
 			statesIndx[obsStates[i].States[j].ID()] = idx
@@ -246,7 +245,6 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 			if viterbiDebug {
 				fmt.Printf(`v.PutEmissionProbability(incStates[%d], observations[%d], %.15f)%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], i, currentLayer.EmissionLogProbabilities[j].prob, "\n")
 			}
-			// fmt.Println("\tEmission", currentLayer.EmissionLogProbabilities[j].prob, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.Source, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.Target)
 			v.PutEmissionProbability(currentLayer.EmissionLogProbabilities[j].rp, gpsMeasurements[i], currentLayer.EmissionLogProbabilities[j].prob)
 		}
 		prevLayer = currentLayer
@@ -258,22 +256,6 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 
 	for s := range layers {
 		step := layers[s]
-		// @experimental
-		// step.TransitionLogProbabilities = softmaxTransitions(step.TransitionLogProbabilities)
-
-		// emsFrom := make(map[int][]float64)
-		// for i := range step.TransitionLogProbabilities {
-		// 	fromState := step.TransitionLogProbabilities[i].from
-		// 	if _, ok := emsFrom[fromState.ID()]; !ok {
-		// 		emsFrom[fromState.ID()] = []float64{}
-		// 	}
-		// 	emsFrom[fromState.ID()] = append(emsFrom[fromState.ID()], step.TransitionLogProbabilities[i].prob)
-		// }
-		// emsSoft := make(map[int][]float64)
-		// for fromStateID := range emsFrom {
-		// 	logProbs := emsFrom[fromStateID]
-		// 	emsSoft[fromStateID] = Softmax(logProbs)
-		// }
 		for i := range step.TransitionLogProbabilities {
 			if viterbiDebug {
 				fmt.Printf(`v.PutTransitionProbability(incStates[%d], incStates[%d], %.15f)%s`, statesIndx[step.TransitionLogProbabilities[i].from.ID()], statesIndx[step.TransitionLogProbabilities[i].to.ID()], step.TransitionLogProbabilities[i].prob, "\n")
@@ -286,34 +268,6 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 	}
 
 	return v, nil
-}
-
-// @experimental Play with normalization of emission probabilities.
-func softmaxEmissions(a []emission) []emission {
-	sum := 0.0
-	output := make([]emission, len(a))
-	for i := range a {
-		output[i] = emission{a[i].rp, math.Exp(a[i].prob)}
-		sum += output[i].prob
-	}
-	for i := range output {
-		output[i].prob = output[i].prob / sum
-	}
-	return output
-}
-
-// @experimental Play with normalization of transition probabilities.
-func softmaxTransitions(a []transition) []transition {
-	sum := 0.0
-	output := make([]transition, len(a))
-	for i := range a {
-		output[i] = transition{a[i].from, a[i].to, math.Exp(a[i].prob)}
-		sum += output[i].prob
-	}
-	for i := range output {
-		output[i].prob = output[i].prob / sum
-	}
-	return output
 }
 
 // computeEmissionLogProbabilities Computes emission probablities between Observation and corresponding States
