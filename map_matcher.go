@@ -221,7 +221,7 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 	// I guess this is ugly.
 	// @todo Refactor data prerapartion for Viterbi's algorithm
 	for i := range gpsMeasurements {
-		currentLayer := obsStates[gpsMeasurements[i].id]
+		currentLayer := obsStates[i]
 		matcher.computeEmissionLogProbabilities(currentLayer)
 		// @experimental
 		// currentLayer.EmissionLogProbabilities = softmaxEmissions(currentLayer.EmissionLogProbabilities)
