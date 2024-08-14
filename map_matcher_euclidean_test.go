@@ -31,12 +31,12 @@ func TestMapMatcherSRID_0(t *testing.T) {
 
 	states := RoadPositions{rp11, rp12, rp21, rp22, rp31, rp32, rp33, rp41, rp42}
 
-	obsState := make(map[int]*CandidateLayer)
+	obsState := make([]*CandidateLayer, len(gpsMeasurements))
 
-	obsState[gpsMeasurements[0].id] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
-	obsState[gpsMeasurements[1].id] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
-	obsState[gpsMeasurements[2].id] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
-	obsState[gpsMeasurements[3].id] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
+	obsState[0] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
+	obsState[1] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
+	obsState[2] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
+	obsState[3] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
 
 	routeLengths := make(lengths)
 
@@ -117,11 +117,11 @@ func BenchmarkMapMatcherSRID_0(b *testing.B) {
 	rp41 := NewRoadPositionFromLonLat(7, 4, &Edge{Source: 0, Target: 1}, 20, 70, 0)
 	rp42 := NewRoadPositionFromLonLat(8, 5, &Edge{Source: 0, Target: 1}, 60, 70, 0)
 
-	obsState := make(map[int]*CandidateLayer)
-	obsState[gpsMeasurements[0].id] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
-	obsState[gpsMeasurements[1].id] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
-	obsState[gpsMeasurements[2].id] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
-	obsState[gpsMeasurements[3].id] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
+	obsState := make([]*CandidateLayer, len(gpsMeasurements))
+	obsState[0] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
+	obsState[1] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
+	obsState[2] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
+	obsState[3] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
 
 	routeLengths := make(lengths)
 

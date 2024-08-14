@@ -10,9 +10,7 @@ import (
 	geojson "github.com/paulmach/go.geojson"
 )
 
-var (
-	timestampLayout = "2006-01-02T15:04:05"
-)
+var timestampLayout = "2006-01-02T15:04:05"
 
 // MapMatchRequest User's request for map matching
 // swagger:model
@@ -37,10 +35,26 @@ type GPSToMapMatch struct {
 // MapMatchResponse Server's response for map matching request
 // swagger:model
 type MapMatchResponse struct {
-	// GeoJSON Data
-	Path *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
+	// GeoJSON data
+	Path *geojson.FeatureCollection `json:"path" swaggerignore:"true"`
+	// Set of matched edges for each observation
+	Data []ObservationEdgeResponse `json:"data" `
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
+}
+
+// Relation between observation and matched edge
+type ObservationEdgeResponse struct {
+	// Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+	ObservationIdx int `json:"obs_idx" example:"0"`
+	// Matched edge identifier
+	EdgeID int64 `json:"edge_id" example:"3149"`
+	// Corresponding matched edge
+	MatchedEdge *geojson.Feature `json:"matched_edge"`
+	// Corresponding matched vertex
+	MatchedVertex *geojson.Feature `json:"matched_vertex"`
+	// Corresponding projection on the edge
+	ProjectedPoint *geojson.Feature `json:"projected_point"`
 }
 
 // MapMatch Do map match via POST-request
@@ -91,7 +105,18 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			log.Println(err)
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
+		ans.Data = make([]ObservationEdgeResponse, len(result.Observations))
 		ans.Path = geojson.NewFeatureCollection()
+		for i := range result.Observations {
+			observation := result.Observations[i]
+			ans.Data[i] = ObservationEdgeResponse{
+				ObservationIdx: observation.Observation.ID(),
+				EdgeID:         observation.MatchedEdge.ID,
+				MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(*observation.MatchedEdge.Polyline),
+				MatchedVertex:  horizon.S2PointToGeoJSONFeature(observation.MatchedVertex.Point),
+				ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observation.ProjectedPoint),
+			}
+		}
 		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
 		ans.Path.AddFeature(f)
 		return ctx.Status(200).JSON(ans)

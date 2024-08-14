@@ -91,8 +91,7 @@ func main() {
 	}
 }
 
-var (
-	webPage = `
+var webPage = `
 <!DOCTYPE html>
 <html>
     <head>
@@ -467,7 +466,13 @@ var (
                     "gps": gpsMeasurements
                 }
                 let sourceName = "source_matched_route";
+                let sourceNameVertices = "source_matched_vertices";
+                let sourceNameProj = "source_matched_proj";
+                let sourceNameEdges = "source_matched_edges";
                 let layerName = "layer_matched_route";
+                let layerNameVertices = "layer_matched_vertices";
+                let layerNameProj = "layer_matched_proj";
+                let layerNameEdges = "layer_matched_edges";
                 fetch("/api/v0.1.0/mapmatch", {
                     method: "post",
                     headers: {
@@ -480,11 +485,75 @@ var (
                 .then(function(jsoned) {
                     clearInterval(timerAnimatedRoute);
                     if (map.getSource(sourceName)) {
-                        map.getSource(sourceName).setData(jsoned.data);
+                        map.getSource(sourceName).setData(jsoned.path);
                     } else {
                         map.addSource(sourceName, {
                             "type": "geojson",
-                            "data": jsoned.data
+                            "data": jsoned.path
+                        });
+                    }
+                    if (map.getSource(sourceNameVertices)) {
+                        let matchedVerticesFC = jsoned.data.map(e => e.matched_vertex);
+                        map.getSource(sourceNameVertices).setData({
+                            "type": "FeatureCollection",
+                            "features": matchedVerticesFC
+                        });
+                    } else {
+                        let matchedVerticesFC = jsoned.data.map(e => e.matched_vertex);
+                        map.addSource(sourceNameVertices, {
+                            "type": "geojson",
+                            "data": {
+                                "type": "FeatureCollection",
+                                "features": matchedVerticesFC
+                            } 
+                        });
+                    }
+                    if (map.getSource(sourceNameProj)) {
+                        let projectedFC = jsoned.data.map(e => e.projected_point);
+                        map.getSource(sourceNameProj).setData({
+                            "type": "FeatureCollection",
+                            "features": projectedFC 
+                        });
+                    } else {
+                        let projectedFC = jsoned.data.map(e => e.projected_point);
+                        map.addSource(sourceNameProj, {
+                            "type": "geojson",
+                            "data": {
+                                "type": "FeatureCollection",
+                                "features": projectedFC 
+                            } 
+                        });
+                    }
+                    if (map.getSource(sourceNameEdges)) {
+                        let matchedEdgesFC = jsoned.data.map(e => e.matched_edge);
+                        map.getSource(sourceNameEdges).setData({
+                            "type": "FeatureCollection",
+                            "features": matchedEdgesFC 
+                        });
+                    } else {
+                        let matchedEdgesFC = jsoned.data.map(e => e.matched_edge);
+                        map.addSource(sourceNameEdges, {
+                            "type": "geojson",
+                            "data": {
+                                "type": "FeatureCollection",
+                                "features": matchedEdgesFC 
+                            } 
+                        });
+                    }
+                    if (!map.getLayer(layerNameEdges)) {
+                        map.addLayer({
+                            "id": layerNameEdges,
+                            "type": "line",
+                            "source": sourceNameEdges,
+                            "layout": {
+                                "line-join": "round",
+                                "line-cap": "butt"
+                            },
+                            "paint": {
+                                "line-color": "#ff00ff",
+                                "line-opacity": 0.8 ,
+                                "line-width": 3
+                            }
                         });
                     }
                     if (!map.getLayer(layerName)) {
@@ -501,6 +570,28 @@ var (
                                 "line-opacity": 0.8 ,
                                 "line-dasharray": [0, 4, 3],
                                 "line-width": 3
+                            }
+                        });
+                    }
+                    if (!map.getLayer(layerNameVertices)) {
+                        map.addLayer({
+                            "id": layerNameVertices,
+                            "type": "circle",
+                            "source": sourceNameVertices,
+                            "paint": {
+                                "circle-radius": 10,
+                                "circle-color": "#00ff00"
+                            }
+                        });
+                    }
+                    if (!map.getLayer(layerNameProj)) {
+                        map.addLayer({
+                            "id": layerNameProj,
+                            "type": "circle",
+                            "source": sourceNameProj,
+                            "paint": {
+                                "circle-radius": 6,
+                                "circle-color": "#ffff00"
                             }
                         });
                     }
@@ -523,10 +614,9 @@ var (
                         }
                     }, animationStep);
                 });
-            }
+    }
         </script>
         <div id="icons">Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
     </body>
 </html>
 	`
-)

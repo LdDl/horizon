@@ -1,8 +1,6 @@
 package horizon
 
-import (
-	"math"
-)
+import "math"
 
 // HmmProbabilities Parameters used in evaluating of Normal Distribution and Exponentional Distribution
 type HmmProbabilities struct {

@@ -23,6 +23,7 @@ type IsochronesRequest struct {
 // IsochronesResponse Server's response for isochrones request
 // swagger:model
 type IsochronesResponse struct {
+	// GeojSON data with properties on each feature: "cost" - travel cost to reach the vertex; "vertex_id" - corresponding vertex
 	Isochrones *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
@@ -65,9 +66,16 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Isochrones = geojson.NewFeatureCollection()
-		for _, isochrone := range result {
+		for i := range result {
+			isochrone := result[i]
+			if isochrone.Vertex == nil {
+				log.Println("Empty vertex")
+				ctx.Status(500).JSON("Empty vertex")
+			}
 			f := horizon.S2PointToGeoJSONFeature(isochrone.Vertex.Point)
+			f.ID = i
 			f.Properties["cost"] = isochrone.Cost
+			f.Properties["vertex_id"] = isochrone.Vertex.ID
 			ans.Isochrones.AddFeature(f)
 		}
 		return ctx.Status(200).JSON(ans)
