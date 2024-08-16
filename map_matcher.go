@@ -170,7 +170,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		if i == len(layers)-1 {
 			continue
 		}
-		// After we've built routes between Prev->Current layers we can change source routing vertix to edge's target vertex
+		// After we've built routes between Prev->Current layers we can change source routing vertex to edge's target vertex
 		// Let's demonstrate how it should work:
 		// In the very first pair of previous and current candidates layers we should search path from edge's target vertex from previous layer to edge's source vertex from current layer: PrevLayer.Edge.Target -> CurrentLayer.Edge.Source
 		// For all other pairs we change search vertex of current layer to edge's target vertex: PrevLayer.Edge.Target -> CurrentLayer.Edge.Target
