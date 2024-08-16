@@ -174,7 +174,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		// Let's demonstrate how it should work:
 		// In the very first pair of previous and current candidates layers we should search path from edge's target vertex from previous layer to edge's source vertex from current layer: PrevLayer.Edge.Target -> CurrentLayer.Edge.Source
 		// For all other pairs we change search vertex of current layer to edge's target vertex: PrevLayer.Edge.Target -> CurrentLayer.Edge.Target
-		// It gives us a better handling for cases when a single vertix is indicent to multiple edges (which could lead to mismatch between shortest path edges and actually matched edge for the given candidate)
+		// It gives us a better handling for cases when a single vertex is indecent to multiple edges (which could lead to mismatch between shortest path edges and actually matched edge for the given candidate)
 		for n := range currentStates {
 			currentStates[n].RoutingGraphVertex = currentStates[n].GraphEdge.Target
 		}
