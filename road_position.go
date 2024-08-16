@@ -20,29 +20,32 @@ type RoadPositions []*RoadPosition
 	next - index of the next vertex in s2.Polyline after the projected point
 */
 type RoadPosition struct {
-	Projected        *GeoPoint
-	GraphEdge        *Edge
-	beforeProjection float64
-	afterProjection  float64
-	GraphVertex      int64
-	RoadPositionID   int
-	next             int
+	Projected          *GeoPoint
+	GraphEdge          *Edge
+	beforeProjection   float64
+	afterProjection    float64
+	PickedGraphVertex  int64
+	RoutingGraphVertex int64
+	RoadPositionID     int
+	next               int
 }
 
 // NewRoadPositionFromLonLat Returns pointer to created State
 /*
 	stateID - unique identifier for state
-	graphVertex - indentifier of vertex which is closest to Observation
+	pickedGraphVertex - indentifier of vertex which is closest to Observation
+	routingGraphVertex - indentifier of vertex which will be used in routing (initially it should match pickedGraphVertex in most cases)
 	e - pointer to Edge
 	lon - longitude (X for SRID = 0)
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewRoadPositionFromLonLat(stateID int, graphVertex int64, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
+func NewRoadPositionFromLonLat(stateID int, pickedGraphVertex, routingGraphVertex int64, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
 	state := RoadPosition{
-		RoadPositionID: stateID,
-		GraphEdge:      e,
-		GraphVertex:    graphVertex,
+		RoadPositionID:     stateID,
+		GraphEdge:          e,
+		PickedGraphVertex:  pickedGraphVertex,
+		RoutingGraphVertex: routingGraphVertex,
 	}
 	if len(srid) != 0 {
 		switch srid[0] {
@@ -60,17 +63,19 @@ func NewRoadPositionFromLonLat(stateID int, graphVertex int64, e *Edge, lon, lat
 // NewRoadPositionFromS2LatLng Returns pointer to created State
 /*
 	stateID - unique identifier for state
-	graphVertex - indentifier of vertex which is closest to Observation
+	pickedGraphVertex - indentifier of vertex which is closest to Observation
+	routingGraphVertex - indentifier of vertex which will be used in routing (initially it should match pickedGraphVertex in most cases)
 	e - pointer to Edge
 	lon - longitude (X for SRID = 0)
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewRoadPositionFromS2LatLng(stateID int, graphVertex int64, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
+func NewRoadPositionFromS2LatLng(stateID int, pickedGraphVertex, routingGraphVertex int64, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
 	state := RoadPosition{
-		RoadPositionID: stateID,
-		GraphEdge:      e,
-		GraphVertex:    graphVertex,
+		RoadPositionID:     stateID,
+		GraphEdge:          e,
+		PickedGraphVertex:  pickedGraphVertex,
+		RoutingGraphVertex: routingGraphVertex,
 	}
 	if len(srid) != 0 {
 		switch srid[0] {

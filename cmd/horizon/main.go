@@ -552,7 +552,7 @@ var webPage = `
                             "paint": {
                                 "line-color": "#ff00ff",
                                 "line-opacity": 0.8 ,
-                                "line-width": 3
+                                "line-width": 8
                             }
                         });
                     }

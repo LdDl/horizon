@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	viterbiDebug = false
+	ViterbiDebug = false
 )
 
 // MapMatcher Engine for solving map matching problem
@@ -93,14 +93,18 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			edge := matcher.engine.edges[m][n]
 			proj, fraction, next := calcProjection(*edge.Polyline, s2point)
 			latLng := s2.LatLngFromPoint(proj)
-			// @todo determine which vertex is better to use. something like below, maybe?
-			choosenID := n
-			// if fraction > 0.5 {
-			// 	choosenID = n
-			// } else {
-			// 	choosenID = m
-			// }
-			roadPos := NewRoadPositionFromLonLat(stateID, choosenID, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
+			pickedGraphVertex := m
+			routingGraphVertex := m
+			if fraction > 0.5 {
+				pickedGraphVertex = n
+			} else {
+				pickedGraphVertex = m
+			}
+			// For first candidate layer we should start routing from edge's target vertex
+			if i == 0 {
+				routingGraphVertex = n
+			}
+			roadPos := NewRoadPositionFromLonLat(stateID, pickedGraphVertex, routingGraphVertex, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
 			roadPos.beforeProjection = edge.Weight * fraction
 			roadPos.afterProjection = edge.Weight * (1 - fraction)
 			roadPos.next = next
@@ -114,10 +118,8 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 	routeLengths := make(lengths)
 
-	// Commented code bellow can be used as alternative for ShortestPathOneToMany (slower, but saves order of writing to chRoutes and routeLengths)
-	// @todo NEED TO BLOCK OF CODE IN LINES 121-150, something interesting happens there. For now using slower version
+	// @todo: Consider to use ShortestPathOneToMany (need to deal with the order of writing data to to chRoutes and routeLengths)
 	for i := 1; i < len(layers); i++ {
-		// fmt.Println("Layer", i)
 		prevStates := layers[i-1]
 		currentStates := layers[i]
 		for m := range prevStates {
@@ -125,35 +127,56 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
 			}
 			for n := range currentStates {
-				if prevStates[m].GraphVertex == currentStates[n].GraphVertex {
+				if prevStates[m].RoutingGraphVertex == currentStates[n].RoutingGraphVertex {
 					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
 						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
 						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphEdge.Source)
+						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						if ans < 0 {
 							ans = math.MaxFloat64
+						} else {
+							// We should increase travel cost by last edge weight and put last edge's target vertex to the path
+							ans += currentStates[n].GraphEdge.Weight
+							path = append(path, currentStates[n].GraphEdge.Target)
 						}
 						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
 						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					}
 					continue
 				}
-				ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphVertex)
+				ans, path := matcher.engine.graph.ShortestPath(prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 				// ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphEdge.Source)
 				if ans < 0 {
 					ans = math.MaxFloat64
 				} else {
-					// Since we are doing Edge(target)-Edge(target) Dijkstra's call we should:
+					// We should increase travel cost by last edge weight and put last edge's target vertex to the path
+					ans += currentStates[n].GraphEdge.Weight
+					path = append(path, currentStates[n].GraphEdge.Target)
+					// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
 					// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
 					// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
-					// ans = (ans + prevStates[m].afterProjection) - currentStates[n].afterProjection // this could be negatative value
+					// @todo: this could lead to negative values. Need to investigate when it happens
+					// ans = (ans + prevStates[m].afterProjection) - currentStates[n].afterProjection
 				}
 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 			}
+			fmt.Println()
+		}
+		// We can skip chaning routing vertices in very last candidates layer
+		if i == len(layers)-1 {
+			continue
+		}
+		// After we've built routes between Prev->Current layers we can change source routing vertix to edge's target vertex
+		// Let's demonstrate how it should work:
+		// In the very first pair of previous and current candidates layers we should search path from edge's target vertex from previous layer to edge's source vertex from current layer: PrevLayer.Edge.Target -> CurrentLayer.Edge.Source
+		// For all other pairs we change search vertex of current layer to edge's target vertex: PrevLayer.Edge.Target -> CurrentLayer.Edge.Target
+		// In gives us a better handling for cases when a single vertix is indicent to multiple edges (which could lead to mismatch between shortest path edges and actually matched edge for the given candidate)
+		for n := range currentStates {
+			currentStates[n].RoutingGraphVertex = currentStates[n].GraphEdge.Target
 		}
 	}
 
@@ -163,7 +186,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	}
 
 	vpath := v.EvalPathLogProbabilities()
-	if viterbiDebug {
+	if ViterbiDebug {
 		fmt.Println("prob:", vpath.Probability)
 		fmt.Println("path:")
 		for i := range vpath.Path {
@@ -194,25 +217,25 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 		for j := range obsStates[i].States {
 			v.AddState(obsStates[i].States[j])
 			statesIndx[obsStates[i].States[j].ID()] = idx
-			if viterbiDebug {
+			if ViterbiDebug {
 				fmt.Printf(`CustomState{Name: "%d", id: %d}%s`, obsStates[i].States[j].GraphEdge.ID, obsStates[i].States[j].ID(), ",\n")
 			}
 			idx++
 		}
-		if viterbiDebug {
+		if ViterbiDebug {
 			fmt.Println()
 		}
 	}
-	if viterbiDebug {
+	if ViterbiDebug {
 		fmt.Println()
 	}
 	for i := range gpsMeasurements {
-		if viterbiDebug {
+		if ViterbiDebug {
 			fmt.Printf(`CustomObservation{Name: "%s", id: %d}%s`, obsStates[i].Observation.dateTime.Format("2006-01-02T15:04:05"), i, ",\n")
 		}
 		v.AddObservation(gpsMeasurements[i])
 	}
-	if viterbiDebug {
+	if ViterbiDebug {
 		fmt.Println()
 	}
 	layers := make([]*CandidateLayer, len(gpsMeasurements))
@@ -227,12 +250,12 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 		// currentLayer.EmissionLogProbabilities = softmaxEmissions(currentLayer.EmissionLogProbabilities)
 		if i == 0 {
 			for j := range currentLayer.EmissionLogProbabilities {
-				if viterbiDebug {
-					fmt.Printf(`v.PutStartProbability(incStates[%d], %.15f)%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], currentLayer.EmissionLogProbabilities[j].prob, "\n")
+				if ViterbiDebug {
+					fmt.Printf(`v.PutStartProbability(incStates[%d], %.15f) // Graph edge: %d. Graph vertex: %d%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], currentLayer.EmissionLogProbabilities[j].prob, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.ID, currentLayer.EmissionLogProbabilities[j].rp.RoutingGraphVertex, "\n")
 				}
 				v.PutStartProbability(currentLayer.EmissionLogProbabilities[j].rp, currentLayer.EmissionLogProbabilities[j].prob)
 			}
-			if viterbiDebug {
+			if ViterbiDebug {
 				fmt.Println()
 			}
 		} else {
@@ -242,14 +265,14 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 			}
 		}
 		for j := range currentLayer.EmissionLogProbabilities {
-			if viterbiDebug {
-				fmt.Printf(`v.PutEmissionProbability(incStates[%d], observations[%d], %.15f)%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], i, currentLayer.EmissionLogProbabilities[j].prob, "\n")
+			if ViterbiDebug {
+				fmt.Printf(`v.PutEmissionProbability(incStates[%d], observations[%d], %.15f) // Graph edge: %d. Graph vertex: %d%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], i, currentLayer.EmissionLogProbabilities[j].prob, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.ID, currentLayer.EmissionLogProbabilities[j].rp.RoutingGraphVertex, "\n")
 			}
 			v.PutEmissionProbability(currentLayer.EmissionLogProbabilities[j].rp, gpsMeasurements[i], currentLayer.EmissionLogProbabilities[j].prob)
 		}
 		prevLayer = currentLayer
 		layers[i] = currentLayer
-		if viterbiDebug {
+		if ViterbiDebug {
 			fmt.Println()
 		}
 	}
@@ -257,10 +280,16 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 	for s := range layers {
 		step := layers[s]
 		for i := range step.TransitionLogProbabilities {
-			if viterbiDebug {
-				fmt.Printf(`v.PutTransitionProbability(incStates[%d], incStates[%d], %.15f)%s`, statesIndx[step.TransitionLogProbabilities[i].from.ID()], statesIndx[step.TransitionLogProbabilities[i].to.ID()], step.TransitionLogProbabilities[i].prob, "\n")
+			if ViterbiDebug {
+				fmt.Printf(`v.PutTransitionProbability(incStates[%d], incStates[%d], %.15f) // From graph edge %d (vertex %d) to graph edge %d (vertex %d)%s`, statesIndx[step.TransitionLogProbabilities[i].from.ID()], statesIndx[step.TransitionLogProbabilities[i].to.ID()], step.TransitionLogProbabilities[i].prob,
+					step.TransitionLogProbabilities[i].from.GraphEdge.ID, step.TransitionLogProbabilities[i].from.RoutingGraphVertex,
+					step.TransitionLogProbabilities[i].to.GraphEdge.ID, step.TransitionLogProbabilities[i].to.RoutingGraphVertex,
+					"\n")
 			}
 			v.PutTransitionProbability(step.TransitionLogProbabilities[i].from, step.TransitionLogProbabilities[i].to, step.TransitionLogProbabilities[i].prob)
+		}
+		if ViterbiDebug {
+			fmt.Println()
 		}
 	}
 
