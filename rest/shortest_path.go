@@ -28,20 +28,10 @@ type GPSToShortestPath struct {
 // SPResponse Server's response for shortest path request
 // swagger:model
 type SPResponse struct {
-	// GeoJSON data
-	Path *geojson.FeatureCollection `json:"path" swaggerignore:"true"`
-	// Set of matched edges for each path's edge
-	Data []EdgesPathResponse `json:"data"`
+	// Set of matched edges for each path's edge as GeoJSON LineString objects. Each feature contains edge identifier (`id`), travel cost (`weight`) and geometry (`coordinates`)
+	Data []*geojson.Feature `json:"data" swaggertype:"object"`
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
-}
-
-// EdgesPathResponse is just information about the edge
-type EdgesPathResponse struct {
-	// Edge's identifier
-	EdgeID int64 `json:"edge_id" example:"3149"`
-	// Edge's cost travel
-	Cost float64 `json:"cost" example:"42.42"`
 }
 
 // FindSP Find shortest path via POST-request
@@ -87,18 +77,19 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 
-		ans.Data = make([]EdgesPathResponse, len(result.Observations))
 		for i := range result.Observations {
-			observation := result.Observations[i]
-			ans.Data[i] = EdgesPathResponse{
-				EdgeID: observation.MatchedEdge.ID,
-				Cost:   observation.MatchedEdge.Weight,
+			observationResult := result.Observations[i]
+			feature := horizon.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline)
+			feature.ID = observationResult.MatchedEdge.ID
+			feature.SetProperty("weight", observationResult.MatchedEdge.Weight)
+			ans.Data = append(ans.Data, feature)
+			for j := range observationResult.NextEdges {
+				edgeFeature := horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom)
+				edgeFeature.ID = observationResult.NextEdges[j].ID
+				edgeFeature.SetProperty("weight", observationResult.NextEdges[j].Weight)
+				ans.Data = append(ans.Data, edgeFeature)
 			}
 		}
-		ans.Path = geojson.NewFeatureCollection()
-		// @todo
-		// f := horizon.S2PolylineToGeoJSONFeature(result.Path)
-		// ans.Path.AddFeature(f)
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn

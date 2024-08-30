@@ -38,10 +38,7 @@ type EdgeResult struct {
 */
 type MatcherResult struct {
 	Observations []ObservationResult
-	// Path         s2.Polyline
-	// IntermediateEdge []Edge
-	// VerticesPath []int64
-	Probability float64
+	Probability  float64
 }
 
 // prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths

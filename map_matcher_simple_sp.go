@@ -76,6 +76,8 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		Observations: make([]ObservationResult, 2),
 		Probability:  100.0,
 	}
+
+	intermediateEdges := []EdgeResult{}
 	for i := 1; i < len(path); i++ {
 		s := path[i-1]
 		t := path[i]
@@ -83,18 +85,19 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		edges = append(edges, *edge)
 		edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
 		copy(edgeGeomCopy, *edge.Polyline)
-		result.Observations[i].NextEdges = append(result.Observations[i].NextEdges, EdgeResult{
+		intermediateEdges = append(intermediateEdges, EdgeResult{
 			Geom:   edgeGeomCopy,
 			Weight: edge.Weight,
 			ID:     edge.ID,
 		})
-		// @todo
-		// result.Path = append(result.Path, *edge.Polyline...)
 	}
 
 	result.Observations[0] = ObservationResult{
 		Observation: source,
 		MatchedEdge: edges[0],
+	}
+	if len(intermediateEdges) > 1 {
+		result.Observations[0].NextEdges = intermediateEdges[1 : len(edges)-1]
 	}
 
 	result.Observations[1] = ObservationResult{

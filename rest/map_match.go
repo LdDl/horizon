@@ -45,7 +45,7 @@ type MapMatchResponse struct {
 // IntermediateEdgeResponse Edge which is not matched to any observation but helps to form whole travel path
 // swagger:model
 type IntermediateEdgeResponse struct {
-	// Edge geometry as GeoJSON LineString
+	// Edge geometry as GeoJSON LineString feature
 	Geom *geojson.Feature `json:"geom" swaggertype:"object"`
 	// Travel cost
 	Weight float64 `json:"weight"`
@@ -61,13 +61,13 @@ type ObservationEdgeResponse struct {
 	EdgeID int64 `json:"edge_id" example:"3149"`
 	// Matched vertex identifier
 	VertexID int64 `json:"vertex_id" example:"44014"`
-	// Corresponding matched edge
+	// Corresponding matched edge as GeoJSON LineString feature
 	MatchedEdge *geojson.Feature `json:"matched_edge" swaggertype:"object"`
-	// Corresponding matched vertex
+	// Corresponding matched vertex as GeoJSON Point feature
 	MatchedVertex *geojson.Feature `json:"matched_vertex" swaggertype:"object"`
-	// Corresponding projection on the edge
+	// Corresponding projection on the edge as GeoJSON Point feature
 	ProjectedPoint *geojson.Feature `json:"projected_point" swaggertype:"object"`
-	// Set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
+	// Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
 	NextEdges []IntermediateEdgeResponse `json:"next_edges"`
 }
 
