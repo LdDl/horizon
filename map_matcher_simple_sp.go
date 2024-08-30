@@ -2,6 +2,8 @@ package horizon
 
 import (
 	"fmt"
+
+	"github.com/golang/geo/s2"
 )
 
 // FindShortestPath Find shortest path between two obserations (not necessary GPS points).
@@ -11,7 +13,6 @@ import (
 	statesRadiusMeters - maximum radius to search nearest polylines
 */
 func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, statesRadiusMeters float64) (MatcherResult, error) {
-
 	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, statesRadiusMeters, 1)
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
@@ -80,7 +81,15 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		t := path[i]
 		edge := matcher.engine.edges[s][t]
 		edges = append(edges, *edge)
-		result.Path = append(result.Path, *edge.Polyline...)
+		edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
+		copy(edgeGeomCopy, *edge.Polyline)
+		result.Observations[i].NextEdges = append(result.Observations[i].NextEdges, EdgeResult{
+			Geom:   edgeGeomCopy,
+			Weight: edge.Weight,
+			ID:     edge.ID,
+		})
+		// @todo
+		// result.Path = append(result.Path, *edge.Polyline...)
 	}
 
 	result.Observations[0] = ObservationResult{

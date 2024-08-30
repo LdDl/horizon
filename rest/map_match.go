@@ -36,11 +36,21 @@ type GPSToMapMatch struct {
 // swagger:model
 type MapMatchResponse struct {
 	// GeoJSON data
-	Path *geojson.FeatureCollection `json:"path" swaggerignore:"true"`
 	// Set of matched edges for each observation
 	Data []ObservationEdgeResponse `json:"data" `
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
+}
+
+// IntermediateEdgeResponse Edge which is not matched to any observation but helps to form whole travel path
+// swagger:model
+type IntermediateEdgeResponse struct {
+	// Edge geometry as GeoJSON LineString
+	Geom *geojson.Feature `json:"geom" swaggertype:"object"`
+	// Travel cost
+	Weight float64 `json:"weight"`
+	// Edge identifier
+	ID int64 `json:"id" example:"4278"`
 }
 
 // Relation between observation and matched edge
@@ -49,12 +59,16 @@ type ObservationEdgeResponse struct {
 	ObservationIdx int `json:"obs_idx" example:"0"`
 	// Matched edge identifier
 	EdgeID int64 `json:"edge_id" example:"3149"`
+	// Matched vertex identifier
+	VertexID int64 `json:"vertex_id" example:"44014"`
 	// Corresponding matched edge
-	MatchedEdge *geojson.Feature `json:"matched_edge"`
+	MatchedEdge *geojson.Feature `json:"matched_edge" swaggertype:"object"`
 	// Corresponding matched vertex
-	MatchedVertex *geojson.Feature `json:"matched_vertex"`
+	MatchedVertex *geojson.Feature `json:"matched_vertex" swaggertype:"object"`
 	// Corresponding projection on the edge
-	ProjectedPoint *geojson.Feature `json:"projected_point"`
+	ProjectedPoint *geojson.Feature `json:"projected_point" swaggertype:"object"`
+	// Set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
+	NextEdges []IntermediateEdgeResponse `json:"next_edges"`
 }
 
 // MapMatch Do map match via POST-request
@@ -106,19 +120,27 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 		ans.Data = make([]ObservationEdgeResponse, len(result.Observations))
-		ans.Path = geojson.NewFeatureCollection()
+		// ans.Path = geojson.NewFeatureCollection()
 		for i := range result.Observations {
-			observation := result.Observations[i]
+			observationResult := result.Observations[i]
 			ans.Data[i] = ObservationEdgeResponse{
-				ObservationIdx: observation.Observation.ID(),
-				EdgeID:         observation.MatchedEdge.ID,
-				MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(*observation.MatchedEdge.Polyline),
-				MatchedVertex:  horizon.S2PointToGeoJSONFeature(observation.MatchedVertex.Point),
-				ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observation.ProjectedPoint),
+				ObservationIdx: observationResult.Observation.ID(),
+				EdgeID:         observationResult.MatchedEdge.ID,
+				MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline),
+				MatchedVertex:  horizon.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
+				ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observationResult.ProjectedPoint),
+				NextEdges:      make([]IntermediateEdgeResponse, len(observationResult.NextEdges)),
+			}
+			for j := range observationResult.NextEdges {
+				ans.Data[i].NextEdges[j] = IntermediateEdgeResponse{
+					Geom:   horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom),
+					Weight: observationResult.NextEdges[j].Weight,
+					ID:     observationResult.NextEdges[j].ID,
+				}
 			}
 		}
-		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
-		ans.Path.AddFeature(f)
+		// f := horizon.S2PolylineToGeoJSONFeature(result.Path)
+		// ans.Path.AddFeature(f)
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn

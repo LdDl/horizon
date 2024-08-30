@@ -11,13 +11,22 @@ import (
 /*
 	Observation - gps measurement itself
 	MatchedEdge - edge in G(v,e) corresponding to current gps measurement
+	MatchedVertex - stands for closest vertex to the observation
+	ProjectedPoint - projection onto the matched edge
+	NextEdges - set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
 */
 type ObservationResult struct {
-	Observation     *GPSMeasurement
-	MatchedEdge     Edge
-	MatchedVertex   Vertex
-	ProjectedPoint  s2.Point
-	MatchedVertexID int64
+	Observation    *GPSMeasurement
+	MatchedEdge    Edge
+	MatchedVertex  Vertex
+	ProjectedPoint s2.Point
+	NextEdges      []EdgeResult
+}
+
+type EdgeResult struct {
+	Geom   s2.Polyline
+	Weight float64
+	ID     int64
 }
 
 // MatcherResult Representation of map matching algorithm's output
@@ -29,9 +38,10 @@ type ObservationResult struct {
 */
 type MatcherResult struct {
 	Observations []ObservationResult
-	Path         s2.Polyline
-	VerticesPath []int64
-	Probability  float64
+	// Path         s2.Polyline
+	// IntermediateEdge []Edge
+	// VerticesPath []int64
+	Probability float64
 }
 
 // prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
@@ -39,7 +49,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	result := MatcherResult{
 		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
-		VerticesPath: []int64{},
+		// VerticesPath: []int64{},
 	}
 
 	rpPath := make(RoadPositions, len(vpath.Path))
@@ -48,13 +58,13 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	}
 
 	result.Observations[0] = ObservationResult{
-		Observation:     gpsMeasurements[0],
-		MatchedEdge:     *rpPath[0].GraphEdge,
-		MatchedVertex:   *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
-		ProjectedPoint:  rpPath[0].Projected.Point,
-		MatchedVertexID: rpPath[0].PickedGraphVertex,
+		Observation:    gpsMeasurements[0],
+		MatchedEdge:    *rpPath[0].GraphEdge,
+		MatchedVertex:  *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
+		ProjectedPoint: rpPath[0].Projected.Point,
 	}
-	result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
+	// result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
+
 	// Cut first graph edge [next vertex to projected point : last_vertex]
 	// And then prepend projected point to given slice
 	// result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
@@ -64,11 +74,10 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
 		result.Observations[i] = ObservationResult{
-			Observation:     gpsMeasurements[i],
-			MatchedEdge:     *currentState.GraphEdge,
-			MatchedVertex:   *matcher.engine.vertices[currentState.PickedGraphVertex],
-			ProjectedPoint:  currentState.Projected.Point,
-			MatchedVertexID: currentState.PickedGraphVertex,
+			Observation:    gpsMeasurements[i],
+			MatchedEdge:    *currentState.GraphEdge,
+			MatchedVertex:  *matcher.engine.vertices[currentState.PickedGraphVertex],
+			ProjectedPoint: currentState.Projected.Point,
 		}
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
 			continue
@@ -89,7 +98,14 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 				continue
 			}
 			lastEdgeID = edge.ID
-			result.Path = append(result.Path, (*edge.Polyline)...)
+			edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
+			copy(edgeGeomCopy, *edge.Polyline)
+			result.Observations[i-1].NextEdges = append(result.Observations[i-1].NextEdges, EdgeResult{
+				Geom:   edgeGeomCopy,
+				Weight: edge.Weight,
+				ID:     edge.ID,
+			})
+			// result.Path = append(result.Path, (*edge.Polyline)...)
 		}
 	}
 	if rpPath[len(rpPath)-1].GraphEdge.ID == lastEdgeID {

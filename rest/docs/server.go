@@ -9,6 +9,7 @@ import (
 )
 
 // Embed a single file
+//
 //go:embed index.html
 var f embed.FS
 
@@ -19,6 +20,7 @@ func PrepareStaticPage() func(*fiber.Ctx) error {
 }
 
 // Embed a directory
+//
 //go:embed assets/*
 var embedDirStatic embed.FS
 

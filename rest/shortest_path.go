@@ -96,8 +96,9 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			}
 		}
 		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
-		ans.Path.AddFeature(f)
+		// @todo
+		// f := horizon.S2PolylineToGeoJSONFeature(result.Path)
+		// ans.Path.AddFeature(f)
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn

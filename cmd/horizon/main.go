@@ -78,7 +78,7 @@ func main() {
 	apiVersionGroup.Post("/shortest", rest.FindSP(matcher))
 	apiVersionGroup.Post("/isochrones", rest.FindIsochrones(matcher))
 
-	docsStaticGroup := apiVersionGroup.Group("/docs-static")
+	docsStaticGroup := apiVersionGroup.Group("/docs")
 	docsStaticGroup.Use("/", docs.PrepareStaticAssets())
 
 	docsGroup := apiVersionGroup.Group("/docs")
@@ -483,63 +483,63 @@ var webPage = `
                 })
                 .then(response => response.json())
                 .then(function(jsoned) {
-                    clearInterval(timerAnimatedRoute);
+                    clearInterval(timerAnimatedRoute);                
+                    const data = jsoned.data;
+
+                    // Prepare GeoJSON features
+                    const unprocessedEdges = data.flatMap(obs => obs.next_edges);
+                    const path = {
+                        type: 'FeatureCollection',
+                        features: unprocessedEdges.map(edge => { return {...edge.geom, id: edge.id}})
+                    };
+                    const matchedEdges = {
+                        type: 'FeatureCollection',
+                        features: data.map(obs => { return {...obs.matched_edge, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
+                    };
+                    const matchedVertices = {
+                        type: 'FeatureCollection',  
+                        features: data.map(obs => { return {...obs.matched_vertex, id: obs.vertex_id, properties: {obs_idx: obs.obs_idx}} })
+                    };
+                    const projectedPoints = {
+                        type: 'FeatureCollection',
+                        features: data.map(obs => { return {...obs.projected_point, properties: {obs_idx: obs.obs_idx}} })
+                    }
+                
+                    // Add all sources
                     if (map.getSource(sourceName)) {
-                        map.getSource(sourceName).setData(jsoned.path);
+                        map.getSource(sourceName).setData(path);
                     } else {
                         map.addSource(sourceName, {
                             "type": "geojson",
-                            "data": jsoned.path
+                            "data": path 
                         });
                     }
                     if (map.getSource(sourceNameVertices)) {
-                        let matchedVerticesFC = jsoned.data.map(e => e.matched_vertex);
-                        map.getSource(sourceNameVertices).setData({
-                            "type": "FeatureCollection",
-                            "features": matchedVerticesFC
-                        });
+                        map.getSource(sourceNameVertices).setData(matchedVertices);
                     } else {
-                        let matchedVerticesFC = jsoned.data.map(e => e.matched_vertex);
                         map.addSource(sourceNameVertices, {
                             "type": "geojson",
-                            "data": {
-                                "type": "FeatureCollection",
-                                "features": matchedVerticesFC
-                            } 
+                            "data": matchedVertices
                         });
                     }
                     if (map.getSource(sourceNameProj)) {
-                        let projectedFC = jsoned.data.map(e => e.projected_point);
-                        map.getSource(sourceNameProj).setData({
-                            "type": "FeatureCollection",
-                            "features": projectedFC 
-                        });
+                        map.getSource(sourceNameProj).setData(projectedPoints);
                     } else {
-                        let projectedFC = jsoned.data.map(e => e.projected_point);
                         map.addSource(sourceNameProj, {
                             "type": "geojson",
-                            "data": {
-                                "type": "FeatureCollection",
-                                "features": projectedFC 
-                            } 
+                            "data": projectedPoints
                         });
                     }
                     if (map.getSource(sourceNameEdges)) {
-                        let matchedEdgesFC = jsoned.data.map(e => e.matched_edge);
-                        map.getSource(sourceNameEdges).setData({
-                            "type": "FeatureCollection",
-                            "features": matchedEdgesFC 
-                        });
+                        map.getSource(sourceNameEdges).setData(matchedEdges);
                     } else {
-                        let matchedEdgesFC = jsoned.data.map(e => e.matched_edge);
                         map.addSource(sourceNameEdges, {
                             "type": "geojson",
-                            "data": {
-                                "type": "FeatureCollection",
-                                "features": matchedEdgesFC 
-                            } 
+                            "data": matchedEdges
                         });
                     }
+
+                    // Add all layers
                     if (!map.getLayer(layerNameEdges)) {
                         map.addLayer({
                             "id": layerNameEdges,

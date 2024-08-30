@@ -163,6 +163,21 @@
                 }
             }
         },
+        "rest.EdgesPathResponse": {
+            "type": "object",
+            "properties": {
+                "cost": {
+                    "description": "Edge's cost travel",
+                    "type": "number",
+                    "example": 42.42
+                },
+                "edge_id": {
+                    "description": "Edge's identifier",
+                    "type": "integer",
+                    "example": 3149
+                }
+            }
+        },
         "rest.GPSToMapMatch": {
             "type": "object",
             "properties": {
@@ -197,6 +212,24 @@
                         37.601249363208915,
                         55.745374309126895
                     ]
+                }
+            }
+        },
+        "rest.IntermediateEdgeResponse": {
+            "type": "object",
+            "properties": {
+                "geom": {
+                    "description": "Edge geometry as GeoJSON LineString",
+                    "type": "object"
+                },
+                "id": {
+                    "description": "Edge identifier",
+                    "type": "integer",
+                    "example": 4278
+                },
+                "weight": {
+                    "description": "Travel cost",
+                    "type": "number"
                 }
             }
         },
@@ -266,6 +299,13 @@
         "rest.MapMatchResponse": {
             "type": "object",
             "properties": {
+                "data": {
+                    "description": "GeoJSON data\nSet of matched edges for each observation",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.ObservationEdgeResponse"
+                    }
+                },
                 "warnings": {
                     "description": "Warnings",
                     "type": "array",
@@ -275,6 +315,45 @@
                     "example": [
                         "Warning"
                     ]
+                }
+            }
+        },
+        "rest.ObservationEdgeResponse": {
+            "type": "object",
+            "properties": {
+                "edge_id": {
+                    "description": "Matched edge identifier",
+                    "type": "integer",
+                    "example": 3149
+                },
+                "matched_edge": {
+                    "description": "Corresponding matched edge",
+                    "type": "object"
+                },
+                "matched_vertex": {
+                    "description": "Corresponding matched vertex",
+                    "type": "object"
+                },
+                "next_edges": {
+                    "description": "Set of leading edges up to next observation. Could be an empty array if observations are very close to each other",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.IntermediateEdgeResponse"
+                    }
+                },
+                "obs_idx": {
+                    "description": "Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed",
+                    "type": "integer",
+                    "example": 0
+                },
+                "projected_point": {
+                    "description": "Corresponding projection on the edge",
+                    "type": "object"
+                },
+                "vertex_id": {
+                    "description": "Matched vertex identifier",
+                    "type": "integer",
+                    "example": 44014
                 }
             }
         },
@@ -298,6 +377,13 @@
         "rest.SPResponse": {
             "type": "object",
             "properties": {
+                "data": {
+                    "description": "Set of matched edges for each path's edge",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.EdgesPathResponse"
+                    }
+                },
                 "warnings": {
                     "description": "Warnings",
                     "type": "array",

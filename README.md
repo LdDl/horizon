@@ -124,7 +124,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
-    If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
+    If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs/index.html#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
     
     <img src="images/swagger1.png" width="720">
 
