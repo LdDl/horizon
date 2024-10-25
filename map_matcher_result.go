@@ -13,14 +13,16 @@ import (
 	MatchedEdge - edge in G(v,e) corresponding to current gps measurement
 	MatchedVertex - stands for closest vertex to the observation
 	ProjectedPoint - projection onto the matched edge
+	ProjectedPointIdx - index of the point in polyline which follows projection point
 	NextEdges - set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
 */
 type ObservationResult struct {
-	Observation    *GPSMeasurement
-	MatchedEdge    Edge
-	MatchedVertex  Vertex
-	ProjectedPoint s2.Point
-	NextEdges      []EdgeResult
+	Observation        *GPSMeasurement
+	MatchedEdge        Edge
+	MatchedVertex      Vertex
+	ProjectedPoint     s2.Point
+	ProjectionPointIdx int
+	NextEdges          []EdgeResult
 }
 
 type EdgeResult struct {
@@ -55,10 +57,11 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	}
 
 	result.Observations[0] = ObservationResult{
-		Observation:    gpsMeasurements[0],
-		MatchedEdge:    *rpPath[0].GraphEdge,
-		MatchedVertex:  *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
-		ProjectedPoint: rpPath[0].Projected.Point,
+		Observation:        gpsMeasurements[0],
+		MatchedEdge:        *rpPath[0].GraphEdge,
+		MatchedVertex:      *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
+		ProjectedPoint:     rpPath[0].Projected.Point,
+		ProjectionPointIdx: rpPath[0].next,
 	}
 	// result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
 
@@ -71,10 +74,11 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
 		result.Observations[i] = ObservationResult{
-			Observation:    gpsMeasurements[i],
-			MatchedEdge:    *currentState.GraphEdge,
-			MatchedVertex:  *matcher.engine.vertices[currentState.PickedGraphVertex],
-			ProjectedPoint: currentState.Projected.Point,
+			Observation:        gpsMeasurements[i],
+			MatchedEdge:        *currentState.GraphEdge,
+			MatchedVertex:      *matcher.engine.vertices[currentState.PickedGraphVertex],
+			ProjectedPoint:     currentState.Projected.Point,
+			ProjectionPointIdx: currentState.next,
 		}
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
 			continue

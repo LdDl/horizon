@@ -164,7 +164,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 			}
-			fmt.Println()
 		}
 		// We can skip chaning routing vertices in very last candidates layer
 		if i == len(layers)-1 {
