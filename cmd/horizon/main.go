@@ -469,10 +469,12 @@ var webPage = `
                 let sourceNameVertices = "source_matched_vertices";
                 let sourceNameProj = "source_matched_proj";
                 let sourceNameEdges = "source_matched_edges";
+                let sourceNameEdgesCuts = "source_matched_edges_cuts";
                 let layerName = "layer_matched_route";
                 let layerNameVertices = "layer_matched_vertices";
                 let layerNameProj = "layer_matched_proj";
                 let layerNameEdges = "layer_matched_edges";
+                let layerNameEdgesCuts = "layer_matched_edges_cuts";
                 fetch("/api/v0.1.0/mapmatch", {
                     method: "post",
                     headers: {
@@ -495,6 +497,10 @@ var webPage = `
                     const matchedEdges = {
                         type: 'FeatureCollection',
                         features: data.map(obs => { return {...obs.matched_edge, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
+                    };
+                    const matchedEdgesCuts = {
+                        type: 'FeatureCollection',
+                        features: data.map(obs => { return {...obs.matched_edge_cut, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const matchedVertices = {
                         type: 'FeatureCollection',  
@@ -538,6 +544,14 @@ var webPage = `
                             "data": matchedEdges
                         });
                     }
+                    if (map.getSource(sourceNameEdgesCuts)) {
+                        map.getSource(sourceNameEdgesCuts).setData(matchedEdgesCuts);
+                    } else {
+                        map.addSource(sourceNameEdgesCuts, {
+                            "type": "geojson",
+                            "data": matchedEdgesCuts
+                        });
+                    }
 
                     // Add all layers
                     if (!map.getLayer(layerNameEdges)) {
@@ -551,8 +565,24 @@ var webPage = `
                             },
                             "paint": {
                                 "line-color": "#ff00ff",
-                                "line-opacity": 0.8 ,
+                                "line-opacity": 0.8,
                                 "line-width": 8
+                            }
+                        });
+                    }
+                    if (!map.getLayer(layerNameEdgesCuts)) {
+                        map.addLayer({
+                            "id": layerNameEdgesCuts,
+                            "type": "line",
+                            "source": sourceNameEdgesCuts,
+                            "layout": {
+                                "line-join": "round",
+                                "line-cap": "butt"
+                            },
+                            "paint": {
+                                "line-color": "#ff0000",
+                                "line-opacity": 0.5,
+                                "line-width": 4
                             }
                         });
                     }
@@ -567,7 +597,7 @@ var webPage = `
                             },
                             "paint": {
                                 "line-color": "#0000ff",
-                                "line-opacity": 0.8 ,
+                                "line-opacity": 0.8,
                                 "line-dasharray": [0, 4, 3],
                                 "line-width": 3
                             }
