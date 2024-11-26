@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	ViterbiDebug = false
+	ViterbiDebug           = true
+	ROUTE_LENGTH_THRESHOLD = 9_999_999_999.0
 )
 
 // MapMatcher Engine for solving map matching problem
@@ -320,12 +321,17 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 		from := prevLayer.States[i]
 		for j := range currentLayer.States {
 			to := currentLayer.States[j]
+			if routeLengths[from.RoadPositionID][to.RoadPositionID] < 0 {
+				continue
+			}
+			if routeLengths[from.RoadPositionID][to.RoadPositionID] > ROUTE_LENGTH_THRESHOLD {
+				// Restrict max route length assuming that too large length is just bad
+				currentLayer.AddTransitionProbability(from, to, -ROUTE_LENGTH_THRESHOLD)
+				continue
+			}
 			transitionLogProbability, err := matcher.hmmParams.TransitionLogProbability(routeLengths[from.RoadPositionID][to.RoadPositionID], straightDistance, timeDiff)
 			if err != nil {
 				return err
-			}
-			if routeLengths[from.RoadPositionID][to.RoadPositionID] < 0 {
-				continue
 			}
 			currentLayer.AddTransitionProbability(from, to, transitionLogProbability)
 		}
