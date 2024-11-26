@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ViterbiDebug           = true
+	ViterbiDebug           = false
 	ROUTE_LENGTH_THRESHOLD = 9_999_999_999.0
 )
 
