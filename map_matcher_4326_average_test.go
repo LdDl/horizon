@@ -39,7 +39,7 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 				{Observation: gpsMeasurements[8]},
 				{Observation: gpsMeasurements[9]},
 			},
-			Probability: -79.815672,
+			Probability: -86.578520,
 		}
 	)
 

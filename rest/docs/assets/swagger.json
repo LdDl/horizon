@@ -200,6 +200,24 @@
                 }
             }
         },
+        "rest.IntermediateEdgeResponse": {
+            "type": "object",
+            "properties": {
+                "geom": {
+                    "description": "Edge geometry as GeoJSON LineString feature",
+                    "type": "object"
+                },
+                "id": {
+                    "description": "Edge identifier",
+                    "type": "integer",
+                    "example": 4278
+                },
+                "weight": {
+                    "description": "Travel cost",
+                    "type": "number"
+                }
+            }
+        },
         "rest.IsochronesRequest": {
             "type": "object",
             "properties": {
@@ -266,6 +284,13 @@
         "rest.MapMatchResponse": {
             "type": "object",
             "properties": {
+                "data": {
+                    "description": "GeoJSON data\nSet of matched edges for each observation",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.ObservationEdgeResponse"
+                    }
+                },
                 "warnings": {
                     "description": "Warnings",
                     "type": "array",
@@ -275,6 +300,45 @@
                     "example": [
                         "Warning"
                     ]
+                }
+            }
+        },
+        "rest.ObservationEdgeResponse": {
+            "type": "object",
+            "properties": {
+                "edge_id": {
+                    "description": "Matched edge identifier",
+                    "type": "integer",
+                    "example": 3149
+                },
+                "matched_edge": {
+                    "description": "Corresponding matched edge as GeoJSON LineString feature",
+                    "type": "object"
+                },
+                "matched_vertex": {
+                    "description": "Corresponding matched vertex as GeoJSON Point feature",
+                    "type": "object"
+                },
+                "next_edges": {
+                    "description": "Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.IntermediateEdgeResponse"
+                    }
+                },
+                "obs_idx": {
+                    "description": "Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed",
+                    "type": "integer",
+                    "example": 0
+                },
+                "projected_point": {
+                    "description": "Corresponding projection on the edge as GeoJSON Point feature",
+                    "type": "object"
+                },
+                "vertex_id": {
+                    "description": "Matched vertex identifier",
+                    "type": "integer",
+                    "example": 44014
                 }
             }
         },
@@ -298,6 +362,10 @@
         "rest.SPResponse": {
             "type": "object",
             "properties": {
+                "data": {
+                    "description": "Set of matched edges for each path's edge as GeoJSON LineString objects. Each feature contains edge identifier (`id`), travel cost (`weight`) and geometry (`coordinates`)",
+                    "type": "object"
+                },
                 "warnings": {
                     "description": "Warnings",
                     "type": "array",

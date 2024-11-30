@@ -22,7 +22,7 @@ func LogNormalDistribution(sigma, x float64) float64 {
 
 // ExponentialDistribution 1 / (β*exp(-x/β)), beta = 1/λ
 func ExponentialDistribution(beta, x float64) float64 {
-	return 1.0 / beta * math.Exp(-x/beta)
+	return (1.0 / beta) * math.Exp(-x/beta)
 }
 
 // LogExponentialDistribution ln(1/β) - (x/β), beta = 1/λ

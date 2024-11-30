@@ -11,10 +11,24 @@ import (
 /*
 	Observation - gps measurement itself
 	MatchedEdge - edge in G(v,e) corresponding to current gps measurement
+	MatchedVertex - stands for closest vertex to the observation
+	ProjectedPoint - projection onto the matched edge
+	ProjectedPointIdx - index of the point in polyline which follows projection point
+	NextEdges - set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
 */
 type ObservationResult struct {
-	Observation *GPSMeasurement
-	MatchedEdge Edge
+	Observation        *GPSMeasurement
+	MatchedEdge        Edge
+	MatchedVertex      Vertex
+	ProjectedPoint     s2.Point
+	ProjectionPointIdx int
+	NextEdges          []EdgeResult
+}
+
+type EdgeResult struct {
+	Geom   s2.Polyline
+	Weight float64
+	ID     int64
 }
 
 // MatcherResult Representation of map matching algorithm's output
@@ -26,8 +40,6 @@ type ObservationResult struct {
 */
 type MatcherResult struct {
 	Observations []ObservationResult
-	Path         s2.Polyline
-	VerticesPath []int64
 	Probability  float64
 }
 
@@ -36,7 +48,7 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	result := MatcherResult{
 		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
-		VerticesPath: []int64{},
+		// VerticesPath: []int64{},
 	}
 
 	rpPath := make(RoadPositions, len(vpath.Path))
@@ -45,48 +57,62 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 	}
 
 	result.Observations[0] = ObservationResult{
-		gpsMeasurements[0],
-		*rpPath[0].GraphEdge,
+		Observation:        gpsMeasurements[0],
+		MatchedEdge:        *rpPath[0].GraphEdge,
+		MatchedVertex:      *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
+		ProjectedPoint:     rpPath[0].Projected.Point,
+		ProjectionPointIdx: rpPath[0].next,
 	}
-	result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
+	// result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
+
 	// Cut first graph edge [next vertex to projected point : last_vertex]
 	// And then prepend projected point to given slice
-	result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
+	// result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
 	// Iterate other states
+	lastEdgeID := int64(-1)
 	for i := 1; i < len(rpPath); i++ {
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
+		result.Observations[i] = ObservationResult{
+			Observation:        gpsMeasurements[i],
+			MatchedEdge:        *currentState.GraphEdge,
+			MatchedVertex:      *matcher.engine.vertices[currentState.PickedGraphVertex],
+			ProjectedPoint:     currentState.Projected.Point,
+			ProjectionPointIdx: currentState.next,
+		}
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
-			result.Observations[i] = ObservationResult{
-				gpsMeasurements[i],
-				*previousState.GraphEdge,
-			}
 			continue
 		}
 		path := chRoutes[previousState.RoadPositionID][currentState.RoadPositionID]
-		for e := 1; e < len(path); e++ {
-			sourceVertex := path[e-1]
-			targetVertex := path[e]
+		if len(path) < 2 {
+			continue
+		}
+		for j := 1; j < len(path); j++ {
+			sourceVertex := path[j-1]
+			targetVertex := path[j]
 			edge := matcher.engine.edges[sourceVertex][targetVertex]
 			if len(*edge.Polyline) < 2 {
 				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
 			}
-			result.Path = append(result.Path, (*edge.Polyline)[1:]...)
-			// result.Path = append(result.Path, *edge.Polyline...) // Cause duplicates in geometry
-			result.VerticesPath = append(result.VerticesPath, targetVertex)
-			if e == len(path)-1 {
-				result.Observations[i] = ObservationResult{
-					gpsMeasurements[i],
-					*edge,
-				}
+			if i == len(rpPath)-1 && j == len(path)-1 {
+				// fmt.Println("\t must skip#2")
+				continue
 			}
+			lastEdgeID = edge.ID
+			edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
+			copy(edgeGeomCopy, *edge.Polyline)
+			result.Observations[i-1].NextEdges = append(result.Observations[i-1].NextEdges, EdgeResult{
+				Geom:   edgeGeomCopy,
+				Weight: edge.Weight,
+				ID:     edge.ID,
+			})
+			// result.Path = append(result.Path, (*edge.Polyline)...)
 		}
 	}
-
-	// Cut whole geometry [first vertex : previous vertex to projected point]
-	// And then append projected point to given slice
-	// @todo: I believe there is a better way to handle this case since projected point has been calculated in Run() function
-	_, _, next := calcProjection(result.Path, rpPath[len(rpPath)-1].Projected.Point)
-	result.Path = append(result.Path[:(next-1)], rpPath[len(rpPath)-1].Projected.Point)
+	if rpPath[len(rpPath)-1].GraphEdge.ID == lastEdgeID {
+		// @todo:
+		// Last edge is the same as matched
+		// return result
+	}
 	return result
 }

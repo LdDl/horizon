@@ -28,7 +28,8 @@ type GPSToShortestPath struct {
 // SPResponse Server's response for shortest path request
 // swagger:model
 type SPResponse struct {
-	Path *geojson.FeatureCollection `json:"data" swaggerignore:"true"`
+	// Set of matched edges for each path's edge as GeoJSON LineString objects. Each feature contains edge identifier (`id`), travel cost (`weight`) and geometry (`coordinates`)
+	Data []*geojson.Feature `json:"data" swaggertype:"object"`
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
 }
@@ -75,9 +76,20 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		if err != nil {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
-		ans.Path = geojson.NewFeatureCollection()
-		f := horizon.S2PolylineToGeoJSONFeature(result.Path)
-		ans.Path.AddFeature(f)
+
+		for i := range result.Observations {
+			observationResult := result.Observations[i]
+			feature := horizon.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline)
+			feature.ID = observationResult.MatchedEdge.ID
+			feature.SetProperty("weight", observationResult.MatchedEdge.Weight)
+			ans.Data = append(ans.Data, feature)
+			for j := range observationResult.NextEdges {
+				edgeFeature := horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom)
+				edgeFeature.ID = observationResult.NextEdges[j].ID
+				edgeFeature.SetProperty("weight", observationResult.NextEdges[j].Weight)
+				ans.Data = append(ans.Data, edgeFeature)
+			}
+		}
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn

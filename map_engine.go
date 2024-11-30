@@ -91,7 +91,6 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		return errors.Wrap(err, fmt.Sprintf("Can't read header of edges file '%s'", edgesFname))
 	}
 	// Read file line by line
-	edgeID := int64(0)
 	for {
 		record, err := readerEdges.Read()
 		if err == io.EOF {
@@ -108,6 +107,10 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		weight, err := strconv.ParseFloat(record[2], 64)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse weight of an edge in edges file. The weight is '%s'", record[2]))
+		}
+		edgeID, err := strconv.ParseInt(record[5], 10, 64)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("Can't parse edge identifier in edges file. The edge is '%s'", record[5]))
 		}
 		err = engine.graph.CreateVertex(sourceVertex)
 		if err != nil {
@@ -148,7 +151,6 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't add s2-polyline to engine: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
-		edgeID++
 	}
 
 	/* Now prepare order position and importance of each vertex */

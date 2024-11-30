@@ -4,8 +4,10 @@
 *.geojson
 map.osm
 map.csv
+map2.csv
 map_shortcuts.csv
 map_vertices.csv
+map_vertices2.csv
 cmd/horizon/front_end/
 .vs
 .vs_code
@@ -18,7 +20,6 @@ cmd/horizon/horizon
 cmd/horizon/horizon.exe
 cmd/horizon/*.zip
 cmd/horizon/*.tar.gz
-cmd/horizon/index.html
 .swag-gen.sh
 docs/*
 rest/docs/docs.go

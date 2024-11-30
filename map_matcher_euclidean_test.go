@@ -16,27 +16,27 @@ func TestMapMatcherSRID_0(t *testing.T) {
 		NewGPSMeasurementFromID(4, 10, 70, 0),
 	}
 
-	rp11 := NewRoadPositionFromLonLat(0, 0, &Edge{Source: 0, Target: 1}, 20, 10, 0)
-	rp12 := NewRoadPositionFromLonLat(1, 3, &Edge{Source: 0, Target: 1}, 60, 10, 0)
+	rp11 := NewRoadPositionFromLonLat(0, 0, 0, &Edge{Source: 0, Target: 1}, 20, 10, 0)
+	rp12 := NewRoadPositionFromLonLat(1, 3, 3, &Edge{Source: 0, Target: 1}, 60, 10, 0)
 
-	rp21 := NewRoadPositionFromLonLat(2, 0, &Edge{Source: 0, Target: 1}, 20, 20, 0)
-	rp22 := NewRoadPositionFromLonLat(3, 3, &Edge{Source: 0, Target: 1}, 60, 20, 0)
+	rp21 := NewRoadPositionFromLonLat(2, 0, 0, &Edge{Source: 0, Target: 1}, 20, 20, 0)
+	rp22 := NewRoadPositionFromLonLat(3, 3, 3, &Edge{Source: 0, Target: 1}, 60, 20, 0)
 
-	rp31 := NewRoadPositionFromLonLat(4, 1, &Edge{Source: 0, Target: 1}, 20, 40, 0)
-	rp32 := NewRoadPositionFromLonLat(5, 1, &Edge{Source: 0, Target: 1}, 30, 50, 0)
-	rp33 := NewRoadPositionFromLonLat(6, 2, &Edge{Source: 0, Target: 1}, 60, 40, 0)
+	rp31 := NewRoadPositionFromLonLat(4, 1, 1, &Edge{Source: 0, Target: 1}, 20, 40, 0)
+	rp32 := NewRoadPositionFromLonLat(5, 1, 1, &Edge{Source: 0, Target: 1}, 30, 50, 0)
+	rp33 := NewRoadPositionFromLonLat(6, 2, 2, &Edge{Source: 0, Target: 1}, 60, 40, 0)
 
-	rp41 := NewRoadPositionFromLonLat(7, 4, &Edge{Source: 0, Target: 1}, 20, 70, 0)
-	rp42 := NewRoadPositionFromLonLat(8, 5, &Edge{Source: 0, Target: 1}, 60, 70, 0)
+	rp41 := NewRoadPositionFromLonLat(7, 4, 4, &Edge{Source: 0, Target: 1}, 20, 70, 0)
+	rp42 := NewRoadPositionFromLonLat(8, 5, 5, &Edge{Source: 0, Target: 1}, 60, 70, 0)
 
 	states := RoadPositions{rp11, rp12, rp21, rp22, rp31, rp32, rp33, rp41, rp42}
 
-	obsState := make(map[int]*CandidateLayer)
+	obsState := make([]*CandidateLayer, len(gpsMeasurements))
 
-	obsState[gpsMeasurements[0].id] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
-	obsState[gpsMeasurements[1].id] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
-	obsState[gpsMeasurements[2].id] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
-	obsState[gpsMeasurements[3].id] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
+	obsState[0] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
+	obsState[1] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
+	obsState[2] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
+	obsState[3] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
 
 	routeLengths := make(lengths)
 
@@ -64,7 +64,7 @@ func TestMapMatcherSRID_0(t *testing.T) {
 		t.Error(err)
 	}
 	vpath := v.EvalPathLogProbabilities()
-	correctProb := -1926.893407386203
+	correctProb := -1932.234419
 	eps := 10e-6
 	if math.Abs(vpath.Probability-correctProb) > eps {
 		t.Errorf(
@@ -107,21 +107,21 @@ func BenchmarkMapMatcherSRID_0(b *testing.B) {
 		NewGPSMeasurementFromID(3, 30, 40, 0),
 		NewGPSMeasurementFromID(4, 10, 70, 0),
 	}
-	rp11 := NewRoadPositionFromLonLat(0, 0, &Edge{Source: 0, Target: 1}, 20, 10, 0)
-	rp12 := NewRoadPositionFromLonLat(1, 3, &Edge{Source: 0, Target: 1}, 60, 10, 0)
-	rp21 := NewRoadPositionFromLonLat(2, 0, &Edge{Source: 0, Target: 1}, 20, 20, 0)
-	rp22 := NewRoadPositionFromLonLat(3, 3, &Edge{Source: 0, Target: 1}, 60, 20, 0)
-	rp31 := NewRoadPositionFromLonLat(4, 1, &Edge{Source: 0, Target: 1}, 20, 40, 0)
-	rp32 := NewRoadPositionFromLonLat(5, 1, &Edge{Source: 0, Target: 1}, 30, 50, 0)
-	rp33 := NewRoadPositionFromLonLat(6, 2, &Edge{Source: 0, Target: 1}, 60, 40, 0)
-	rp41 := NewRoadPositionFromLonLat(7, 4, &Edge{Source: 0, Target: 1}, 20, 70, 0)
-	rp42 := NewRoadPositionFromLonLat(8, 5, &Edge{Source: 0, Target: 1}, 60, 70, 0)
+	rp11 := NewRoadPositionFromLonLat(0, 0, 0, &Edge{Source: 0, Target: 1}, 20, 10, 0)
+	rp12 := NewRoadPositionFromLonLat(1, 3, 3, &Edge{Source: 0, Target: 1}, 60, 10, 0)
+	rp21 := NewRoadPositionFromLonLat(2, 0, 0, &Edge{Source: 0, Target: 1}, 20, 20, 0)
+	rp22 := NewRoadPositionFromLonLat(3, 3, 3, &Edge{Source: 0, Target: 1}, 60, 20, 0)
+	rp31 := NewRoadPositionFromLonLat(4, 1, 1, &Edge{Source: 0, Target: 1}, 20, 40, 0)
+	rp32 := NewRoadPositionFromLonLat(5, 1, 1, &Edge{Source: 0, Target: 1}, 30, 50, 0)
+	rp33 := NewRoadPositionFromLonLat(6, 2, 2, &Edge{Source: 0, Target: 1}, 60, 40, 0)
+	rp41 := NewRoadPositionFromLonLat(7, 4, 4, &Edge{Source: 0, Target: 1}, 20, 70, 0)
+	rp42 := NewRoadPositionFromLonLat(8, 5, 5, &Edge{Source: 0, Target: 1}, 60, 70, 0)
 
-	obsState := make(map[int]*CandidateLayer)
-	obsState[gpsMeasurements[0].id] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
-	obsState[gpsMeasurements[1].id] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
-	obsState[gpsMeasurements[2].id] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
-	obsState[gpsMeasurements[3].id] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
+	obsState := make([]*CandidateLayer, len(gpsMeasurements))
+	obsState[0] = NewCandidateLayer(gpsMeasurements[0], RoadPositions{rp11, rp12})
+	obsState[1] = NewCandidateLayer(gpsMeasurements[1], RoadPositions{rp21, rp22})
+	obsState[2] = NewCandidateLayer(gpsMeasurements[2], RoadPositions{rp31, rp32, rp33})
+	obsState[3] = NewCandidateLayer(gpsMeasurements[3], RoadPositions{rp41, rp42})
 
 	routeLengths := make(lengths)
 
