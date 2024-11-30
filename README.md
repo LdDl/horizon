@@ -45,9 +45,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
     * Install [osm2ch tool](https://github.com/LdDl/osm2ch#osm2ch). It's needed for converting *.osm.pbf file to CSV for proper usage in [contraction hierarchies (ch) library](https://github.com/LdDl/ch#ch---contraction-hierarchies)
         ```shell
-        go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.0
+        go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.1
         # for disabling zlib:
-        export CGO_ENABLED=0 && go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.0
+        export CGO_ENABLED=0 && go install github.com/LdDl/osm2ch/cmd/osm2ch@v1.5.1
         ```
     * Check if **osm2ch** binary was installed properly:
         ```shell
@@ -58,7 +58,7 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     * Install [osmconvert tool](https://wiki.openstreetmap.org/wiki/Osmconvert). It's needed for removing excess data from road graph and compressing *.osm file. You can follow the [link](https://wiki.openstreetmap.org/wiki/Osmconvert#Binaries) for theirs instruction.
     We advice to use this method (described in [Source](https://wiki.openstreetmap.org/wiki/Osmconvert#Source) paragraph):
         ```shell
-        sudo apt install osmctools && wget -O - http://m.m.i24.cc/osmconvert.c | sudo cc -x c - -lz -O3 -o osmconvert
+        wget -O - http://m.m.i24.cc/osmconvert.c | sudo cc -x c - -lz -O3 -o osmconvert && sudo mv osmconvert /usr/local/bin/
         ```
     * Check if **osmconvert** binary was installed properly:
         ```shell
@@ -76,6 +76,8 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 2. Compress *.osm file via [osmconvert](https://wiki.openstreetmap.org/wiki/Osmconvert).
     ```shell
     osmconvert map.osm --out-pbf -o=map.osm.pbf
+    # If you want skip authors/versions
+    # osmconvert map.osm --drop-author --drop-version --out-pbf -o=map.osm.pbf
     ```
     <img src="images/inst5.png" width="720">
 
@@ -103,19 +105,33 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
 6. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
-    curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/mapmatch' -d '{"max_states":5,"state_radius":7.0,"gps":[{"tm":"2020-03-11T00:00:00","lon_lat":[37.601249363208915,55.745374309126895]},{"tm":"2020-03-11T00:00:02","lon_lat":[37.600552781226014,55.7462238201015]},{"tm":"2020-03-11T00:00:04","lon_lat":[37.59995939657391,55.747450858855984]},{"tm":"2020-03-11T00:00:06","lon_lat":[37.60052698189332,55.7480171714195]},{"tm":"2020-03-11T00:00:08","lon_lat":[37.600655978556816,55.748728680680564]},{"tm":"2020-03-11T00:00:10","lon_lat":[37.600372185897115,55.74945469716283]},{"tm":"2020-03-11T00:00:12","lon_lat":[37.600694677555865,55.75052191686339]},{"tm":"2020-03-11T00:00:14","lon_lat":[37.600965570549214,55.751371315759044]},{"tm":"2020-03-11T00:00:16","lon_lat":[37.600926871550165,55.752634490168425]},{"tm":"2020-03-11T00:00:18","lon_lat":[37.60038508556347,55.75559625596534]}]}'
-    ```
-    For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
-    ```shell
-    curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/shortest' -d '{"state_radius":10.0,"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}'
+    curl 'http://localhost:32800/api/v0.1.0/mapmatch' \
+        -X POST \
+        -H 'Accept: application/json' \
+        -H 'Content-Type: application/json' \
+        --data-raw '{"max_states":5,"state_radius":7.0,"gps":[{"tm":"2024-11-30T00:00:00","lon_lat":[37.601249363208915,55.745374309126895]},{"tm":"2024-11-30T00:00:02","lon_lat":[37.600552781226014,55.7462238201015]},{"tm":"2024-11-30T00:00:04","lon_lat":[37.59995939657391,55.747450858855984]},{"tm":"2024-11-30T00:00:06","lon_lat":[37.60052698189332,55.7480171714195]},{"tm":"2024-11-30T00:00:08","lon_lat":[37.600655978556816,55.748728680680564]},{"tm":"2024-11-30T00:00:10","lon_lat":[37.600372185897115,55.74945469716283]},{"tm":"2024-11-30T00:00:12","lon_lat":[37.600694677555865,55.75052191686339]},{"tm":"2024-11-30T00:00:14","lon_lat":[37.600965570549214,55.751371315759044]},{"tm":"2024-11-30T00:00:16","lon_lat":[37.600926871550165,55.752634490168425]},{"tm":"2024-11-30T00:00:18","lon_lat":[37.60038508556347,55.75559625596534]}]}' ; echo
     ```
     <img src="images/inst8.png" width="720">
-    
-    For isochrones estimation (_note: maxCost => it represents meters in current example_):
+
+    For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
     ```shell
-    curl -X POST -H 'accept: application/json' -H  'Content-Type: application/json' 'http://localhost:32800/api/v0.1.0/isochrones' -d '{"max_cost":2100.0,"nearest_radius": 25.0, "lon_lat":[37.601249363208915,55.745374309126895]}'
+    curl 'http://localhost:32800/api/v0.1.0/shortest' \
+        -X POST \
+        -H 'accept: application/json' \
+        -H  'Content-Type: application/json' \
+        --data-raw '{"state_radius":10.0,"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}' ; echo
     ```
     <img src="images/inst9.png" width="720">
+
+    For isochrones estimation (_note: maxCost => it represents meters in current example_):
+    ```shell
+    curl 'http://localhost:32800/api/v0.1.0/isochrones' \
+        -X POST \
+        -H 'accept: application/json' \
+        -H  'Content-Type: application/json' \
+        --data-raw '{"max_cost":2100.0,"nearest_radius": 25.0, "lon_lat":[37.601249363208915,55.745374309126895]}' ; echo
+    ```
+    <img src="images/inst10.png" width="720">
 
 7. Open Front-end on link http://localhost:32800/
 
