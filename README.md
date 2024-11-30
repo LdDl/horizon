@@ -140,6 +140,14 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     <img src="images/maplibre1.png" width="720">
     <img src="images/maplibre2.png" width="720">
 
+    - Blue - observation point (measurement)
+    - Purple - represents matched edge
+    - Yellow - represents projection of the point onto the matched edge
+    - Green - represents picked either source or target vertex of the matched edge
+    - Red - represents cuts of excessed geometries (for first and last matched edges)
+    - Dark Blue - represents intermediate edges (i.e. there are some edges between two matched edges)
+    
+
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
     If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs/index.html#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
