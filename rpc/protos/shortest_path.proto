@@ -1,0 +1,13 @@
+syntax = "proto3";
+package horizon;
+option go_package = "./;protos_pb";
+
+message SPRequest {
+    // @todo
+    int64 req = 1;
+}
+
+message SPResponse {
+    // @todo
+    int64 res = 1;
+}
