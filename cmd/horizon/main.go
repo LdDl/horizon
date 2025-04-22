@@ -33,6 +33,7 @@ var (
 	grpcEnable   = flag.Bool("grpc", false, "Enable gRPC server")
 	grpcAddrFlag = flag.String("gh", "0.0.0.0", "Bind gRPC address")
 	grpcPortFlag = flag.Int("gp", 32801, "gRPC port")
+	grpcReflect  = flag.Bool("gr", false, "Enable gRPC reflection")
 
 	//go:embed index.html
 	webPage string
@@ -97,7 +98,7 @@ func main() {
 
 	// Init gRPC API server if needed
 	if *grpcEnable {
-		grpcServer, err := rpc.NewMicroserice(matcher)
+		grpcServer, err := rpc.NewMicroserice(matcher, *grpcReflect)
 		if err != nil {
 			fmt.Println("Can't prepare gRPC API instance", err)
 			return
@@ -110,6 +111,7 @@ func main() {
 		errChan := make(chan error, 1)
 		go func(s *grpc.Server, l net.Listener, errCh chan<- error) {
 			fmt.Printf("Starting gRPC API  server on %s:%d\n", *grpcAddrFlag, *grpcPortFlag)
+			fmt.Println("gRPC reflection enabled:", *grpcReflect)
 			if err := s.Serve(l); err != nil {
 				errCh <- fmt.Errorf("gRPC API server error: %w", err)
 				return
