@@ -5,13 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
+	"os"
 	"time"
 
 	"github.com/LdDl/horizon"
 	"github.com/LdDl/horizon/rest"
 	"github.com/LdDl/horizon/rest/docs"
+	"github.com/LdDl/horizon/rpc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -25,6 +29,10 @@ var (
 	zoomFlag   = flag.Float64("mapzoom", 1.0, "initial zoom of front-end map")
 	apiPath    = "api"
 	apiVersion = "0.1.0"
+
+	grpcEnable   = flag.Bool("grpc", false, "Enable gRPC server")
+	grpcAddrFlag = flag.String("gh", "0.0.0.0", "Bind gRPC address")
+	grpcPortFlag = flag.Int("gp", 32801, "gRPC port")
 
 	//go:embed index.html
 	webPage string
@@ -67,11 +75,10 @@ func main() {
 		AllowHeaders:  "Origin, Authorization, Content-Type, Content-Length, Accept, Accept-Encoding, X-HttpRequest",
 		AllowMethods:  "GET, POST, PUT, DELETE",
 		ExposeHeaders: "Content-Length",
-		// AllowCredentials: true,
-		MaxAge: 5600,
+		MaxAge:        5600,
 	})
 
-	// Init server
+	// Init REST API server
 	server := fiber.New(config)
 	server.Use(allCors)
 	server.Get("/", rest.RenderPage(webPage))
@@ -88,9 +95,36 @@ func main() {
 	docsGroup := apiVersionGroup.Group("/docs")
 	docsGroup.Use("/", docs.PrepareStaticPage())
 
-	// Start server
+	// Init gRPC API server if needed
+	if *grpcEnable {
+		grpcServer, err := rpc.NewMicroserice(matcher)
+		if err != nil {
+			fmt.Println("Can't prepare gRPC API instance", err)
+			return
+		}
+		stdListener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", *grpcAddrFlag, *grpcPortFlag))
+		if err != nil {
+			fmt.Println("Can't prepare standart listener for gRPC API instance", err)
+			return
+		}
+		errChan := make(chan error, 1)
+		go func(s *grpc.Server, l net.Listener, errCh chan<- error) {
+			fmt.Printf("Starting gRPC API  server on %s:%d\n", *grpcAddrFlag, *grpcPortFlag)
+			if err := s.Serve(l); err != nil {
+				errCh <- fmt.Errorf("gRPC API server error: %w", err)
+				return
+			}
+		}(grpcServer, stdListener, errChan)
+		go func(errCh <-chan error) {
+			err := <-errCh
+			fmt.Println("Can't start gRPC API server", err)
+			os.Exit(1)
+		}(errChan)
+	}
+
+	// Start REST API server
 	if err := server.Listen(fmt.Sprintf("%s:%d", *addrFlag, *portFlag)); err != nil {
-		fmt.Println(err)
+		fmt.Println("Can't start REST API server", err)
 		return
 	}
 }

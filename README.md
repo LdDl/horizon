@@ -105,6 +105,12 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```
     <img src="images/inst7.png" width="720">
 
+    5.1. If you need to enable gRPC API use flags `grpc`, `gh` and `gp`, e.g.:
+
+    ```shell
+    horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0 -grpc true -gh 0.0.0.0 -gp 32801
+    ```
+
 6. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
     ```shell
     curl 'http://localhost:32800/api/v0.1.0/mapmatch' \
