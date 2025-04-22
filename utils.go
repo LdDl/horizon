@@ -66,3 +66,39 @@ func S2PointToGeoJSONFeature(pt *s2.Point) *geojson.Feature {
 	latLng := s2.LatLngFromPoint(*pt)
 	return geojson.NewPointFeature([]float64{latLng.Lng.Degrees(), latLng.Lat.Degrees()})
 }
+
+// ExtractCutUpTo cuts geometry between very first point and neighbor of the projected point index in the polyline
+func ExtractCutUpTo(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
+	polyCopy := polyline
+	polyCopyCut := polyline
+
+	// Cut segment from the start of the polyline up to projection poit
+	polyCopy = append(s2.Polyline{projected}, polyCopy[projectedIdx:]...)
+
+	// Cut segment from projection point up to the end of the polyline
+	part := polyCopyCut[:projectedIdx-1]
+	if len(part) == 0 {
+		polyCopyCut = s2.Polyline{polyCopyCut[0], projected}
+	} else {
+		polyCopyCut = append(polyCopyCut[:projectedIdx-1], projected)
+	}
+	return polyCopy, polyCopyCut
+}
+
+// ExtractCutUpFrom cuts geometry between neighbor of the projected point index in the polyline and last point
+func ExtractCutUpFrom(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
+	polyCopy := polyline
+	polyCopyCut := polyline
+
+	// Cut segment from the projection poit up to the end of the polyline
+	part := polyCopy[:projectedIdx-1]
+	if len(part) == 0 {
+		polyCopy = s2.Polyline{polyCopy[0], projected}
+	} else {
+		polyCopy = append(polyCopy[:projectedIdx-1], projected)
+	}
+
+	// Cut segment from the start of the polyline up to projection poit
+	polyCopyCut = append(s2.Polyline{projected}, polyCopyCut[projectedIdx:]...)
+	return polyCopy, polyCopyCut
+}

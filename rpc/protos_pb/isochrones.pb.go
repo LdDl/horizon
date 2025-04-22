@@ -20,6 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// User's request for isochrones
 type IsochronesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -99,6 +100,7 @@ func (x *IsochronesRequest) GetLat() float64 {
 	return 0
 }
 
+// Server's response for isochrones request
 type IsochronesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -156,6 +158,7 @@ func (x *IsochronesResponse) GetWarnings() []string {
 	return nil
 }
 
+// Single isochrone information
 type Isochrone struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

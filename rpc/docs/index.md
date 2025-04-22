@@ -9,8 +9,11 @@
     - [IsochronesResponse](#horizon-IsochronesResponse)
   
 - [map_match.proto](#map_match-proto)
+    - [GPSToMapMatch](#horizon-GPSToMapMatch)
+    - [IntermediateEdge](#horizon-IntermediateEdge)
     - [MapMatchRequest](#horizon-MapMatchRequest)
     - [MapMatchResponse](#horizon-MapMatchResponse)
+    - [ObservationEdge](#horizon-ObservationEdge)
   
 - [point.proto](#point-proto)
     - [GeoPoint](#horizon-GeoPoint)
@@ -37,7 +40,7 @@
 <a name="horizon-Isochrone"></a>
 
 ### Isochrone
-
+Single isochrone information
 
 
 | Field | Type | Label | Description |
@@ -55,7 +58,7 @@
 <a name="horizon-IsochronesRequest"></a>
 
 ### IsochronesRequest
-
+User&#39;s request for isochrones
 
 
 | Field | Type | Label | Description |
@@ -73,7 +76,7 @@
 <a name="horizon-IsochronesResponse"></a>
 
 ### IsochronesResponse
-
+Server&#39;s response for isochrones request
 
 
 | Field | Type | Label | Description |
@@ -102,15 +105,51 @@
 
 
 
-<a name="horizon-MapMatchRequest"></a>
+<a name="horizon-GPSToMapMatch"></a>
 
-### MapMatchRequest
-
+### GPSToMapMatch
+Representation of GPS data
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| req | [int64](#int64) |  | @todo |
+| tm | [string](#string) |  | Timestamp. Field would be ignored for request on &#39;/shortest&#39; service. Example: 2020-03-11T00:00:00 |
+| lon | [double](#double) |  | Longitude Example: 37.601249363208915 |
+| lat | [double](#double) |  | Latitude Example: 55.745374309126895 |
+
+
+
+
+
+
+<a name="horizon-IntermediateEdge"></a>
+
+### IntermediateEdge
+Edge which is not matched to any observation but helps to form whole travel path
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| geom | [GeoPoint](#horizon-GeoPoint) | repeated | Edge geometry as line feature |
+| weight | [double](#double) |  | Travel cost Example: 2.0 |
+| id | [int64](#int64) |  | Edge identifier Example: 4278 |
+
+
+
+
+
+
+<a name="horizon-MapMatchRequest"></a>
+
+### MapMatchRequest
+User&#39;s request for map matching
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| max_states | [int32](#int32) | optional | Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on &#39;/shortest&#39; service. Example: 5 |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 7.0 |
+| gps | [GPSToMapMatch](#horizon-GPSToMapMatch) | repeated | Set of GPS data |
 
 
 
@@ -120,12 +159,35 @@
 <a name="horizon-MapMatchResponse"></a>
 
 ### MapMatchResponse
-
+Server&#39;s response for map matching request
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| res | [int64](#int64) |  | @todo |
+| data | [ObservationEdge](#horizon-ObservationEdge) | repeated | Set of matched edges for each observation |
+| warnings | [string](#string) | repeated | List of warnings |
+
+
+
+
+
+
+<a name="horizon-ObservationEdge"></a>
+
+### ObservationEdge
+Relation between observation and matched edge
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| obs_idx | [int32](#int32) |  | Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed Example: 0 |
+| edge_id | [int64](#int64) |  | Matched edge identifier Example: 3149 |
+| vertex_id | [int64](#int64) |  | Matched vertex identifier Example: 44014 |
+| matched_edge | [GeoPoint](#horizon-GeoPoint) | repeated | Corresponding matched edge as line feature |
+| matched_edge_cut | [GeoPoint](#horizon-GeoPoint) | repeated | Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge |
+| matched_vertex | [GeoPoint](#horizon-GeoPoint) |  | Corresponding matched vertex as point feature |
+| projected_point | [GeoPoint](#horizon-GeoPoint) |  | Corresponding projection on the edge as point feature |
+| next_edges | [IntermediateEdge](#horizon-IntermediateEdge) | repeated | Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation |
 
 
 
@@ -211,7 +273,7 @@
 <a name="horizon-EdgeInfo"></a>
 
 ### EdgeInfo
-
+Edge information
 
 
 | Field | Type | Label | Description |
@@ -228,7 +290,7 @@
 <a name="horizon-SPRequest"></a>
 
 ### SPRequest
-
+User&#39;s request for finding shortest path
 
 
 | Field | Type | Label | Description |
@@ -244,7 +306,7 @@
 <a name="horizon-SPResponse"></a>
 
 ### SPResponse
-
+Server&#39;s response for shortest path request
 
 
 | Field | Type | Label | Description |

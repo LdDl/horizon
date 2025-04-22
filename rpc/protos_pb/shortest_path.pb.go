@@ -20,6 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// User's request for finding shortest path
 type SPRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -78,6 +79,7 @@ func (x *SPRequest) GetGps() []*GeoPoint {
 	return nil
 }
 
+// Server's response for shortest path request
 type SPResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -135,6 +137,7 @@ func (x *SPResponse) GetWarnings() []string {
 	return nil
 }
 
+// Edge information
 type EdgeInfo struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

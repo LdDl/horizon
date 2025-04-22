@@ -202,11 +202,23 @@
             <ul>
               
                 <li>
+                  <a href="#horizon.GPSToMapMatch"><span class="badge">M</span>GPSToMapMatch</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.IntermediateEdge"><span class="badge">M</span>IntermediateEdge</a>
+                </li>
+              
+                <li>
                   <a href="#horizon.MapMatchRequest"><span class="badge">M</span>MapMatchRequest</a>
                 </li>
               
                 <li>
                   <a href="#horizon.MapMatchResponse"><span class="badge">M</span>MapMatchResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.ObservationEdge"><span class="badge">M</span>ObservationEdge</a>
                 </li>
               
               
@@ -281,7 +293,7 @@
 
       
         <h3 id="horizon.Isochrone">Isochrone</h3>
-        <p></p>
+        <p>Single isochrone information</p>
 
         
           <table class="field-table">
@@ -326,7 +338,7 @@
         
       
         <h3 id="horizon.IsochronesRequest">IsochronesRequest</h3>
-        <p></p>
+        <p>User's request for isochrones</p>
 
         
           <table class="field-table">
@@ -375,7 +387,7 @@ Example: 55.745374309126895 </p></td>
         
       
         <h3 id="horizon.IsochronesResponse">IsochronesResponse</h3>
-        <p></p>
+        <p>Server's response for isochrones request</p>
 
         
           <table class="field-table">
@@ -419,8 +431,8 @@ Example: 55.745374309126895 </p></td>
       <p></p>
 
       
-        <h3 id="horizon.MapMatchRequest">MapMatchRequest</h3>
-        <p></p>
+        <h3 id="horizon.GPSToMapMatch">GPSToMapMatch</h3>
+        <p>Representation of GPS data</p>
 
         
           <table class="field-table">
@@ -430,10 +442,107 @@ Example: 55.745374309126895 </p></td>
             <tbody>
               
                 <tr>
-                  <td>req</td>
+                  <td>tm</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Timestamp. Field would be ignored for request on &#39;/shortest&#39; service.
+Example: 2020-03-11T00:00:00 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lon</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Longitude
+Example: 37.601249363208915 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lat</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Latitude
+Example: 55.745374309126895 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.IntermediateEdge">IntermediateEdge</h3>
+        <p>Edge which is not matched to any observation but helps to form whole travel path</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>geom</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Edge geometry as line feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>weight</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Travel cost
+Example: 2.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>id</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>@todo </p></td>
+                  <td><p>Edge identifier
+Example: 4278 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.MapMatchRequest">MapMatchRequest</h3>
+        <p>User's request for map matching</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>max_states</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td>optional</td>
+                  <td><p>Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on &#39;/shortest&#39; service.
+Example: 5 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>state_radius</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+Example: 7.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>gps</td>
+                  <td><a href="#horizon.GPSToMapMatch">GPSToMapMatch</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of GPS data </p></td>
                 </tr>
               
             </tbody>
@@ -444,7 +553,7 @@ Example: 55.745374309126895 </p></td>
         
       
         <h3 id="horizon.MapMatchResponse">MapMatchResponse</h3>
-        <p></p>
+        <p>Server's response for map matching request</p>
 
         
           <table class="field-table">
@@ -454,10 +563,93 @@ Example: 55.745374309126895 </p></td>
             <tbody>
               
                 <tr>
-                  <td>res</td>
+                  <td>data</td>
+                  <td><a href="#horizon.ObservationEdge">ObservationEdge</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of matched edges for each observation </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warnings</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>List of warnings </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.ObservationEdge">ObservationEdge</h3>
+        <p>Relation between observation and matched edge</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>obs_idx</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+Example: 0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>edge_id</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>@todo </p></td>
+                  <td><p>Matched edge identifier
+Example: 3149 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>vertex_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Matched vertex identifier
+Example: 44014 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_edge</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Corresponding matched edge as line feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_edge_cut</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_vertex</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Corresponding matched vertex as point feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>projected_point</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Corresponding projection on the edge as point feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>next_edges</td>
+                  <td><a href="#horizon.IntermediateEdge">IntermediateEdge</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation </p></td>
                 </tr>
               
             </tbody>
@@ -576,7 +768,7 @@ Example: 55.745374309126895 </p></td>
 
       
         <h3 id="horizon.EdgeInfo">EdgeInfo</h3>
-        <p></p>
+        <p>Edge information</p>
 
         
           <table class="field-table">
@@ -614,7 +806,7 @@ Example: 55.745374309126895 </p></td>
         
       
         <h3 id="horizon.SPRequest">SPRequest</h3>
-        <p></p>
+        <p>User's request for finding shortest path</p>
 
         
           <table class="field-table">
@@ -646,7 +838,7 @@ Example: 10.0 </p></td>
         
       
         <h3 id="horizon.SPResponse">SPResponse</h3>
-        <p></p>
+        <p>Server's response for shortest path request</p>
 
         
           <table class="field-table">

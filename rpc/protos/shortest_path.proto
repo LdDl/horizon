@@ -4,6 +4,7 @@ option go_package = "./;protos_pb";
 
 import "point.proto";
 
+// User's request for finding shortest path
 message SPRequest {
     // Max radius of search for potential candidates (in range [7, 50], default is 25.0)
     // Example: 10.0
@@ -12,6 +13,7 @@ message SPRequest {
     repeated GeoPoint gps = 2;
 }
 
+// Server's response for shortest path request
 message SPResponse {
     // List of edges in a path
     repeated EdgeInfo data = 1;
@@ -19,6 +21,7 @@ message SPResponse {
     repeated string warnings = 2;
 }
 
+// Edge information
 message EdgeInfo {
     int64 edge_id = 1;
     // Travel cost to the target vertex

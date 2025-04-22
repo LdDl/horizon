@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -92,7 +93,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
 		if len(data.Data) < 3 {
-			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 3 GPS points atleast"})
+			return ctx.Status(400).JSON(fiber.Map{"Error": fmt.Sprintf("please provide 3 GPS points atleast. Provided: %d", len(data.Data))})
 		}
 		gpsMeasurements := horizon.GPSMeasurements{}
 		for i := range data.Data {
@@ -128,9 +129,9 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
 			var matchedEdgeCut s2.Polyline
 			if i == 0 {
-				matchedEdgePolyline, matchedEdgeCut = extractCutUpTo(*observationResult.MatchedEdge.Polyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 			} else if i == len(result.Observations)-1 {
-				matchedEdgePolyline, matchedEdgeCut = extractCutUpFrom(*observationResult.MatchedEdge.Polyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 			}
 			ans.Data[i] = ObservationEdgeResponse{
 				ObservationIdx: observationResult.Observation.ID(),
@@ -154,40 +155,4 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		return ctx.Status(200).JSON(ans)
 	}
 	return fn
-}
-
-// Cuts geometry between very first point and neighbor of the projected point index in the polyline
-func extractCutUpTo(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
-	polyCopy := polyline
-	polyCopyCut := polyline
-
-	// Cut segment from the start of the polyline up to projection poit
-	polyCopy = append(s2.Polyline{projected}, polyCopy[projectedIdx:]...)
-
-	// Cut segment from projection point up to the end of the polyline
-	part := polyCopyCut[:projectedIdx-1]
-	if len(part) == 0 {
-		polyCopyCut = s2.Polyline{polyCopyCut[0], projected}
-	} else {
-		polyCopyCut = append(polyCopyCut[:projectedIdx-1], projected)
-	}
-	return polyCopy, polyCopyCut
-}
-
-// Cuts geometry between neighbor of the projected point index in the polyline and last point
-func extractCutUpFrom(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
-	polyCopy := polyline
-	polyCopyCut := polyline
-
-	// Cut segment from the projection poit up to the end of the polyline
-	part := polyCopy[:projectedIdx-1]
-	if len(part) == 0 {
-		polyCopy = s2.Polyline{polyCopy[0], projected}
-	} else {
-		polyCopy = append(polyCopy[:projectedIdx-1], projected)
-	}
-
-	// Cut segment from the start of the polyline up to projection poit
-	polyCopyCut = append(s2.Polyline{projected}, polyCopyCut[projectedIdx:]...)
-	return polyCopy, polyCopyCut
 }

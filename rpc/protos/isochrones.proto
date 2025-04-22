@@ -4,6 +4,7 @@ option go_package = "./;protos_pb";
 
 import "point.proto";
 
+// User's request for isochrones
 message IsochronesRequest {
     // Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
     // Example: 2100.0
@@ -19,6 +20,7 @@ message IsochronesRequest {
     double lat = 4;
 }
 
+// Server's response for isochrones request
 message IsochronesResponse {
     // List of isochrones
     repeated Isochrone isochrones = 1;
@@ -26,6 +28,7 @@ message IsochronesResponse {
     repeated string warnings = 2;
 }
 
+// Single isochrone information
 message Isochrone {
     // Isochrone ID
     int64 id = 1;

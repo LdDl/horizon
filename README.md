@@ -125,6 +125,27 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```
         <img src="images/inst8.png" width="720">
 
+        Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
+        ```shell
+        grpcurl -plaintext -emit-defaults -d '{
+        "max_states": 5,
+        "state_radius": 7.0,
+        "gps": [
+            {"tm": "2024-11-30T00:00:00", "lon": 37.601249363208915, "lat": 55.745374309126895},
+            {"tm": "2024-11-30T00:00:02", "lon": 37.600552781226014, "lat": 55.7462238201015},
+            {"tm": "2024-11-30T00:00:04", "lon": 37.59995939657391, "lat": 55.747450858855984},
+            {"tm": "2024-11-30T00:00:06", "lon": 37.60052698189332, "lat": 55.7480171714195},
+            {"tm": "2024-11-30T00:00:08", "lon": 37.600655978556816, "lat": 55.748728680680564},
+            {"tm": "2024-11-30T00:00:10", "lon": 37.600372185897115, "lat": 55.74945469716283},
+            {"tm": "2024-11-30T00:00:12", "lon": 37.600694677555865, "lat": 55.75052191686339},
+            {"tm": "2024-11-30T00:00:14", "lon": 37.600965570549214, "lat": 55.751371315759044},
+            {"tm": "2024-11-30T00:00:16", "lon": 37.600926871550165, "lat": 55.752634490168425},
+            {"tm": "2024-11-30T00:00:18", "lon": 37.60038508556347, "lat": 55.75559625596534}
+        ]
+        }' localhost:32801 horizon.Service/RunMapMatch | tr -d '\n\t ' ; echo
+        ```
+        <img src="images/inst8-grpc.png" width="720">
+
     * For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
         ```shell
         curl 'http://localhost:32800/api/v0.1.0/shortest' \
