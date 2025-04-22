@@ -19,6 +19,7 @@
     - [Service](#horizon-Service)
   
 - [shortest_path.proto](#shortest_path-proto)
+    - [EdgeInfo](#horizon-EdgeInfo)
     - [SPRequest](#horizon-SPRequest)
     - [SPResponse](#horizon-SPResponse)
   
@@ -207,6 +208,23 @@
 
 
 
+<a name="horizon-EdgeInfo"></a>
+
+### EdgeInfo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| edge_id | [int64](#int64) |  |  |
+| weight | [double](#double) |  | Travel cost to the target vertex |
+| geom | [GeoPoint](#horizon-GeoPoint) | repeated | Line |
+
+
+
+
+
+
 <a name="horizon-SPRequest"></a>
 
 ### SPRequest
@@ -215,7 +233,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| req | [int64](#int64) |  | @todo |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 10.0 |
+| gps | [GeoPoint](#horizon-GeoPoint) | repeated | Set of GPS data |
 
 
 
@@ -230,7 +249,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| res | [int64](#int64) |  | @todo |
+| data | [EdgeInfo](#horizon-EdgeInfo) | repeated | List of edges in a path |
+| warnings | [string](#string) | repeated | List of warnings |
 
 
 

@@ -135,6 +135,18 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```
         <img src="images/inst9.png" width="720">
 
+        Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
+        ```shell
+        grpcurl -plaintext -emit-defaults -d '{
+        "state_radius": 10.0,
+        "gps": [
+            {"lon": 37.601249363208915, "lat": 55.745374309126895},
+            {"lon": 37.600926871550165, "lat": 55.752634490168425}
+        ]
+        }' localhost:32801 horizon.Service/GetSP | tr -d '\n\t ' ; echo
+        ```
+        <img src="images/inst9-grpc.png" width="720">
+
     * For isochrones estimation (_note: maxCost => it represents meters in current example_):
         ```shell
         curl 'http://localhost:32800/api/v0.1.0/isochrones' \

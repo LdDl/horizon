@@ -251,6 +251,10 @@
             <ul>
               
                 <li>
+                  <a href="#horizon.EdgeInfo"><span class="badge">M</span>EdgeInfo</a>
+                </li>
+              
+                <li>
                   <a href="#horizon.SPRequest"><span class="badge">M</span>SPRequest</a>
                 </li>
               
@@ -571,6 +575,44 @@ Example: 55.745374309126895 </p></td>
       <p></p>
 
       
+        <h3 id="horizon.EdgeInfo">EdgeInfo</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>edge_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>weight</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Travel cost to the target vertex </p></td>
+                </tr>
+              
+                <tr>
+                  <td>geom</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Line </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="horizon.SPRequest">SPRequest</h3>
         <p></p>
 
@@ -582,10 +624,18 @@ Example: 55.745374309126895 </p></td>
             <tbody>
               
                 <tr>
-                  <td>req</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>@todo </p></td>
+                  <td>state_radius</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+Example: 10.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>gps</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of GPS data </p></td>
                 </tr>
               
             </tbody>
@@ -606,10 +656,17 @@ Example: 55.745374309126895 </p></td>
             <tbody>
               
                 <tr>
-                  <td>res</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p>@todo </p></td>
+                  <td>data</td>
+                  <td><a href="#horizon.EdgeInfo">EdgeInfo</a></td>
+                  <td>repeated</td>
+                  <td><p>List of edges in a path </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warnings</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>List of warnings </p></td>
                 </tr>
               
             </tbody>
