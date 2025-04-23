@@ -1,0 +1,13 @@
+syntax = "proto3";
+package horizon; 
+option go_package = "./;protos_pb";
+
+import "map_match.proto";
+import "shortest_path.proto";
+import "isochrones.proto";
+
+service Service {
+    rpc RunMapMatch (MapMatchRequest) returns (MapMatchResponse) {}
+    rpc GetSP (SPRequest) returns (SPResponse) {}
+    rpc GetIsochrones (IsochronesRequest) returns (IsochronesResponse) {}
+}

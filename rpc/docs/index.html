@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0;  
+      }
+
+       
+      .field-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(3) {  
+        width: 6em;
+      }
+      .field-table td:nth-child(4) {  
+        width: auto;
+      }
+
+       
+      .extension-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) {  
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) {  
+        width: auto;
+      }
+
+       
+      .enum-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) {  
+        width: auto;
+      }
+
+       
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+       
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+       
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+       
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        
+          
+          <li>
+            <a href="#isochrones.proto">isochrones.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#horizon.Isochrone"><span class="badge">M</span>Isochrone</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.IsochronesRequest"><span class="badge">M</span>IsochronesRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.IsochronesResponse"><span class="badge">M</span>IsochronesResponse</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#map_match.proto">map_match.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#horizon.GPSToMapMatch"><span class="badge">M</span>GPSToMapMatch</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.IntermediateEdge"><span class="badge">M</span>IntermediateEdge</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.MapMatchRequest"><span class="badge">M</span>MapMatchRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.MapMatchResponse"><span class="badge">M</span>MapMatchResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.ObservationEdge"><span class="badge">M</span>ObservationEdge</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#point.proto">point.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#horizon.GeoPoint"><span class="badge">M</span>GeoPoint</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#service.proto">service.proto</a>
+            <ul>
+              
+              
+              
+              
+                <li>
+                  <a href="#horizon.Service"><span class="badge">S</span>Service</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#shortest_path.proto">shortest_path.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#horizon.EdgeInfo"><span class="badge">M</span>EdgeInfo</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.SPRequest"><span class="badge">M</span>SPRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#horizon.SPResponse"><span class="badge">M</span>SPResponse</a>
+                </li>
+              
+              
+              
+              
+            </ul>
+          </li>
+        
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    
+      
+      <div class="file-heading">
+        <h2 id="isochrones.proto">isochrones.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="horizon.Isochrone">Isochrone</h3>
+        <p>Single isochrone information</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Isochrone ID </p></td>
+                </tr>
+              
+                <tr>
+                  <td>cost</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Travel cost to the target vertex </p></td>
+                </tr>
+              
+                <tr>
+                  <td>vertex_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Vertex ID in the graph </p></td>
+                </tr>
+              
+                <tr>
+                  <td>point</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Longitude, Latitude </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.IsochronesRequest">IsochronesRequest</h3>
+        <p>User's request for isochrones</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>max_cost</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max cost restrictions for single isochrone. Should be in range [0,&#43;Inf]. Minumim is 0.
+Example: 2100.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>max_nearest_radius</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,&#43;Inf])
+Example: 25.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lon</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Longitude
+Example: 37.601249363208915 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lat</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Latitude
+Example: 55.745374309126895 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.IsochronesResponse">IsochronesResponse</h3>
+        <p>Server's response for isochrones request</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>isochrones</td>
+                  <td><a href="#horizon.Isochrone">Isochrone</a></td>
+                  <td>repeated</td>
+                  <td><p>List of isochrones </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warnings</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>List of warnings </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="map_match.proto">map_match.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="horizon.GPSToMapMatch">GPSToMapMatch</h3>
+        <p>Representation of GPS data</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>tm</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Timestamp. Field would be ignored for request on &#39;/shortest&#39; service.
+Example: 2020-03-11T00:00:00 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lon</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Longitude
+Example: 37.601249363208915 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lat</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Latitude
+Example: 55.745374309126895 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.IntermediateEdge">IntermediateEdge</h3>
+        <p>Edge which is not matched to any observation but helps to form whole travel path</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>geom</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Edge geometry as line feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>weight</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Travel cost
+Example: 2.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Edge identifier
+Example: 4278 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.MapMatchRequest">MapMatchRequest</h3>
+        <p>User's request for map matching</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>max_states</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td>optional</td>
+                  <td><p>Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on &#39;/shortest&#39; service.
+Example: 5 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>state_radius</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+Example: 7.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>gps</td>
+                  <td><a href="#horizon.GPSToMapMatch">GPSToMapMatch</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of GPS data </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.MapMatchResponse">MapMatchResponse</h3>
+        <p>Server's response for map matching request</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#horizon.ObservationEdge">ObservationEdge</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of matched edges for each observation </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warnings</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>List of warnings </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.ObservationEdge">ObservationEdge</h3>
+        <p>Relation between observation and matched edge</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>obs_idx</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+Example: 0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>edge_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Matched edge identifier
+Example: 3149 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>vertex_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Matched vertex identifier
+Example: 44014 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_edge</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Corresponding matched edge as line feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_edge_cut</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge </p></td>
+                </tr>
+              
+                <tr>
+                  <td>matched_vertex</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Corresponding matched vertex as point feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>projected_point</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Corresponding projection on the edge as point feature </p></td>
+                </tr>
+              
+                <tr>
+                  <td>next_edges</td>
+                  <td><a href="#horizon.IntermediateEdge">IntermediateEdge</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="point.proto">point.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="horizon.GeoPoint">GeoPoint</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>lon</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Longitude
+Example: 37.601249363208915 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lat</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Latitude
+Example: 55.745374309126895 </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+      
+      <div class="file-heading">
+        <h2 id="service.proto">service.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+
+      
+
+      
+
+      
+        <h3 id="horizon.Service">Service</h3>
+        <p></p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>RunMapMatch</td>
+                <td><a href="#horizon.MapMatchRequest">MapMatchRequest</a></td>
+                <td><a href="#horizon.MapMatchResponse">MapMatchResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>GetSP</td>
+                <td><a href="#horizon.SPRequest">SPRequest</a></td>
+                <td><a href="#horizon.SPResponse">SPResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>GetIsochrones</td>
+                <td><a href="#horizon.IsochronesRequest">IsochronesRequest</a></td>
+                <td><a href="#horizon.IsochronesResponse">IsochronesResponse</a></td>
+                <td><p></p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="shortest_path.proto">shortest_path.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="horizon.EdgeInfo">EdgeInfo</h3>
+        <p>Edge information</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>edge_id</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>weight</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Travel cost to the target vertex </p></td>
+                </tr>
+              
+                <tr>
+                  <td>geom</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Line </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.SPRequest">SPRequest</h3>
+        <p>User's request for finding shortest path</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>state_radius</td>
+                  <td><a href="#double">double</a></td>
+                  <td>optional</td>
+                  <td><p>Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+Example: 10.0 </p></td>
+                </tr>
+              
+                <tr>
+                  <td>gps</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of GPS data </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.SPResponse">SPResponse</h3>
+        <p>Server's response for shortest path request</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>data</td>
+                  <td><a href="#horizon.EdgeInfo">EdgeInfo</a></td>
+                  <td>repeated</td>
+                  <td><p>List of edges in a path </p></td>
+                </tr>
+              
+                <tr>
+                  <td>warnings</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>List of warnings </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
+    
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        
+          <tr id="double">
+            <td>double</td>
+            <td></td>
+            <td>double</td>
+            <td>double</td>
+            <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="float">
+            <td>float</td>
+            <td></td>
+            <td>float</td>
+            <td>float</td>
+            <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="int32">
+            <td>int32</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="int64">
+            <td>int64</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="uint32">
+            <td>uint32</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="uint64">
+            <td>uint64</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint32">
+            <td>sint32</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint64">
+            <td>sint64</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="fixed32">
+            <td>fixed32</td>
+            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="fixed64">
+            <td>fixed64</td>
+            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="sfixed32">
+            <td>sfixed32</td>
+            <td>Always four bytes.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sfixed64">
+            <td>sfixed64</td>
+            <td>Always eight bytes.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="bool">
+            <td>bool</td>
+            <td></td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
+          </tr>
+        
+          <tr id="string">
+            <td>string</td>
+            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+            <td>string</td>
+            <td>String</td>
+            <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
+          </tr>
+        
+          <tr id="bytes">
+            <td>bytes</td>
+            <td>May contain any arbitrary sequence of bytes.</td>
+            <td>string</td>
+            <td>ByteString</td>
+            <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </body>
+</html>
+

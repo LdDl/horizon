@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/LdDl/horizon"
@@ -56,7 +57,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(400).JSON(fiber.Map{"Error": err.Error()})
 		}
 		if len(data.Data) != 2 {
-			return ctx.Status(400).JSON(fiber.Map{"Error": "Please provide 2 GPS points only"})
+			return ctx.Status(400).JSON(fiber.Map{"Error": fmt.Sprintf("please provide 2 GPS points only. Provided: %d", len(data.Data))})
 		}
 		gpsMeasurements := horizon.GPSMeasurements{}
 		ut := time.Now().UTC().Unix()

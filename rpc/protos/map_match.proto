@@ -1,0 +1,73 @@
+syntax = "proto3";
+package horizon;
+option go_package = "./;protos_pb";
+
+import "point.proto";
+
+// User's request for map matching
+message MapMatchRequest {
+    // Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
+    // Example: 5
+    optional int32 max_states = 1;
+    // Max radius of search for potential candidates (in range [7, 50], default is 25.0)
+    // Example: 7.0
+    optional double state_radius = 2;
+    // Set of GPS data
+    repeated GPSToMapMatch gps = 3;
+}
+
+// Representation of GPS data
+message GPSToMapMatch {
+    // Timestamp. Field would be ignored for request on '/shortest' service.
+    // Example: 2020-03-11T00:00:00
+    string tm = 1;
+    // Longitude
+    // Example: 37.601249363208915
+    double lon = 3;
+    // Latitude
+    // Example: 55.745374309126895
+    double lat = 4;
+}
+
+// Server's response for map matching request
+message MapMatchResponse {
+    // Set of matched edges for each observation
+    repeated ObservationEdge data = 1;
+    // List of warnings
+    repeated string warnings = 2;
+}
+
+// Relation between observation and matched edge
+message ObservationEdge {
+    // Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+    // Example: 0
+    int32 obs_idx = 1;
+    // Matched edge identifier
+    // Example: 3149
+    int64 edge_id = 2;
+    // Matched vertex identifier
+    // Example: 44014
+    int64 vertex_id = 3;
+    // Corresponding matched edge as line feature
+    repeated GeoPoint matched_edge = 4;
+    // Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge
+    repeated GeoPoint matched_edge_cut = 5;
+    // Corresponding matched vertex as point feature
+    GeoPoint matched_vertex = 6;
+    // Corresponding projection on the edge as point feature
+    GeoPoint projected_point = 7;
+    // Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
+    repeated IntermediateEdge next_edges = 8;
+}
+
+// Edge which is not matched to any observation but helps to form whole travel path
+message IntermediateEdge {
+    // Edge geometry as line feature
+    repeated GeoPoint geom = 1;
+    // Travel cost
+    // Example: 2.0
+    double weight = 2;
+    // Edge identifier
+    // Example: 4278
+    int64 id = 3;
+}

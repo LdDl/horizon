@@ -16,13 +16,19 @@ New ideas, thought about needed features will be store in this file.
     * Shortest path finder (we are trying to avoid word "routing") service
     * Isochrones service
 
+* gRPC server side
+    * generate protobuf structure
+    * Map matching service
+    * Isochrones service
+    * gRPC docs (autogen)
+
 * ~~Front-end integrated with server-side. Probably via [Mapbox](https://github.com/mapbox/mapbox-gl-js).~~
 Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.maptiler.com/) due Mapbox [changed license](https://github.com/mapbox/mapbox-gl-js/releases/tag/v2.0.0)
 
 * More screenshots in README
 * ~~Migrate to Fiber v2~~
 * ~~Migrate to new version of CH (https://github.com/LdDl/ch) v1.7.5~~
-* ~~Swagger docs (autogen) - https://github.com/LdDl/horizon/pull/10~~
+* ~~Swagger docs (autogen)~~ - https://github.com/LdDl/horizon/pull/10
 * ~~Snake case for JSON's~~
 
 ### W.I.P
@@ -32,12 +38,6 @@ Replaced with [Maplibre](https://maplibre.org/) and [Maptiler](https://www.mapti
 * Rewrite front-end in [VueJS](https://github.com/vuejs/vue) or [Svelte](https://svelte.dev/) framework (+ update installation instruction) [AS SEPARATE REPOSITORY + design Figma]
 
 ### Planned
-* gRPC server side
-    * generate protobuf structure _DELAYED_
-    * Map matching service
-    * Isochrones service
-    * gRPC docs (autogen)
-
 * Some kind of wiki
 * Cool logo :) PR's are welcome, haha
 * Contributing guidelines

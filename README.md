@@ -1,4 +1,4 @@
-# Horizon v0.6.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.7.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -24,12 +24,12 @@ Demonstration:
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.6.0
+go install github.com/LdDl/horizon/cmd/horizon@v0.7.0
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.6.0/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.6.0/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.7.0/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.7.0/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
@@ -105,35 +105,89 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     ```
     <img src="images/inst7.png" width="720">
 
+    5.1. If you need to enable gRPC API use flags `grpc`, `gh`, `gp` and optionally `gr`, e.g.:
+
+    ```shell
+    horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0 -grpc=true -gh 0.0.0.0 -gp 32801 -gr=true
+    ```
+    
+    <img src="images/inst7-grpc.png" width="720">
+
 6. Check if server works fine via POST-request (we are using [cURL](https://curl.haxx.se)). Notice: order of provided GPS-points matters.
-    ```shell
-    curl 'http://localhost:32800/api/v0.1.0/mapmatch' \
-        -X POST \
-        -H 'Accept: application/json' \
-        -H 'Content-Type: application/json' \
-        --data-raw '{"max_states":5,"state_radius":7.0,"gps":[{"tm":"2024-11-30T00:00:00","lon_lat":[37.601249363208915,55.745374309126895]},{"tm":"2024-11-30T00:00:02","lon_lat":[37.600552781226014,55.7462238201015]},{"tm":"2024-11-30T00:00:04","lon_lat":[37.59995939657391,55.747450858855984]},{"tm":"2024-11-30T00:00:06","lon_lat":[37.60052698189332,55.7480171714195]},{"tm":"2024-11-30T00:00:08","lon_lat":[37.600655978556816,55.748728680680564]},{"tm":"2024-11-30T00:00:10","lon_lat":[37.600372185897115,55.74945469716283]},{"tm":"2024-11-30T00:00:12","lon_lat":[37.600694677555865,55.75052191686339]},{"tm":"2024-11-30T00:00:14","lon_lat":[37.600965570549214,55.751371315759044]},{"tm":"2024-11-30T00:00:16","lon_lat":[37.600926871550165,55.752634490168425]},{"tm":"2024-11-30T00:00:18","lon_lat":[37.60038508556347,55.75559625596534]}]}' ; echo
-    ```
-    <img src="images/inst8.png" width="720">
+    
+    * Map matching:
+        ```shell
+        curl 'http://localhost:32800/api/v0.1.0/mapmatch' \
+            -X POST \
+            -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            --data-raw '{"max_states":5,"state_radius":7.0,"gps":[{"tm":"2024-11-30T00:00:00","lon_lat":[37.601249363208915,55.745374309126895]},{"tm":"2024-11-30T00:00:02","lon_lat":[37.600552781226014,55.7462238201015]},{"tm":"2024-11-30T00:00:04","lon_lat":[37.59995939657391,55.747450858855984]},{"tm":"2024-11-30T00:00:06","lon_lat":[37.60052698189332,55.7480171714195]},{"tm":"2024-11-30T00:00:08","lon_lat":[37.600655978556816,55.748728680680564]},{"tm":"2024-11-30T00:00:10","lon_lat":[37.600372185897115,55.74945469716283]},{"tm":"2024-11-30T00:00:12","lon_lat":[37.600694677555865,55.75052191686339]},{"tm":"2024-11-30T00:00:14","lon_lat":[37.600965570549214,55.751371315759044]},{"tm":"2024-11-30T00:00:16","lon_lat":[37.600926871550165,55.752634490168425]},{"tm":"2024-11-30T00:00:18","lon_lat":[37.60038508556347,55.75559625596534]}]}' ; echo
+        ```
+        <img src="images/inst8.png" width="720">
 
-    For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
-    ```shell
-    curl 'http://localhost:32800/api/v0.1.0/shortest' \
-        -X POST \
-        -H 'accept: application/json' \
-        -H  'Content-Type: application/json' \
-        --data-raw '{"state_radius":10.0,"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}' ; echo
-    ```
-    <img src="images/inst9.png" width="720">
+        Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
+        ```shell
+        grpcurl -plaintext -emit-defaults -d '{
+        "max_states": 5,
+        "state_radius": 7.0,
+        "gps": [
+            {"tm": "2024-11-30T00:00:00", "lon": 37.601249363208915, "lat": 55.745374309126895},
+            {"tm": "2024-11-30T00:00:02", "lon": 37.600552781226014, "lat": 55.7462238201015},
+            {"tm": "2024-11-30T00:00:04", "lon": 37.59995939657391, "lat": 55.747450858855984},
+            {"tm": "2024-11-30T00:00:06", "lon": 37.60052698189332, "lat": 55.7480171714195},
+            {"tm": "2024-11-30T00:00:08", "lon": 37.600655978556816, "lat": 55.748728680680564},
+            {"tm": "2024-11-30T00:00:10", "lon": 37.600372185897115, "lat": 55.74945469716283},
+            {"tm": "2024-11-30T00:00:12", "lon": 37.600694677555865, "lat": 55.75052191686339},
+            {"tm": "2024-11-30T00:00:14", "lon": 37.600965570549214, "lat": 55.751371315759044},
+            {"tm": "2024-11-30T00:00:16", "lon": 37.600926871550165, "lat": 55.752634490168425},
+            {"tm": "2024-11-30T00:00:18", "lon": 37.60038508556347, "lat": 55.75559625596534}
+        ]
+        }' localhost:32801 horizon.Service/RunMapMatch | tr -d '\n\t ' ; echo
+        ```
+        <img src="images/inst8-grpc.png" width="720">
 
-    For isochrones estimation (_note: maxCost => it represents meters in current example_):
-    ```shell
-    curl 'http://localhost:32800/api/v0.1.0/isochrones' \
-        -X POST \
-        -H 'accept: application/json' \
-        -H  'Content-Type: application/json' \
-        --data-raw '{"max_cost":2100.0,"nearest_radius": 25.0, "lon_lat":[37.601249363208915,55.745374309126895]}' ; echo
-    ```
-    <img src="images/inst10.png" width="720">
+    * For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
+        ```shell
+        curl 'http://localhost:32800/api/v0.1.0/shortest' \
+            -X POST \
+            -H 'accept: application/json' \
+            -H  'Content-Type: application/json' \
+            --data-raw '{"state_radius":10.0,"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}' ; echo
+        ```
+        <img src="images/inst9.png" width="720">
+
+        Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
+        ```shell
+        grpcurl -plaintext -emit-defaults -d '{
+        "state_radius": 10.0,
+        "gps": [
+            {"lon": 37.601249363208915, "lat": 55.745374309126895},
+            {"lon": 37.600926871550165, "lat": 55.752634490168425}
+        ]
+        }' localhost:32801 horizon.Service/GetSP | tr -d '\n\t ' ; echo
+        ```
+        <img src="images/inst9-grpc.png" width="720">
+
+    * For isochrones estimation (_note: maxCost => it represents meters in current example_):
+        ```shell
+        curl 'http://localhost:32800/api/v0.1.0/isochrones' \
+            -X POST \
+            -H 'accept: application/json' \
+            -H  'Content-Type: application/json' \
+            --data-raw '{"max_cost":2100.0,"nearest_radius": 25.0, "lon_lat":[37.601249363208915,55.745374309126895]}' ; echo
+        ```
+        <img src="images/inst10.png" width="720">
+
+        Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
+        ```shell
+        grpcurl -plaintext -emit-defaults -d '{
+        "max_cost": 2100.0,
+        "max_nearest_radius": 25.0,
+        "lon": 37.601249363208915,
+        "lat": 55.745374309126895
+        }' localhost:32801 horizon.Service/GetIsochrones | tr -d '\n\t ' ; echo
+        ```
+        <img src="images/inst10-grpc.png" width="720">
 
 7. Open Front-end on link http://localhost:32800/
 
@@ -153,6 +207,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     If you use http://localhost:32800/ then you can navigate to http://localhost:32800/api/v0.1.0/docs/index.html#overview for API documentation. It may look like (thanks [rapidoc](https://github.com/mrin9/RapiDoc#rapidoc)):
     
     <img src="images/swagger1.png" width="720">
+
+    If gRPC is enabled you can navigate to http://localhost:32800/api/v0.1.0/grpc/docs/index.html to see gRPC documentation:
+    <img src="images/grpc-doc-1.png" width="720">
 
 ## Benchmark
 Please follow [link](BENCHMARK.md)

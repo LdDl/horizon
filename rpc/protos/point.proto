@@ -1,0 +1,12 @@
+syntax = "proto3";
+package horizon;
+option go_package = "./;protos_pb";
+
+message GeoPoint {
+    // Longitude
+    // Example: 37.601249363208915
+    double lon = 1;
+    // Latitude
+    // Example: 55.745374309126895
+    double lat = 2;
+}

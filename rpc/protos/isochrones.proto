@@ -1,0 +1,41 @@
+syntax = "proto3";
+package horizon;
+option go_package = "./;protos_pb";
+
+import "point.proto";
+
+// User's request for isochrones
+message IsochronesRequest {
+    // Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
+    // Example: 2100.0
+	optional double max_cost = 1;
+	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
+    // Example: 25.0
+    optional double max_nearest_radius = 2;
+	// Longitude
+    // Example: 37.601249363208915
+    double lon = 3;
+    // Latitude
+    // Example: 55.745374309126895
+    double lat = 4;
+}
+
+// Server's response for isochrones request
+message IsochronesResponse {
+    // List of isochrones
+    repeated Isochrone isochrones = 1;
+    // List of warnings
+    repeated string warnings = 2;
+}
+
+// Single isochrone information
+message Isochrone {
+    // Isochrone ID
+    int64 id = 1;
+    // Travel cost to the target vertex
+    double cost = 2;
+    // Vertex ID in the graph
+    int64 vertex_id = 3;
+    // Longitude, Latitude
+    GeoPoint point = 4;
+}
