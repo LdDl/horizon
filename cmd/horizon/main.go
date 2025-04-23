@@ -13,6 +13,7 @@ import (
 	"github.com/LdDl/horizon/rest"
 	"github.com/LdDl/horizon/rest/docs"
 	"github.com/LdDl/horizon/rpc"
+	rpc_docs "github.com/LdDl/horizon/rpc/docs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"google.golang.org/grpc"
@@ -122,6 +123,10 @@ func main() {
 			fmt.Println("Can't start gRPC API server", err)
 			os.Exit(1)
 		}(errChan)
+		// Enable gRPC docs
+		grpcGroup := apiVersionGroup.Group("/grpc")
+		grpcDocsGroup := grpcGroup.Group("/docs")
+		grpcDocsGroup.Use("/", rpc_docs.PrepareStaticPage())
 	}
 
 	// Start REST API server

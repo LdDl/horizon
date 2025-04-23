@@ -208,6 +208,9 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     
     <img src="images/swagger1.png" width="720">
 
+    If gRPC is enabled you can navigate to http://localhost:32800/api/v0.1.0/grpc/docs/index.html to see gRPC documentation:
+    <img src="images/grpc-doc-1.png" width="720">
+
 ## Benchmark
 Please follow [link](BENCHMARK.md)
 
