@@ -7,6 +7,7 @@ Horizon is project aimed to do map matching (snap GPS data to map) and routing (
 - [About](#about)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Docker](#docker)
 - [Benchmark](#benchmark)
 - [Support](#support)
 - [ToDo](#todo)
@@ -210,6 +211,20 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
     If gRPC is enabled you can navigate to http://localhost:32800/api/v0.1.0/grpc/docs/index.html to see gRPC documentation:
     <img src="images/grpc-doc-1.png" width="720">
+
+### Docker
+If you don't want use binary or can't build it you can use public Docker image:
+```bash
+docker pull dimahkiin/horizon:latest
+# Make sure you set up volume correctly. Is this example I've just used the current user directory
+docker run -p 32800:32800 -p 32801:32801 \
+  -v $(pwd):/app/data \
+  dimahkiin/horizon \
+  -h 0.0.0.0 -p 32800 -f /app/data/map.csv \
+  -sigma 50.0 -beta 30.0 \
+  -maplon 37.60011784074581 -maplat 55.7469688386492 -mapzoom 17.0 \
+  -grpc=true -gh 0.0.0.0 -gp 32801 -gr=true
+```
 
 ## Benchmark
 Please follow [link](BENCHMARK.md)
