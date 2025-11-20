@@ -221,6 +221,10 @@
                   <a href="#horizon.ObservationEdge"><span class="badge">M</span>ObservationEdge</a>
                 </li>
               
+                <li>
+                  <a href="#horizon.SubMatch"><span class="badge">M</span>SubMatch</a>
+                </li>
+              
               
               
               
@@ -571,10 +575,10 @@ Example: 7.0 </p></td>
             <tbody>
               
                 <tr>
-                  <td>data</td>
-                  <td><a href="#horizon.ObservationEdge">ObservationEdge</a></td>
+                  <td>sub_matches</td>
+                  <td><a href="#horizon.SubMatch">SubMatch</a></td>
                   <td>repeated</td>
-                  <td><p>Set of matched edges for each observation </p></td>
+                  <td><p>Array of sub-matches (segments split when route cannot be computed between consecutive points) </p></td>
                 </tr>
               
                 <tr>
@@ -658,6 +662,38 @@ Example: 44014 </p></td>
                   <td><a href="#horizon.IntermediateEdge">IntermediateEdge</a></td>
                   <td>repeated</td>
                   <td><p>Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="horizon.SubMatch">SubMatch</h3>
+        <p>A single continuous matched segment</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>observations</td>
+                  <td><a href="#horizon.ObservationEdge">ObservationEdge</a></td>
+                  <td>repeated</td>
+                  <td><p>Set of matched edges for observations in this segment </p></td>
+                </tr>
+              
+                <tr>
+                  <td>probability</td>
+                  <td><a href="#double">double</a></td>
+                  <td></td>
+                  <td><p>Probability from Viterbi algorithm for this segment
+Example: -86.578520 </p></td>
                 </tr>
               
             </tbody>

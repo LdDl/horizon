@@ -32,10 +32,19 @@ message GPSToMapMatch {
     optional double accuracy = 5;
 }
 
+// A single continuous matched segment
+message SubMatch {
+    // Set of matched edges for observations in this segment
+    repeated ObservationEdge observations = 1;
+    // Probability from Viterbi algorithm for this segment
+    // Example: -86.578520
+    double probability = 2;
+}
+
 // Server's response for map matching request
 message MapMatchResponse {
-    // Set of matched edges for each observation
-    repeated ObservationEdge data = 1;
+    // Array of sub-matches (segments split when route cannot be computed between consecutive points)
+    repeated SubMatch sub_matches = 1;
     // List of warnings
     repeated string warnings = 2;
 }

@@ -72,7 +72,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		return MatcherResult{}, ErrSameVertex
 	}
 	edges := []Edge{}
-	result := MatcherResult{
+	subMatch := SubMatch{
 		Observations: make([]ObservationResult, 2),
 		Probability:  100.0,
 	}
@@ -92,18 +92,20 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		})
 	}
 
-	result.Observations[0] = ObservationResult{
+	subMatch.Observations[0] = ObservationResult{
 		Observation: source,
 		MatchedEdge: edges[0],
 	}
 	if len(intermediateEdges) > 1 {
-		result.Observations[0].NextEdges = intermediateEdges[1 : len(edges)-1]
+		subMatch.Observations[0].NextEdges = intermediateEdges[1 : len(edges)-1]
 	}
 
-	result.Observations[1] = ObservationResult{
+	subMatch.Observations[1] = ObservationResult{
 		Observation: target,
 		MatchedEdge: edges[len(edges)-1],
 	}
 
-	return result, nil
+	return MatcherResult{
+		SubMatches: []SubMatch{subMatch},
+	}, nil
 }

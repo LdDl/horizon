@@ -39,8 +39,10 @@ func (ts *Microservice) GetSP(ctx context.Context, in *protos_pb.SPRequest) (*pr
 	if err != nil {
 		return nil, fmt.Errorf("something went wrong on server side: %v", err)
 	}
-	for i := range result.Observations {
-		observationResult := result.Observations[i]
+	// For now, we only handle the first sub-match
+	subMatch := result.SubMatches[0]
+	for i := range subMatch.Observations {
+		observationResult := subMatch.Observations[i]
 		feature := &protos_pb.EdgeInfo{
 			EdgeId: observationResult.MatchedEdge.ID,
 			Weight: observationResult.MatchedEdge.Weight,

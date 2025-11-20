@@ -78,8 +78,10 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
 
-		for i := range result.Observations {
-			observationResult := result.Observations[i]
+		// For now, we only handle the first sub-match
+		subMatch := result.SubMatches[0]
+		for i := range subMatch.Observations {
+			observationResult := subMatch.Observations[i]
 			feature := horizon.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline)
 			feature.ID = observationResult.MatchedEdge.ID
 			feature.SetProperty("weight", observationResult.MatchedEdge.Weight)

@@ -27,19 +27,23 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		}
 
 		correctStates = MatcherResult{
-			Observations: []ObservationResult{
-				{Observation: gpsMeasurements[0]},
-				{Observation: gpsMeasurements[1]},
-				{Observation: gpsMeasurements[2]},
-				{Observation: gpsMeasurements[3]},
-				{Observation: gpsMeasurements[4]},
-				{Observation: gpsMeasurements[5]},
-				{Observation: gpsMeasurements[5]},
-				{Observation: gpsMeasurements[7]},
-				{Observation: gpsMeasurements[8]},
-				{Observation: gpsMeasurements[9]},
+			SubMatches: []SubMatch{
+				{
+					Observations: []ObservationResult{
+						{Observation: gpsMeasurements[0]},
+						{Observation: gpsMeasurements[1]},
+						{Observation: gpsMeasurements[2]},
+						{Observation: gpsMeasurements[3]},
+						{Observation: gpsMeasurements[4]},
+						{Observation: gpsMeasurements[5]},
+						{Observation: gpsMeasurements[5]},
+						{Observation: gpsMeasurements[7]},
+						{Observation: gpsMeasurements[8]},
+						{Observation: gpsMeasurements[9]},
+					},
+					Probability: -86.578520,
+				},
 			},
-			Probability: -86.578520,
 		}
 	)
 
@@ -49,16 +53,16 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		t.Error(err)
 	}
 
-	correctStates.Observations[0].MatchedEdge = *matcher.engine.edges[13640][13641]
-	correctStates.Observations[1].MatchedEdge = *matcher.engine.edges[13650][13651]
-	correctStates.Observations[2].MatchedEdge = *matcher.engine.edges[13659][13660]
-	correctStates.Observations[3].MatchedEdge = *matcher.engine.edges[13661][13662]
-	correctStates.Observations[4].MatchedEdge = *matcher.engine.edges[13663][13664]
-	correctStates.Observations[5].MatchedEdge = *matcher.engine.edges[13664][13665]
-	correctStates.Observations[6].MatchedEdge = *matcher.engine.edges[13665][13666]
-	correctStates.Observations[7].MatchedEdge = *matcher.engine.edges[16784][16785]
-	correctStates.Observations[8].MatchedEdge = *matcher.engine.edges[16788][16789]
-	correctStates.Observations[9].MatchedEdge = *matcher.engine.edges[32639][32640]
+	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges[13640][13641]
+	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges[13650][13651]
+	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges[13659][13660]
+	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges[13661][13662]
+	correctStates.SubMatches[0].Observations[4].MatchedEdge = *matcher.engine.edges[13663][13664]
+	correctStates.SubMatches[0].Observations[5].MatchedEdge = *matcher.engine.edges[13664][13665]
+	correctStates.SubMatches[0].Observations[6].MatchedEdge = *matcher.engine.edges[13665][13666]
+	correctStates.SubMatches[0].Observations[7].MatchedEdge = *matcher.engine.edges[16784][16785]
+	correctStates.SubMatches[0].Observations[8].MatchedEdge = *matcher.engine.edges[16788][16789]
+	correctStates.SubMatches[0].Observations[9].MatchedEdge = *matcher.engine.edges[32639][32640]
 
 	statesRadiusMeters := 7.0
 	maxStates := 5
@@ -67,23 +71,26 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(result.Observations) != len(correctStates.Observations) {
-		t.Errorf("Result should contain %d measurements, but got %d", len(correctStates.Observations), len(result.Observations))
+	resultSubMatch := result.SubMatches[0]
+	correctSubMatch := correctStates.SubMatches[0]
+
+	if len(resultSubMatch.Observations) != len(correctSubMatch.Observations) {
+		t.Errorf("Result should contain %d measurements, but got %d", len(correctSubMatch.Observations), len(resultSubMatch.Observations))
 	}
 
 	eps := 10e-6
-	if math.Abs(result.Probability-correctStates.Probability) > eps {
-		t.Errorf("Path's probability should be %f, but got %f", correctStates.Probability, result.Probability)
+	if math.Abs(resultSubMatch.Probability-correctSubMatch.Probability) > eps {
+		t.Errorf("Path's probability should be %f, but got %f", correctSubMatch.Probability, resultSubMatch.Probability)
 	}
 
-	for i := range result.Observations {
-		if result.Observations[i].MatchedEdge.Source != correctStates.Observations[i].MatchedEdge.Source &&
-			result.Observations[i].MatchedEdge.Source != correctStates.Observations[i].MatchedEdge.Target &&
-			result.Observations[i].MatchedEdge.Target != correctStates.Observations[i].MatchedEdge.Source {
+	for i := range resultSubMatch.Observations {
+		if resultSubMatch.Observations[i].MatchedEdge.Source != correctSubMatch.Observations[i].MatchedEdge.Source &&
+			resultSubMatch.Observations[i].MatchedEdge.Source != correctSubMatch.Observations[i].MatchedEdge.Target &&
+			resultSubMatch.Observations[i].MatchedEdge.Target != correctSubMatch.Observations[i].MatchedEdge.Source {
 			t.Errorf("Matched edge for observation %d should be %d->%d, but got %d->%d",
-				result.Observations[i].Observation.id,
-				correctStates.Observations[i].MatchedEdge.Source, correctStates.Observations[i].MatchedEdge.Target,
-				result.Observations[i].MatchedEdge.Source, result.Observations[i].MatchedEdge.Target,
+				resultSubMatch.Observations[i].Observation.id,
+				correctSubMatch.Observations[i].MatchedEdge.Source, correctSubMatch.Observations[i].MatchedEdge.Target,
+				resultSubMatch.Observations[i].MatchedEdge.Source, resultSubMatch.Observations[i].MatchedEdge.Target,
 			)
 		}
 	}

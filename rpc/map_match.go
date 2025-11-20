@@ -57,76 +57,85 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 		return nil, fmt.Errorf("something went wrong on server side: %v", err)
 	}
 
-	response.Data = make([]*protos_pb.ObservationEdge, len(result.Observations))
-	for i := range result.Observations {
-		observationResult := result.Observations[i]
-		if observationResult.MatchedEdge.Polyline == nil {
-			return nil, fmt.Errorf("matched edge has nil polyline nil for observation %d", observationResult.Observation.ID())
+	// Process all sub-matches
+	response.SubMatches = make([]*protos_pb.SubMatch, len(result.SubMatches))
+	for s := range result.SubMatches {
+		subMatch := result.SubMatches[s]
+		subMatchResp := &protos_pb.SubMatch{
+			Observations: make([]*protos_pb.ObservationEdge, len(subMatch.Observations)),
+			Probability:  subMatch.Probability,
 		}
-		matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
-
-		var matchedEdgeCut s2.Polyline
-		if i == 0 {
-			matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
-		} else if i == len(result.Observations)-1 {
-			matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
-		}
-
-		if observationResult.MatchedVertex.Point == nil {
-			return nil, fmt.Errorf("matched vertex has nil point for observation %d", observationResult.Observation.ID())
-		}
-		vertexPoint := s2.LatLngFromPoint(*observationResult.MatchedVertex.Point)
-		projectedPoint := s2.LatLngFromPoint(observationResult.ProjectedPoint)
-
-		geomLen := len(matchedEdgePolyline)
-		line := make([]*protos_pb.GeoPoint, geomLen)
-		for k := range matchedEdgePolyline {
-			latLng := s2.LatLngFromPoint(matchedEdgePolyline[k])
-			line[k] = &protos_pb.GeoPoint{
-				Lon: latLng.Lng.Degrees(),
-				Lat: latLng.Lat.Degrees(),
+		for i := range subMatch.Observations {
+			observationResult := subMatch.Observations[i]
+			if observationResult.MatchedEdge.Polyline == nil {
+				return nil, fmt.Errorf("matched edge has nil polyline nil for observation %d", observationResult.Observation.ID())
 			}
-		}
-		response.Data[i] = &protos_pb.ObservationEdge{
-			ObsIdx:      int32(observationResult.Observation.ID()),
-			EdgeId:      observationResult.MatchedEdge.ID,
-			MatchedEdge: line,
-			MatchedVertex: &protos_pb.GeoPoint{
-				Lon: vertexPoint.Lng.Degrees(),
-				Lat: vertexPoint.Lat.Degrees(),
-			},
-			ProjectedPoint: &protos_pb.GeoPoint{
-				Lon: projectedPoint.Lng.Degrees(),
-				Lat: projectedPoint.Lat.Degrees(),
-			},
-			NextEdges: make([]*protos_pb.IntermediateEdge, len(observationResult.NextEdges)),
-		}
-		if len(matchedEdgeCut) > 0 {
-			cutLine := make([]*protos_pb.GeoPoint, len(matchedEdgeCut))
-			for k := range matchedEdgeCut {
-				latLng := s2.LatLngFromPoint(matchedEdgeCut[k])
-				cutLine[k] = &protos_pb.GeoPoint{
+			matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
+
+			var matchedEdgeCut s2.Polyline
+			if i == 0 {
+				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+			} else if i == len(subMatch.Observations)-1 {
+				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+			}
+
+			if observationResult.MatchedVertex.Point == nil {
+				return nil, fmt.Errorf("matched vertex has nil point for observation %d", observationResult.Observation.ID())
+			}
+			vertexPoint := s2.LatLngFromPoint(*observationResult.MatchedVertex.Point)
+			projectedPoint := s2.LatLngFromPoint(observationResult.ProjectedPoint)
+
+			geomLen := len(matchedEdgePolyline)
+			line := make([]*protos_pb.GeoPoint, geomLen)
+			for k := range matchedEdgePolyline {
+				latLng := s2.LatLngFromPoint(matchedEdgePolyline[k])
+				line[k] = &protos_pb.GeoPoint{
 					Lon: latLng.Lng.Degrees(),
 					Lat: latLng.Lat.Degrees(),
 				}
 			}
-			response.Data[i].MatchedEdgeCut = cutLine
-		}
-		for j := range observationResult.NextEdges {
-			nextLine := make([]*protos_pb.GeoPoint, len(observationResult.NextEdges[j].Geom))
-			for k := range observationResult.NextEdges[j].Geom {
-				latLng := s2.LatLngFromPoint(observationResult.NextEdges[j].Geom[k])
-				nextLine[k] = &protos_pb.GeoPoint{
-					Lon: latLng.Lng.Degrees(),
-					Lat: latLng.Lat.Degrees(),
+			subMatchResp.Observations[i] = &protos_pb.ObservationEdge{
+				ObsIdx:      int32(observationResult.Observation.ID()),
+				EdgeId:      observationResult.MatchedEdge.ID,
+				MatchedEdge: line,
+				MatchedVertex: &protos_pb.GeoPoint{
+					Lon: vertexPoint.Lng.Degrees(),
+					Lat: vertexPoint.Lat.Degrees(),
+				},
+				ProjectedPoint: &protos_pb.GeoPoint{
+					Lon: projectedPoint.Lng.Degrees(),
+					Lat: projectedPoint.Lat.Degrees(),
+				},
+				NextEdges: make([]*protos_pb.IntermediateEdge, len(observationResult.NextEdges)),
+			}
+			if len(matchedEdgeCut) > 0 {
+				cutLine := make([]*protos_pb.GeoPoint, len(matchedEdgeCut))
+				for k := range matchedEdgeCut {
+					latLng := s2.LatLngFromPoint(matchedEdgeCut[k])
+					cutLine[k] = &protos_pb.GeoPoint{
+						Lon: latLng.Lng.Degrees(),
+						Lat: latLng.Lat.Degrees(),
+					}
+				}
+				subMatchResp.Observations[i].MatchedEdgeCut = cutLine
+			}
+			for j := range observationResult.NextEdges {
+				nextLine := make([]*protos_pb.GeoPoint, len(observationResult.NextEdges[j].Geom))
+				for k := range observationResult.NextEdges[j].Geom {
+					latLng := s2.LatLngFromPoint(observationResult.NextEdges[j].Geom[k])
+					nextLine[k] = &protos_pb.GeoPoint{
+						Lon: latLng.Lng.Degrees(),
+						Lat: latLng.Lat.Degrees(),
+					}
+				}
+				subMatchResp.Observations[i].NextEdges[j] = &protos_pb.IntermediateEdge{
+					Geom:   nextLine,
+					Weight: observationResult.NextEdges[j].Weight,
+					Id:     observationResult.NextEdges[j].ID,
 				}
 			}
-			response.Data[i].NextEdges[j] = &protos_pb.IntermediateEdge{
-				Geom:   nextLine,
-				Weight: observationResult.NextEdges[j].Weight,
-				Id:     observationResult.NextEdges[j].ID,
-			}
 		}
+		response.SubMatches[s] = subMatchResp
 	}
 	return response, nil
 }

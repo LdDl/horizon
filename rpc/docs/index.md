@@ -14,6 +14,7 @@
     - [MapMatchRequest](#horizon-MapMatchRequest)
     - [MapMatchResponse](#horizon-MapMatchResponse)
     - [ObservationEdge](#horizon-ObservationEdge)
+    - [SubMatch](#horizon-SubMatch)
   
 - [point.proto](#point-proto)
     - [GeoPoint](#horizon-GeoPoint)
@@ -165,7 +166,7 @@ Server&#39;s response for map matching request
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| data | [ObservationEdge](#horizon-ObservationEdge) | repeated | Set of matched edges for each observation |
+| sub_matches | [SubMatch](#horizon-SubMatch) | repeated | Array of sub-matches (segments split when route cannot be computed between consecutive points) |
 | warnings | [string](#string) | repeated | List of warnings |
 
 
@@ -189,6 +190,22 @@ Relation between observation and matched edge
 | matched_vertex | [GeoPoint](#horizon-GeoPoint) |  | Corresponding matched vertex as point feature |
 | projected_point | [GeoPoint](#horizon-GeoPoint) |  | Corresponding projection on the edge as point feature |
 | next_edges | [IntermediateEdge](#horizon-IntermediateEdge) | repeated | Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation |
+
+
+
+
+
+
+<a name="horizon-SubMatch"></a>
+
+### SubMatch
+A single continuous matched segment
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| observations | [ObservationEdge](#horizon-ObservationEdge) | repeated | Set of matched edges for observations in this segment |
+| probability | [double](#double) |  | Probability from Viterbi algorithm for this segment Example: -86.578520 |
 
 
 
