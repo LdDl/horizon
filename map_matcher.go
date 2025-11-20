@@ -185,7 +185,11 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		return MatcherResult{}, err
 	}
 
-	vpath := v.EvalPathLogProbabilities()
+	vpath, err := v.EvalPathLogProbabilities()
+	if err != nil {
+		return MatcherResult{}, errors.Wrapf(err, "Can't evaluate path log probabilities")
+	}
+
 	if ViterbiDebug {
 		fmt.Println("prob:", vpath.Probability)
 		fmt.Println("path:")
@@ -209,7 +213,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	gpsMeasurements - set of Observations
 */
 func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLengths map[int]map[int]float64, gpsMeasurements []*GPSMeasurement) (*viterbi.Viterbi, error) {
-	v := &viterbi.Viterbi{}
+	v := viterbi.New()
 
 	statesIndx := make(map[int]int)
 	idx := 0

@@ -63,7 +63,10 @@ func TestMapMatcherSRID_0(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	vpath := v.EvalPathLogProbabilities()
+	vpath, err := v.EvalPathLogProbabilities()
+	if err != nil {
+		t.Error(err)
+	}
 	correctProb := -1932.234419
 	eps := 10e-6
 	if math.Abs(vpath.Probability-correctProb) > eps {
@@ -155,7 +158,10 @@ func BenchmarkMapMatcherSRID_0(b *testing.B) {
 				if err != nil {
 					b.Error(err)
 				}
-				vpath := v.EvalPathLogProbabilities()
+				vpath, err := v.EvalPathLogProbabilities()
+				if err != nil {
+					b.Error(err)
+				}
 				_ = vpath
 			}
 		})
