@@ -32,6 +32,8 @@ type GPSToMapMatch struct {
 	Timestamp string `json:"tm" example:"2020-03-11T00:00:00"`
 	// [Longitude, Latitude]
 	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
+	// GPS measurement accuracy in meters (optional, <=0 or null means use default sigma)
+	Accuracy *float64 `json:"accuracy" example:"5.0"`
 }
 
 // MapMatchResponse Server's response for map matching request
@@ -102,7 +104,12 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 				return ctx.Status(400).JSON(fiber.Map{"Error": "Wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS"})
 			}
 			// Use index of measurement as ID
-			gpsMeasurement := horizon.NewGPSMeasurement(i, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326, horizon.WithGPSTime(tm))
+			var gpsMeasurement *horizon.GPSMeasurement
+			if data.Data[i].Accuracy != nil && *data.Data[i].Accuracy > 0 {
+				gpsMeasurement = horizon.NewGPSMeasurement(i, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326, horizon.WithGPSTime(tm), horizon.WithGPSAccuracy(*data.Data[i].Accuracy))
+			} else {
+				gpsMeasurement = horizon.NewGPSMeasurement(i, data.Data[i].LonLat[0], data.Data[i].LonLat[1], 4326, horizon.WithGPSTime(tm))
+			}
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 		}
 		statesRadiusMeters := 25.0

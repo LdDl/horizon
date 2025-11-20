@@ -166,6 +166,11 @@
         "rest.GPSToMapMatch": {
             "type": "object",
             "properties": {
+                "accuracy": {
+                    "description": "GPS measurement accuracy in meters (optional, \u003c=0 or null means use default sigma)",
+                    "type": "number",
+                    "example": 5
+                },
                 "lon_lat": {
                     "description": "[Longitude, Latitude]",
                     "type": "array",
@@ -313,6 +318,10 @@
                 },
                 "matched_edge": {
                     "description": "Corresponding matched edge as GeoJSON LineString feature",
+                    "type": "object"
+                },
+                "matched_edge_cut": {
+                    "description": "Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge",
                     "type": "object"
                 },
                 "matched_vertex": {

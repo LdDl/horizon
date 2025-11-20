@@ -27,6 +27,9 @@ message GPSToMapMatch {
     // Latitude
     // Example: 55.745374309126895
     double lat = 4;
+    // GPS measurement accuracy in meters (optional, <=0 or null means use default sigma)
+    // Example: 5.0
+    optional double accuracy = 5;
 }
 
 // Server's response for map matching request
