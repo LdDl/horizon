@@ -1,7 +1,5 @@
 github.com/LdDl/ch v1.7.7 h1:jTrqlG0IaTEnL9AUL6TOCsybHKtUwEm+I1sdvL6owsk=
 github.com/LdDl/ch v1.7.7/go.mod h1:i6JXvviI4GnJRTctKKVo6A0PzqaxaTHKvXhHgqVwFRY=
-github.com/LdDl/viterbi v1.0.2 h1:Suqn8CjJQiuvD5c6WiajDcIzChlp/IYNxH+q6OjvN7E=
-github.com/LdDl/viterbi v1.0.2/go.mod h1:aRi/jFMBD9c+rhe0/iIlO1QAiQn6Yo5K79aKBzp1HMg=
 github.com/LdDl/viterbi v1.1.0 h1:P+NdpZpktXCULL/fdvA0sRzf6wPmjhunDZ9JFFirmws=
 github.com/LdDl/viterbi v1.1.0/go.mod h1:aRi/jFMBD9c+rhe0/iIlO1QAiQn6Yo5K79aKBzp1HMg=
 github.com/andybalholm/brotli v1.1.0 h1:eLKJA0d02Lf0mVpIDgYnqXcUn0GqVmEFny3VuID1U3M=
@@ -29,8 +27,8 @@ github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovk
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
-github.com/mattn/go-runewidth v0.0.15 h1:UNAjwbU9l54TA3KzvqLGxwWjHmMgBUVhBiTjelZgg3U=
-github.com/mattn/go-runewidth v0.0.15/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
+github.com/mattn/go-runewidth v0.0.16 h1:E5ScNMtiwvlvB5paMFdw9p4kSQzbXFikJ5SQO6TULQc=
+github.com/mattn/go-runewidth v0.0.16/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/paulmach/go.geojson v1.4.0 h1:5x5moCkCtDo5x8af62P9IOAYGQcYHtxz2QJ3x1DoCgY=
 github.com/paulmach/go.geojson v1.4.0/go.mod h1:YaKx1hKpWF+T2oj2lFJPsW/t1Q5e1jQI61eoQSTwpIs=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
