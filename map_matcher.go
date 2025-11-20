@@ -305,11 +305,16 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 	layer - wrapper of Observation
 */
 func (matcher *MapMatcher) computeEmissionLogProbabilities(layer *CandidateLayer) {
-	ems := make([]float64, len(layer.States))
+	// Use observation's accuracy if provided, else default sigma
+	sigma := matcher.hmmParams.sigma
+	if layer.Observation.accuracy > 0 {
+		sigma = layer.Observation.accuracy
+	}
+
 	for i := range layer.States {
 		distance := layer.States[i].Projected.DistanceTo(layer.Observation.GeoPoint)
-		ems[i] = matcher.hmmParams.EmissionLogProbability(distance)
-		layer.AddEmissionProbability(layer.States[i], matcher.hmmParams.EmissionLogProbability(distance))
+		emissionLogProb := LogNormalDistribution(sigma, distance)
+		layer.AddEmissionProbability(layer.States[i], emissionLogProb)
 	}
 }
 

@@ -14,11 +14,18 @@ type GPSMeasurements []*GPSMeasurement
 	id - unique identifier
 	dateTime - timestamp
 	GeoPoint - latitude(Y)/longitude(X), pointer to GeoPoint (wrapper)
+	accuracy - GPS measurement accuracy in meters (<=0 means use default sigma)
 */
 type GPSMeasurement struct {
 	*GeoPoint
 	dateTime time.Time
 	id       int
+	accuracy float64
+}
+
+// Accuracy Returns GPS measurement accuracy in meters (0 means use default sigma)
+func (gps *GPSMeasurement) Accuracy() float64 {
+	return gps.accuracy
 }
 
 // ID Returns generated identifier for GPS-point
@@ -64,6 +71,14 @@ func NewGPSMeasurement(id int, lon, lat float64, srid int, options ...func(*GPSM
 func WithGPSTime(t time.Time) func(*GPSMeasurement) {
 	return func(gps *GPSMeasurement) {
 		gps.dateTime = t
+	}
+}
+
+// WithGPSAccuracy sets user defined accuracy for GPS measurement in meters
+// Value of <=0 means use default sigma from HmmProbabilities
+func WithGPSAccuracy(accuracy float64) func(*GPSMeasurement) {
+	return func(gps *GPSMeasurement) {
+		gps.accuracy = accuracy
 	}
 }
 

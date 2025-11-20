@@ -29,7 +29,12 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 			return nil, fmt.Errorf("wrong timestamp layout. Please use YYYY-MM-DDTHH:mm:SS")
 		}
 		// Use index of measurement as ID
-		gpsMeasurement := horizon.NewGPSMeasurement(i, in.Gps[i].Lon, in.Gps[i].Lat, 4326, horizon.WithGPSTime(tm))
+		var gpsMeasurement *horizon.GPSMeasurement
+		if in.Gps[i].Accuracy != nil && *in.Gps[i].Accuracy > 0 {
+			gpsMeasurement = horizon.NewGPSMeasurement(i, in.Gps[i].Lon, in.Gps[i].Lat, 4326, horizon.WithGPSTime(tm), horizon.WithGPSAccuracy(*in.Gps[i].Accuracy))
+		} else {
+			gpsMeasurement = horizon.NewGPSMeasurement(i, in.Gps[i].Lon, in.Gps[i].Lat, 4326, horizon.WithGPSTime(tm))
+		}
 		gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 	}
 

@@ -116,6 +116,7 @@ Representation of GPS data
 | tm | [string](#string) |  | Timestamp. Field would be ignored for request on &#39;/shortest&#39; service. Example: 2020-03-11T00:00:00 |
 | lon | [double](#double) |  | Longitude Example: 37.601249363208915 |
 | lat | [double](#double) |  | Latitude Example: 55.745374309126895 |
+| accuracy | [double](#double) | optional | GPS measurement accuracy in meters (optional, &lt;=0 or null means use default sigma) Example: 5.0 |
 
 
 
