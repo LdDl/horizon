@@ -47,6 +47,12 @@ func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, 
 	return mm, nil
 }
 
+// Segments to process separately (split at break points)
+type Segment struct {
+	start int // first observation index in this segment
+	end   int // last observation index in this segment
+}
+
 // Run Do magic
 /*
 	gpsMeasurements - Observations
@@ -119,6 +125,9 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 	routeLengths := make(lengths)
 
+	segments := []Segment{}
+	segmentStart := 0
+
 	// @todo: Consider to use ShortestPathOneToMany (need to deal with the order of writing data to to chRoutes and routeLengths)
 	for i := 1; i < len(layers); i++ {
 		prevStates := layers[i-1]
@@ -166,6 +175,13 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 			}
 		}
+
+		// Check for break point on-the-fly
+		if isBreakPoint(prevStates, currentStates, chRoutes) {
+			segments = append(segments, Segment{start: segmentStart, end: i - 1})
+			segmentStart = i
+		}
+
 		// We can skip chaning routing vertices in very last candidates layer
 		if i == len(layers)-1 {
 			continue
@@ -180,31 +196,49 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		}
 	}
 
-	v, err := matcher.PrepareViterbi(obsState, routeLengths, engineGpsMeasurements)
-	if err != nil {
-		return MatcherResult{}, err
-	}
+	// Make sure the last segment is there
+	segments = append(segments, Segment{start: segmentStart, end: len(layers) - 1})
 
-	vpath, err := v.EvalPathLogProbabilities()
-	if err != nil {
-		return MatcherResult{}, errors.Wrapf(err, "Can't evaluate path log probabilities")
-	}
-
-	if ViterbiDebug {
-		fmt.Println("prob:", vpath.Probability)
-		fmt.Println("path:")
-		for i := range vpath.Path {
-			fmt.Println("\t", vpath.Path[i].(*RoadPosition).GraphEdge.ID, vpath.Path[i].(*RoadPosition).ID())
+	// Process each segment separately
+	subMatches := make([]SubMatch, 0, len(segments))
+	for _, seg := range segments {
+		segmentSize := seg.end - seg.start + 1
+		if segmentSize < 1 {
+			continue
 		}
+
+		// Slice data for this segment
+		segmentLayers := layers[seg.start : seg.end+1]
+		segmentObsState := obsState[seg.start : seg.end+1]
+		segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
+
+		v, err := matcher.PrepareViterbi(segmentObsState, routeLengths, segmentGPS)
+		if err != nil {
+			return MatcherResult{}, err
+		}
+
+		vpath, err := v.EvalPathLogProbabilities()
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "Can't evaluate path log probabilities for segment [%d:%d]", seg.start, seg.end)
+		}
+
+		if ViterbiDebug {
+			fmt.Printf("Segment [%d:%d] prob: %f\n", seg.start, seg.end, vpath.Probability)
+			fmt.Println("path:")
+			for i := range vpath.Path {
+				fmt.Println("\t", vpath.Path[i].(*RoadPosition).GraphEdge.ID, vpath.Path[i].(*RoadPosition).ID())
+			}
+		}
+
+		if len(vpath.Path) != len(segmentGPS) {
+			return MatcherResult{}, fmt.Errorf("number of states in final path != number (%d and %d) of observations for segment [%d:%d]", len(vpath.Path), len(segmentGPS), seg.start, seg.end)
+		}
+
+		subMatch := matcher.prepareSubMatch(vpath, segmentGPS, segmentLayers, chRoutes)
+		subMatches = append(subMatches, subMatch)
 	}
 
-	if len(vpath.Path) != len(engineGpsMeasurements) {
-		return MatcherResult{}, fmt.Errorf("number of states in final path != number (%d and %d) of observations. Should be unreachable error", len(vpath.Path), len(engineGpsMeasurements))
-	}
-
-	result := matcher.prepareResult(vpath, engineGpsMeasurements, chRoutes)
-
-	return result, nil
+	return MatcherResult{SubMatches: subMatches}, nil
 }
 
 // PrepareViterbi Prepares engine for doing Viterbi's algorithm (see https://github.com/LdDl/viterbi/blob/master/viterbi.go#L25)
@@ -346,4 +380,22 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 		}
 	}
 	return nil
+}
+
+// isBreakPoint checks if there are no valid routes between two consecutive layers
+func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[int][]int64) bool {
+	for m := range prevStates {
+		fromID := prevStates[m].RoadPositionID
+		if _, ok := chRoutes[fromID]; !ok {
+			continue
+		}
+		for n := range currentStates {
+			toID := currentStates[n].RoadPositionID
+			path, ok := chRoutes[fromID][toID]
+			if ok && len(path) > 0 {
+				return false // Found valid route
+			}
+		}
+	}
+	return true // No valid routes found
 }

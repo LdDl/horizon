@@ -26,11 +26,16 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 				{
 					Observations: []ObservationResult{
 						{Observation: gpsMeasurements[0]},
+					},
+					Probability: -9.887810,
+				},
+				{
+					Observations: []ObservationResult{
 						{Observation: gpsMeasurements[1]},
 						{Observation: gpsMeasurements[2]},
 						{Observation: gpsMeasurements[3]},
 					},
-					Probability: -20000000029.498936,
+					Probability: -10000000025.753883,
 				},
 			},
 		}
@@ -43,9 +48,9 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 	}
 
 	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges[102][105]
+	correctStates.SubMatches[1].Observations[0].MatchedEdge = *matcher.engine.edges[101][102]
+	correctStates.SubMatches[1].Observations[1].MatchedEdge = *matcher.engine.edges[101][102]
+	correctStates.SubMatches[1].Observations[2].MatchedEdge = *matcher.engine.edges[102][105]
 
 	statesRadiusMeters := 7.0
 	maxStates := 5
@@ -54,25 +59,36 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		t.Error(err)
 	}
 
-	resultSubMatch := result.SubMatches[0]
-	correctSubMatch := correctStates.SubMatches[0]
-
-	if len(resultSubMatch.Observations) != len(correctSubMatch.Observations) {
-		t.Errorf("Result should contain %d measurements, but got %d", len(correctSubMatch.Observations), len(resultSubMatch.Observations))
+	// Check number of sub-matches
+	if len(result.SubMatches) != len(correctStates.SubMatches) {
+		t.Errorf("Expected %d sub-matches, got %d", len(correctStates.SubMatches), len(result.SubMatches))
+		return
 	}
 
 	eps := 10e-6
-	if math.Abs(resultSubMatch.Probability-correctSubMatch.Probability) > eps {
-		t.Errorf("Path's probability should be %f, but got %f", correctSubMatch.Probability, resultSubMatch.Probability)
-	}
+	for s := range result.SubMatches {
+		resultSubMatch := result.SubMatches[s]
+		correctSubMatch := correctStates.SubMatches[s]
 
-	for i := range resultSubMatch.Observations {
-		if resultSubMatch.Observations[i].MatchedEdge != correctSubMatch.Observations[i].MatchedEdge {
-			t.Errorf("Matched edge for observation %d should be %d->%d, but got %d->%d",
-				resultSubMatch.Observations[i].Observation.id,
-				correctSubMatch.Observations[i].MatchedEdge.Source, correctSubMatch.Observations[i].MatchedEdge.Target,
-				resultSubMatch.Observations[i].MatchedEdge.Source, resultSubMatch.Observations[i].MatchedEdge.Target,
-			)
+		if len(resultSubMatch.Observations) != len(correctSubMatch.Observations) {
+			t.Errorf("SubMatch %d: expected %d observations, got %d",
+				s, len(correctSubMatch.Observations), len(resultSubMatch.Observations))
+			continue
+		}
+
+		if math.Abs(resultSubMatch.Probability-correctSubMatch.Probability) > eps {
+			t.Errorf("SubMatch %d: probability should be %f, but got %f",
+				s, correctSubMatch.Probability, resultSubMatch.Probability)
+		}
+
+		for i := range resultSubMatch.Observations {
+			if resultSubMatch.Observations[i].MatchedEdge != correctSubMatch.Observations[i].MatchedEdge {
+				t.Errorf("SubMatch %d, observation %d: matched edge should be %d->%d, but got %d->%d",
+					s, resultSubMatch.Observations[i].Observation.id,
+					correctSubMatch.Observations[i].MatchedEdge.Source, correctSubMatch.Observations[i].MatchedEdge.Target,
+					resultSubMatch.Observations[i].MatchedEdge.Source, resultSubMatch.Observations[i].MatchedEdge.Target,
+				)
+			}
 		}
 	}
 
