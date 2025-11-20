@@ -18,7 +18,6 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 		return nil, fmt.Errorf("please provide 3 GPS points atleast. Provided: %d", len(in.Gps))
 	}
 	response := &protos_pb.MapMatchResponse{
-		Data:     []*protos_pb.ObservationEdge{},
 		Warnings: []string{},
 	}
 
