@@ -3,6 +3,8 @@ package horizon
 import (
 	"fmt"
 	"math"
+	"runtime"
+	"sync"
 
 	"github.com/LdDl/ch"
 	"github.com/LdDl/viterbi"
@@ -19,16 +21,19 @@ const (
 /*
 	hmmParams - parameters of Hidden Markov Model
 	engine - wrapper around MapEngine (for KNN and finding shortest path problems)
+	viterbiSemaphore - limits concurrent Viterbi computations globally
 */
 type MapMatcher struct {
-	hmmParams *HmmProbabilities
-	engine    *MapEngine
+	hmmParams        *HmmProbabilities
+	engine           *MapEngine
+	viterbiSemaphore chan struct{}
 }
 
 // NewMapMatcherDefault Returns pointer to created MapMatcher with default parameters
 func NewMapMatcherDefault() *MapMatcher {
 	return &MapMatcher{
-		hmmParams: HmmProbabilitiesDefault(),
+		hmmParams:        HmmProbabilitiesDefault(),
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
 	}
 }
 
@@ -38,7 +43,8 @@ func NewMapMatcherDefault() *MapMatcher {
 */
 func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, error) {
 	mm := &MapMatcher{
-		hmmParams: props,
+		hmmParams:        props,
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
 	}
 	mapEngine, err := prepareEngine(edgesFilename)
 	if err != nil {
@@ -62,6 +68,12 @@ type Segment struct {
 type cachedRoute struct {
 	cost float64
 	path []int64
+}
+
+// viterbiResult is for processing each segment (Viterbi) separately using goroutines
+type viterbiResult struct {
+	vpath viterbi.ViterbiPath
+	err   error
 }
 
 // Run Do magic
@@ -232,42 +244,66 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		routeLengths: currentRouteLengths,
 	})
 
-	// Process each segment separately
+	// Run Viterbi in parallel for each segment with bounded concurrency
+	results := make([]viterbiResult, len(segments))
+	var wg sync.WaitGroup
+	wg.Add(len(segments))
+
+	for i := range segments {
+		go func(i int) {
+			matcher.viterbiSemaphore <- struct{}{} // Acquire
+			defer func() {
+				<-matcher.viterbiSemaphore // Release
+				wg.Done()
+			}()
+
+			seg := &segments[i]
+			segmentObsState := obsState[seg.start : seg.end+1]
+			segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
+
+			v, err := matcher.PrepareViterbi(segmentObsState, seg.routeLengths, segmentGPS)
+			if err != nil {
+				results[i] = viterbiResult{err: err}
+				return
+			}
+
+			vpath, err := v.EvalPathLogProbabilities()
+			if err != nil {
+				results[i] = viterbiResult{err: errors.Wrapf(err, "Can't evaluate path log probabilities for segment [%d:%d]", seg.start, seg.end)}
+				return
+			}
+
+			if len(vpath.Path) != len(segmentGPS) {
+				results[i] = viterbiResult{err: fmt.Errorf("number of states in final path != number (%d and %d) of observations for segment [%d:%d]", len(vpath.Path), len(segmentGPS), seg.start, seg.end)}
+				return
+			}
+
+			results[i] = viterbiResult{vpath: vpath}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Check for errors and prepare subMatches sequentially
 	subMatches := make([]SubMatch, 0, len(segments))
-	for _, seg := range segments {
-		segmentSize := seg.end - seg.start + 1
-		if segmentSize < 1 {
-			continue
+	for i := range segments {
+		if results[i].err != nil {
+			return MatcherResult{}, results[i].err
 		}
 
-		// Slice data for this segment
+		seg := &segments[i]
 		segmentLayers := layers[seg.start : seg.end+1]
-		segmentObsState := obsState[seg.start : seg.end+1]
 		segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
 
-		v, err := matcher.PrepareViterbi(segmentObsState, seg.routeLengths, segmentGPS)
-		if err != nil {
-			return MatcherResult{}, err
-		}
-
-		vpath, err := v.EvalPathLogProbabilities()
-		if err != nil {
-			return MatcherResult{}, errors.Wrapf(err, "Can't evaluate path log probabilities for segment [%d:%d]", seg.start, seg.end)
-		}
-
 		if ViterbiDebug {
-			fmt.Printf("Segment [%d:%d] prob: %f\n", seg.start, seg.end, vpath.Probability)
+			fmt.Printf("Segment [%d:%d] prob: %f\n", seg.start, seg.end, results[i].vpath.Probability)
 			fmt.Println("path:")
-			for i := range vpath.Path {
-				fmt.Println("\t", vpath.Path[i].(*RoadPosition).GraphEdge.ID, vpath.Path[i].(*RoadPosition).ID())
+			for j := range results[i].vpath.Path {
+				fmt.Println("\t", results[i].vpath.Path[j].(*RoadPosition).GraphEdge.ID, results[i].vpath.Path[j].(*RoadPosition).ID())
 			}
 		}
 
-		if len(vpath.Path) != len(segmentGPS) {
-			return MatcherResult{}, fmt.Errorf("number of states in final path != number (%d and %d) of observations for segment [%d:%d]", len(vpath.Path), len(segmentGPS), seg.start, seg.end)
-		}
-
-		subMatch := matcher.prepareSubMatch(vpath, segmentGPS, segmentLayers, chRoutes)
+		subMatch := matcher.prepareSubMatch(results[i].vpath, segmentGPS, segmentLayers, chRoutes)
 		subMatches = append(subMatches, subMatch)
 	}
 
