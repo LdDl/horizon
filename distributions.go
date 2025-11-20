@@ -15,7 +15,8 @@ func NormalDistribution(sigma, x float64) float64 {
 	return 1.0 / (sqrtTwoPi * sigma) * math.Exp(-0.5*math.Pow(x/sigma, 2))
 }
 
-// LogNormalDistribution https://en.wikipedia.org/wiki/Log-normal_distribution
+// LogNormalDistribution computes log of normal distribution PDF
+// log(f(x)) = log(1/(sqrt(2*pi)*sigma)) - 0.5*(x/sigma)^2
 func LogNormalDistribution(sigma, x float64) float64 {
 	return math.Log(1.0/(sqrtTwoPi*sigma)) + (-0.5 * math.Pow(x/sigma, 2))
 }
@@ -25,7 +26,9 @@ func ExponentialDistribution(beta, x float64) float64 {
 	return (1.0 / beta) * math.Exp(-x/beta)
 }
 
-// LogExponentialDistribution ln(1/β) - (x/β), beta = 1/λ
+// LogExponentialDistribution computes log of exponential distribution PDF
+// log(f(x)) = log(1/beta) - x/beta
+// Note: When beta < 1, PDF can exceed 1 at x=0, resulting in positive log values
 func LogExponentialDistribution(beta, x float64) float64 {
 	return math.Log(1.0/beta) - (x / beta)
 }
