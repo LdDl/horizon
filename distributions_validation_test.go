@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// TestLogProbabilitiesCorrectness verifies that log probability functions match their regular counterparts
-func TestLogProbabilitiesCorrectness(t *testing.T) {
+// TestLogDistributionsUnnormalized verifies that unnormalized log distributions are always <= 0
+func TestLogDistributionsUnnormalized(t *testing.T) {
 	betas := []float64{
 		0.00959442, // Default beta
 		0.001,
@@ -28,30 +28,24 @@ func TestLogProbabilitiesCorrectness(t *testing.T) {
 		1000.0,
 	}
 
-	// Test LogExponentialDistribution
+	// Test LogExponentialDistributionUnnormalized - should always be <= 0
 	for _, beta := range betas {
 		for _, x := range xValues {
-			logProb := LogExponentialDistribution(beta, x)
-			regularProb := ExponentialDistribution(beta, x)
-
-			if regularProb > 0 {
-				expectedLogProb := math.Log(regularProb)
-				eps := 1e-10
-				if math.Abs(logProb-expectedLogProb) > eps {
-					t.Errorf("LogExponentialDistribution(beta=%f, x=%f) = %f doesn't match log(ExponentialDistribution) = %f",
-						beta, x, logProb, expectedLogProb)
-				}
-			} else {
-				// Handle numerical underflow
-				if logProb > -100 {
-					t.Errorf("LogExponentialDistribution(beta=%f, x=%f) = %f should be very negative when regular prob underflows",
-						beta, x, logProb)
-				}
+			logProb := LogExponentialDistributionUnnormalized(beta, x)
+			if logProb > 0 {
+				t.Errorf("LogExponentialDistributionUnnormalized(beta=%f, x=%f) = %f should be <= 0",
+					beta, x, logProb)
+			}
+			// Verify formula: -x/beta
+			expected := -x / beta
+			if math.Abs(logProb-expected) > 1e-10 {
+				t.Errorf("LogExponentialDistributionUnnormalized(beta=%f, x=%f) = %f, expected %f",
+					beta, x, logProb, expected)
 			}
 		}
 	}
 
-	// Test LogNormalDistribution
+	// Test LogNormalDistributionUnnormalized - should always be <= 0
 	sigmas := []float64{
 		0.5,
 		1.0,
@@ -61,44 +55,37 @@ func TestLogProbabilitiesCorrectness(t *testing.T) {
 
 	for _, sigma := range sigmas {
 		for _, x := range xValues {
-			logProb := LogNormalDistribution(sigma, x)
-			regularProb := NormalDistribution(sigma, x)
-
-			if regularProb > 0 {
-				expectedLogProb := math.Log(regularProb)
-				eps := 1e-10
-				if math.Abs(logProb-expectedLogProb) > eps {
-					t.Errorf("LogNormalDistribution(sigma=%f, x=%f) = %f doesn't match log(NormalDistribution) = %f",
-						sigma, x, logProb, expectedLogProb)
-				}
-			} else {
-				// Handle numerical underflow
-				if logProb > -100 {
-					t.Errorf("LogNormalDistribution(sigma=%f, x=%f) = %f should be very negative when regular prob underflows",
-						sigma, x, logProb)
-				}
+			logProb := LogNormalDistributionUnnormalized(sigma, x)
+			if logProb > 0 {
+				t.Errorf("LogNormalDistributionUnnormalized(sigma=%f, x=%f) = %f should be <= 0",
+					sigma, x, logProb)
+			}
+			// Verify formula: -0.5*(x/sigma)^2
+			expected := -0.5 * math.Pow(x/sigma, 2)
+			if math.Abs(logProb-expected) > 1e-10 {
+				t.Errorf("LogNormalDistributionUnnormalized(sigma=%f, x=%f) = %f, expected %f",
+					sigma, x, logProb, expected)
 			}
 		}
 	}
 }
 
-// TestDefaultBetaEdgeCase tests exponential distribution with default beta at x=0
-func TestDefaultBetaEdgeCase(t *testing.T) {
+// TestDefaultBetaNoPositiveValues verifies no positive log probabilities with default beta for unnormalized
+func TestDefaultBetaNoPositiveValues(t *testing.T) {
 	beta := 0.00959442 // Default beta
 	x := 0.0
 
-	logProb := LogExponentialDistribution(beta, x)
-	expectedLogProb := math.Log(1.0 / beta)
+	logProb := LogExponentialDistributionUnnormalized(beta, x)
 
-	eps := 1e-10
-	if math.Abs(logProb-expectedLogProb) > eps {
-		t.Errorf("LogExponentialDistribution(beta=%f, x=0) = %f, expected %f",
-			beta, logProb, expectedLogProb)
+	// With unnormalized formula, x=0 gives 0, not positive value
+	if logProb != 0 {
+		t.Errorf("LogExponentialDistributionUnnormalized(beta=%f, x=0) = %f, expected 0", beta, logProb)
 	}
 
-	// Verify that PDF > 1 is valid for small beta
-	if beta < 1.0 && logProb > 0 {
-		// This is expected: PDF can exceed 1 for continuous distributions
-		t.Logf("LogExponentialDistribution(beta=%f, x=0) = %f (positive, as expected for PDF > 1)", beta, logProb)
+	// All values should be <= 0
+	if logProb > 0 {
+		t.Errorf("LogExponentialDistributionUnnormalized should never return positive values, got %f", logProb)
 	}
+
+	t.Logf("LogExponentialDistributionUnnormalized(beta=%f, x=0) = %f (no more positive values!)", beta, logProb)
 }
