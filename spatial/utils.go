@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
@@ -83,7 +84,7 @@ func CalcProjectionEuclidean(line s2.Polyline, point s2.Point) (projected s2.Poi
 	for i := 0; i < len(line)-1; i++ {
 		dx := line[i+1].Vector.X - line[i].Vector.X
 		dy := line[i+1].Vector.Y - line[i].Vector.Y
-		segLen := sqrt(dx*dx + dy*dy)
+		segLen := math.Sqrt(dx*dx + dy*dy)
 		totalLength += segLen
 
 		if i < bestNext-1 {
@@ -92,7 +93,7 @@ func CalcProjectionEuclidean(line s2.Polyline, point s2.Point) (projected s2.Poi
 			// Add partial segment
 			dx := bestProjection.Vector.X - line[i].Vector.X
 			dy := bestProjection.Vector.Y - line[i].Vector.Y
-			lengthToProj += sqrt(dx*dx + dy*dy)
+			lengthToProj += math.Sqrt(dx*dx + dy*dy)
 		}
 	}
 
@@ -101,19 +102,6 @@ func CalcProjectionEuclidean(line s2.Polyline, point s2.Point) (projected s2.Poi
 	}
 
 	return bestProjection, lengthToProj / totalLength, bestNext
-}
-
-// sqrt is a helper for Euclidean distance calculation
-func sqrt(x float64) float64 {
-	if x <= 0 {
-		return 0
-	}
-	// Newton's method for square root
-	z := x
-	for i := 0; i < 10; i++ {
-		z = (z + x/z) / 2
-	}
-	return z
 }
 
 // GeoJSONToS2PolylineFeature Returns *s2.Polyline representation of *geojson.Geometry (of LineString type)
