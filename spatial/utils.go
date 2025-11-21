@@ -7,7 +7,7 @@ import (
 	geojson "github.com/paulmach/go.geojson"
 )
 
-// CalcProjection Returns projection on line and fraction for point
+// CalcProjection Returns projection on line and fraction for point (spherical geometry)
 /*
 	line - s2.Polyline
 	point - s2.Point
@@ -24,6 +24,96 @@ func CalcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fract
 	}
 	subs = append(subs, pr)
 	return pr, (subs.Length() / line.Length()).Radians(), next
+}
+
+// CalcProjectionEuclidean Returns projection on line and fraction for point (Euclidean/planar geometry)
+/*
+	line - s2.Polyline (using Vector.X/Y as Euclidean coordinates)
+	point - s2.Point (using Vector.X/Y as Euclidean coordinates)
+
+	projected - projection of point on line
+	fraction - number in [0;1], describes how far projected point from first point of polyline
+	next - index of the next vertex after the projected point
+*/
+func CalcProjectionEuclidean(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64, next int) {
+	if len(line) < 2 {
+		return point, 0, 0
+	}
+
+	px, py := point.Vector.X, point.Vector.Y
+	minDist := -1.0
+	var bestProjection s2.Point
+	bestNext := 1
+
+	// Find the closest segment
+	for i := 0; i < len(line)-1; i++ {
+		x1, y1 := line[i].Vector.X, line[i].Vector.Y
+		x2, y2 := line[i+1].Vector.X, line[i+1].Vector.Y
+
+		dx := x2 - x1
+		dy := y2 - y1
+
+		var projX, projY float64
+		if dx == 0 && dy == 0 {
+			projX, projY = x1, y1
+		} else {
+			t := ((px-x1)*dx + (py-y1)*dy) / (dx*dx + dy*dy)
+			if t < 0 {
+				projX, projY = x1, y1
+			} else if t > 1 {
+				projX, projY = x2, y2
+			} else {
+				projX = x1 + t*dx
+				projY = y1 + t*dy
+			}
+		}
+
+		distSq := (px-projX)*(px-projX) + (py-projY)*(py-projY)
+		if minDist < 0 || distSq < minDist {
+			minDist = distSq
+			bestProjection = NewEuclideanS2Point(projX, projY)
+			bestNext = i + 1
+		}
+	}
+
+	// Calculate total line length and length up to projection
+	totalLength := 0.0
+	lengthToProj := 0.0
+
+	for i := 0; i < len(line)-1; i++ {
+		dx := line[i+1].Vector.X - line[i].Vector.X
+		dy := line[i+1].Vector.Y - line[i].Vector.Y
+		segLen := sqrt(dx*dx + dy*dy)
+		totalLength += segLen
+
+		if i < bestNext-1 {
+			lengthToProj += segLen
+		} else if i == bestNext-1 {
+			// Add partial segment
+			dx := bestProjection.Vector.X - line[i].Vector.X
+			dy := bestProjection.Vector.Y - line[i].Vector.Y
+			lengthToProj += sqrt(dx*dx + dy*dy)
+		}
+	}
+
+	if totalLength == 0 {
+		return bestProjection, 0, bestNext
+	}
+
+	return bestProjection, lengthToProj / totalLength, bestNext
+}
+
+// sqrt is a helper for Euclidean distance calculation
+func sqrt(x float64) float64 {
+	if x <= 0 {
+		return 0
+	}
+	// Newton's method for square root
+	z := x
+	for i := 0; i < 10; i++ {
+		z = (z + x/z) / 2
+	}
+	return z
 }
 
 // GeoJSONToS2PolylineFeature Returns *s2.Polyline representation of *geojson.Geometry (of LineString type)

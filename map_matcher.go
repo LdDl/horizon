@@ -162,6 +162,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	obsState := make([]*CandidateLayer, len(engineGpsMeasurements))
 	for i := 0; i < len(engineGpsMeasurements); i++ {
 		s2point := engineGpsMeasurements[i].Point
+		srid := engineGpsMeasurements[i].GeoPoint.SRID()
 		closest := closestSets[i]
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
@@ -169,8 +170,26 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			m := s2polyline.Source
 			n := s2polyline.Target
 			edge := matcher.engine.edges[m][n]
-			proj, fraction, next := spatial.CalcProjection(*edge.Polyline, s2point)
-			latLng := s2.LatLngFromPoint(proj)
+
+			// Use appropriate projection based on SRID
+			var proj s2.Point
+			var fraction float64
+			var next int
+			var lon, lat float64
+
+			if srid == 4326 {
+				// Spherical geometry (WGS84)
+				proj, fraction, next = spatial.CalcProjection(*edge.Polyline, s2point)
+				latLng := s2.LatLngFromPoint(proj)
+				lon = latLng.Lng.Degrees()
+				lat = latLng.Lat.Degrees()
+			} else {
+				// Euclidean geometry (SRID=0 or other)
+				proj, fraction, next = spatial.CalcProjectionEuclidean(*edge.Polyline, s2point)
+				lon = proj.Vector.X
+				lat = proj.Vector.Y
+			}
+
 			pickedGraphVertex := m
 			routingGraphVertex := m
 			if fraction > 0.5 {
@@ -182,7 +201,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			if i == 0 {
 				routingGraphVertex = n
 			}
-			roadPos := NewRoadPositionFromLonLat(stateID, pickedGraphVertex, routingGraphVertex, edge, latLng.Lng.Degrees(), latLng.Lat.Degrees(), 4326)
+			roadPos := NewRoadPositionFromLonLat(stateID, pickedGraphVertex, routingGraphVertex, edge, lon, lat, srid)
 			roadPos.beforeProjection = edge.Weight * fraction
 			roadPos.afterProjection = edge.Weight * (1 - fraction)
 			roadPos.next = next
