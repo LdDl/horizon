@@ -9,6 +9,19 @@ import (
 	"github.com/golang/geo/s2"
 )
 
+/*
+- TestMapMatcherSubMatches: Uses spherical geometry (SRID 4326, lat/lon coordinates)
+- TestMapMatcherSubMatchesPlanar: Uses Euclidean geometry (SRID 0, Cartesian coordinates)
+Both tests use the same network topology with 4 disconnected subgraphs (Networks 1-4).
+The map matcher should split observations into separate SubMatches when no route exists
+between consecutive points (i.e., they belong to different disconnected networks).
+Different geometries may yield different optimal paths through the same topology:
+- Spherical test: Path 0->1 -> (1->2) -> 2->3
+Intermediate edge added since it could be better in spherical distance because of big distances in example and therefore
+emission probabilities impact more for neighboring edges (so combined emission outweights)
+- Planar test: Path 0->3 -> 3->2 (direct shortcut edge preferred)
+*/
+
 // TestMapMatcherSubMatches tests sub-matching with 4 disconnected road networks
 /*
 {"type":"FeatureCollection","features":[
@@ -228,17 +241,22 @@ func TestMapMatcherSubMatches(t *testing.T) {
 	// t.Logf("Number of sub-matches: %d", len(result.SubMatches))
 	// for s, subMatch := range result.SubMatches {
 	// 	t.Logf("SubMatch %d (probability: %f):", s, subMatch.Probability)
+	// 	totalWeight := 0.0
 	// 	for i, obs := range subMatch.Observations {
-	// 		t.Logf("  Obs %d (ID=%d): edge %d->%d",
+	// 		t.Logf("  Obs %d (ID=%d): edge %d->%d (weight: %f)",
 	// 			i, obs.Observation.id,
-	// 			obs.MatchedEdge.Source, obs.MatchedEdge.Target)
+	// 			obs.MatchedEdge.Source, obs.MatchedEdge.Target,
+	// 			obs.MatchedEdge.Weight)
+	// 		totalWeight += obs.MatchedEdge.Weight
 	// 		// Show intermediate path edges (NextEdges) that connect this observation to the next
 	// 		if len(obs.NextEdges) > 0 {
 	// 			for j, nextEdge := range obs.NextEdges {
-	// 				t.Logf("    -> NextEdge[%d]: ID=%d (edge in path to next observation)", j, nextEdge.ID)
+	// 				t.Logf("    -> NextEdge[%d]: ID=%d (weight: %f)", j, nextEdge.ID, nextEdge.Weight)
+	// 				totalWeight += nextEdge.Weight
 	// 			}
 	// 		}
 	// 	}
+	// 	t.Logf("  Total path weight: %f", totalWeight)
 	// }
 
 	// Check number of sub-matches
@@ -584,17 +602,22 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 	// t.Logf("Number of sub-matches: %d", len(result.SubMatches))
 	// for s, subMatch := range result.SubMatches {
 	// 	t.Logf("SubMatch %d (probability: %f):", s, subMatch.Probability)
+	// 	totalWeight := 0.0
 	// 	for i, obs := range subMatch.Observations {
-	// 		t.Logf("  Obs %d (ID=%d): edge %d->%d",
+	// 		t.Logf("  Obs %d (ID=%d): edge %d->%d (weight: %f)",
 	// 			i, obs.Observation.id,
-	// 			obs.MatchedEdge.Source, obs.MatchedEdge.Target)
+	// 			obs.MatchedEdge.Source, obs.MatchedEdge.Target,
+	// 			obs.MatchedEdge.Weight)
+	// 		totalWeight += obs.MatchedEdge.Weight
 	// 		// Show intermediate path edges (NextEdges) that connect this observation to the next
 	// 		if len(obs.NextEdges) > 0 {
 	// 			for j, nextEdge := range obs.NextEdges {
-	// 				t.Logf("    -> NextEdge[%d]: ID=%d (edge in path to next observation)", j, nextEdge.ID)
+	// 				t.Logf("    -> NextEdge[%d]: ID=%d (weight: %f)", j, nextEdge.ID, nextEdge.Weight)
+	// 				totalWeight += nextEdge.Weight
 	// 			}
 	// 		}
 	// 	}
+	// 	t.Logf("  Total path weight: %f", totalWeight)
 	// }
 
 	// Check number of sub-matches
