@@ -14,28 +14,29 @@ import (
 	statesRadiusMeters - maximum radius to search nearest polylines
 */
 func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, statesRadiusMeters float64) (MatcherResult, error) {
-	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, statesRadiusMeters, 1)
+	closestSource, _ := matcher.engine.storage.FindNearestInRadius(source.Point, statesRadiusMeters, 1)
+	// @todo need to handle error also
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
 		return MatcherResult{}, ErrSourceNotFound
 	}
 	if len(closestSource) > 1 {
-		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
+		// actually it's impossible if FindNearestInRadius() has been implemented correctly
 		return MatcherResult{}, ErrSourceHasMoreEdges
 	}
 
-	closestTarget, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(target.Point, statesRadiusMeters, 1)
+	closestTarget, _ := matcher.engine.storage.FindNearestInRadius(target.Point, statesRadiusMeters, 1)
 	if len(closestTarget) == 0 {
 		// @todo need to handle this case properly...
 		return MatcherResult{}, ErrTargetNotFound
 	}
 	if len(closestTarget) > 1 {
-		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
+		// actually it's impossible if FindNearestInRadius() has been implemented correctly
 		return MatcherResult{}, ErrTargetHasMoreEdges
 	}
 
-	s2polylineSource := matcher.engine.s2Storage.GetEdge(closestSource[0].EdgeID)
-	s2polylineTarget := matcher.engine.s2Storage.GetEdge(closestTarget[0].EdgeID)
+	s2polylineSource := matcher.engine.storage.GetEdge(closestSource[0].EdgeID)
+	s2polylineTarget := matcher.engine.storage.GetEdge(closestTarget[0].EdgeID)
 
 	// Find vertex for 'source' point
 	m, n := s2polylineSource.Source, s2polylineSource.Target

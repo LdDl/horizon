@@ -17,32 +17,32 @@ import (
 
 // MapEngine Engine for solving finding shortest path and KNN problems
 // edges - set of edges (map[from_vertex]map[to_vertex]Edge)
-// s2Storage - datastore for B-tree. It is used for solving KNN problem
-// s2StorageVertices - datastore for graph vertices (with geometry property)
+// storage - spatial storage for solving KNN problem (implements spatial.Storage interface)
+// vertices - datastore for graph vertices (with geometry property)
 // graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
 type MapEngine struct {
-	edges     map[int64]map[int64]*spatial.Edge
-	s2Storage *spatial.S2Storage
-	vertices  map[int64]*spatial.Vertex
-	graph     ch.Graph
+	edges    map[int64]map[int64]*spatial.Edge
+	storage  spatial.Storage
+	vertices map[int64]*spatial.Vertex
+	graph    ch.Graph
 }
 
 // NewMapEngineDefault Returns pointer to created MapEngine with default parameters
 func NewMapEngineDefault() *MapEngine {
-	index := spatial.NewS2Storage(17, 35)
+	storage := spatial.NewStorage(spatial.StorageTypeSpherical)
 	return &MapEngine{
-		edges:     make(map[int64]map[int64]*spatial.Edge),
-		vertices:  make(map[int64]*spatial.Vertex),
-		s2Storage: index,
+		edges:    make(map[int64]map[int64]*spatial.Edge),
+		vertices: make(map[int64]*spatial.Vertex),
+		storage:  storage,
 	}
 }
 
 // NewMapEngine Returns pointer to created MapEngine with provided parameters
 func NewMapEngine(opts ...func(*MapEngine)) *MapEngine {
 	engine := &MapEngine{
-		edges:     make(map[int64]map[int64]*spatial.Edge),
-		vertices:  make(map[int64]*spatial.Vertex),
-		s2Storage: nil,
+		edges:    make(map[int64]map[int64]*spatial.Edge),
+		vertices: make(map[int64]*spatial.Vertex),
+		storage:  nil,
 	}
 	for _, opt := range opts {
 		opt(engine)
@@ -62,16 +62,24 @@ func WithGraph(graph ch.Graph) func(*MapEngine) {
 	}
 }
 
-// WithS2Storage is an option which sets s2Storage for MapEngine
+// WithStorage is an option which sets storage for MapEngine
+func WithStorage(storage spatial.Storage) func(*MapEngine) {
+	return func(engine *MapEngine) {
+		engine.storage = storage
+	}
+}
+
+// WithS2Storage is an option which sets s2Storage for MapEngine (backward compatibility)
+// Deprecated: Use WithStorage instead
 func WithS2Storage(storage *spatial.S2Storage) func(*MapEngine) {
 	return func(engine *MapEngine) {
-		engine.s2Storage = storage
+		engine.storage = storage
 	}
 }
 
 // WithEdges is an option which sets edges for MapEngine and populate existing spatial index
-// This option requires that s2Storage is already set in MapEngine which you can do via WithS2Storage option
-// If s2Storage is nil then edges are just set without populating spatial index!!!
+// This option requires that storage is already set in MapEngine which you can do via WithStorage option
+// If storage is nil then edges are just set without populating spatial index!!!
 func WithEdges(edges []*spatial.Edge) func(*MapEngine) {
 	return func(engine *MapEngine) {
 		for _, edge := range edges {
@@ -79,8 +87,8 @@ func WithEdges(edges []*spatial.Edge) func(*MapEngine) {
 				engine.edges[edge.Source] = make(map[int64]*spatial.Edge)
 			}
 			engine.edges[edge.Source][edge.Target] = edge
-			if engine.s2Storage != nil {
-				engine.s2Storage.AddEdge(uint64(edge.ID), edge)
+			if engine.storage != nil {
+				engine.storage.AddEdge(uint64(edge.ID), edge)
 			}
 		}
 	}
@@ -192,7 +200,7 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		engine.edges[sourceVertex][targetVertex] = &edge
 
-		err = engine.s2Storage.AddEdge(uint64(edgeID), &edge)
+		err = engine.storage.AddEdge(uint64(edgeID), &edge)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't add s2-polyline to engine: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}

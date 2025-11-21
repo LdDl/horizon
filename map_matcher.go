@@ -142,7 +142,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	closestSets := [][]spatial.NearestObject{}
 
 	for i := 0; i < len(gpsMeasurements); i++ {
-		closest, err := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		closest, err := matcher.engine.storage.FindNearestInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		if err != nil {
 			return MatcherResult{}, errors.Wrapf(err, "Can't find neighbors for point: '%s' (states radius = %f, max states = %d)", gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		}
@@ -165,7 +165,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		closest := closestSets[i]
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
-			s2polyline := matcher.engine.s2Storage.GetEdge(closest[j].EdgeID)
+			s2polyline := matcher.engine.storage.GetEdge(closest[j].EdgeID)
 			m := s2polyline.Source
 			n := s2polyline.Target
 			edge := matcher.engine.edges[m][n]

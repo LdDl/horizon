@@ -26,13 +26,14 @@ type Isochrone struct {
 	maxNearestRadius - max radius of search for nearest vertex
 */
 func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float64, maxNearestRadius float64) (IsochronesResult, error) {
-	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, maxNearestRadius, 1)
+	closestSource, _ := matcher.engine.storage.FindNearestInRadius(source.Point, maxNearestRadius, 1)
+	// @todo need to handle error also
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
 		return nil, ErrSourceNotFound
 	}
 	// Find corresponding edge
-	s2polylineSource := matcher.engine.s2Storage.GetEdge(closestSource[0].EdgeID)
+	s2polylineSource := matcher.engine.storage.GetEdge(closestSource[0].EdgeID)
 	// Find vertex for 'source' point
 	m, n := s2polylineSource.Source, s2polylineSource.Target
 	edgeSource := matcher.engine.edges[m][n]
