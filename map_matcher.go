@@ -3,7 +3,10 @@ package horizon
 import (
 	"fmt"
 	"math"
+	"runtime"
+	"sync"
 
+	"github.com/LdDl/ch"
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
@@ -18,26 +21,51 @@ const (
 /*
 	hmmParams - parameters of Hidden Markov Model
 	engine - wrapper around MapEngine (for KNN and finding shortest path problems)
+	viterbiSemaphore - limits concurrent Viterbi computations globally
 */
 type MapMatcher struct {
-	hmmParams *HmmProbabilities
-	engine    *MapEngine
+	hmmParams        *HmmProbabilities
+	engine           *MapEngine
+	viterbiSemaphore chan struct{}
 }
 
 // NewMapMatcherDefault Returns pointer to created MapMatcher with default parameters
 func NewMapMatcherDefault() *MapMatcher {
 	return &MapMatcher{
-		hmmParams: HmmProbabilitiesDefault(),
+		hmmParams:        HmmProbabilitiesDefault(),
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
 	}
 }
 
-// NewMapMatcher Returns pointer to created MapMatcher with provided parameters
+// NewMapMatcherFromFiles Returns pointer to created MapMatcher from CSV files
 /*
 	props - parameters of Hidden Markov Model
+	edgesFilename - path to the edges CSV file (e.g., "graph.csv")
+
+	This function expects three CSV files with the same prefix:
+	  - {prefix}.csv - edges file (required)
+	    Format: from_vertex_id;to_vertex_id;weight;geom;was_one_way;edge_id
+	    geom is GeoJSON LineString
+
+	  - {prefix}_vertices.csv - vertices file (required)
+	    Format: vertex_id;order_pos;importance;geom
+	    geom is GeoJSON Point
+	    order_pos and importance are used for contraction hierarchies
+
+	  - {prefix}_shortcuts.csv - shortcuts file (required, can be empty with header only)
+	    Format: from_vertex_id;to_vertex_id;weight;via_vertex_id
+	    These are precomputed contraction hierarchy shortcuts.
+	    If empty, shortcuts will be computed via PrepareContractionHierarchies()
+
+	Example: if edgesFilename is "./data/roads.csv", it will look for:
+	  - ./data/roads.csv
+	  - ./data/roads_vertices.csv
+	  - ./data/roads_shortcuts.csv
 */
-func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, error) {
+func NewMapMatcherFromFiles(props *HmmProbabilities, edgesFilename string) (*MapMatcher, error) {
 	mm := &MapMatcher{
-		hmmParams: props,
+		hmmParams:        props,
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
 	}
 	mapEngine, err := prepareEngine(edgesFilename)
 	if err != nil {
@@ -45,6 +73,54 @@ func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, 
 	}
 	mm.engine = mapEngine
 	return mm, nil
+}
+
+// NewMapMatcher returns pointer to created MapMatcher with provided options
+func NewMapMatcher(ops ...func(*MapMatcher)) *MapMatcher {
+	mm := &MapMatcher{
+		hmmParams:        HmmProbabilitiesDefault(),
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
+	}
+	for _, op := range ops {
+		op(mm)
+	}
+	return mm
+}
+
+// WithHmmParameters sets the HMM parameters for the matcher
+func WithHmmParameters(params *HmmProbabilities) func(*MapMatcher) {
+	return func(matcher *MapMatcher) {
+		matcher.hmmParams = params
+	}
+}
+
+// WithMapEngine sets the map engine for the matcher
+func WithMapEngine(engine *MapEngine) func(*MapMatcher) {
+	return func(matcher *MapMatcher) {
+		matcher.engine = engine
+	}
+}
+
+// Segment represents a continuous matched segment to process separately (split at break points)
+type Segment struct {
+	// First observation index in this segment
+	start int
+	// Last observation index in this segment
+	end int
+	// Route lengths for this segment only
+	routeLengths lengths
+}
+
+// cachedRoute is a structure to hold cached RAW shortest path results
+type cachedRoute struct {
+	cost float64
+	path []int64
+}
+
+// viterbiResult is for processing each segment (Viterbi) separately using goroutines
+type viterbiResult struct {
+	vpath viterbi.ViterbiPath
+	err   error
 }
 
 // Run Do magic
@@ -117,7 +193,13 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	}
 	chRoutes := make(map[int]map[int][]int64)
 
-	routeLengths := make(lengths)
+	segments := []Segment{}
+	segmentStart := 0
+	currentRouteLengths := make(lengths)
+
+	// vertex-level path cache to avoid recomputing same routes
+	// key: fromVertex -> toVertex -> {rawCost, rawPath}
+	vertexCache := make(map[int64]map[int64]cachedRoute)
 
 	// @todo: Consider to use ShortestPathOneToMany (need to deal with the order of writing data to to chRoutes and routeLengths)
 	for i := 1; i < len(layers); i++ {
@@ -132,40 +214,62 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
 						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
 						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						ans, path := matcher.engine.graph.ShortestPath(prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
-						if ans < 0 {
-							ans = math.MaxFloat64
+						rawCost, rawPath := getCachedPath(&matcher.engine.graph, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
+						var finalCost float64
+						var finalPath []int64
+						if rawCost < 0 {
+							finalCost = math.MaxFloat64
 						} else {
-							// We should increase travel cost by last edge weight and put last edge's target vertex to the path
-							ans += currentStates[n].GraphEdge.Weight
-							path = append(path, currentStates[n].GraphEdge.Target)
+							// Apply candidate-specific penalty and copy path to avoid mutating cache
+							finalCost = rawCost + currentStates[n].GraphEdge.Weight
+							finalPath = make([]int64, len(rawPath), len(rawPath)+1)
+							copy(finalPath, rawPath)
+							finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
 						}
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
-						routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], finalCost)
 					}
 					continue
 				}
-				ans, path := matcher.engine.graph.ShortestPath(prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
-				// ans, path := matcher.engine.graph.ShortestPath(prevStates[m].GraphVertex, currentStates[n].GraphEdge.Source)
-				if ans < 0 {
-					ans = math.MaxFloat64
+				rawCost, rawPath := getCachedPath(&matcher.engine.graph, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
+
+				var finalCost float64
+				var finalPath []int64
+				if rawCost < 0 {
+					finalCost = math.MaxFloat64
 				} else {
-					// We should increase travel cost by last edge weight and put last edge's target vertex to the path
-					ans += currentStates[n].GraphEdge.Weight
-					path = append(path, currentStates[n].GraphEdge.Target)
+					// Apply candidate-specific penalty and copy path to avoid mutating cache
+					finalCost = rawCost + currentStates[n].GraphEdge.Weight
+					finalPath = make([]int64, len(rawPath), len(rawPath)+1)
+					copy(finalPath, rawPath)
+					finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
 					// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
 					// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
 					// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
 					// @todo: this could lead to negative values. Need to investigate when it happens
-					// ans = (ans + prevStates[m].afterProjection) - currentStates[n].afterProjection
+					// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
 				}
-				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = path
-				routeLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], finalCost)
 			}
 		}
+
+		// Check for break point on-the-fly
+		if isBreakPoint(prevStates, currentStates, chRoutes) {
+			// Finalize current segment with its routeLengths
+			segments = append(segments, Segment{
+				start:        segmentStart,
+				end:          i - 1,
+				routeLengths: currentRouteLengths,
+			})
+			// Start new segment with fresh routeLengths
+			segmentStart = i
+			currentRouteLengths = make(lengths)
+		}
+
 		// We can skip chaning routing vertices in very last candidates layer
 		if i == len(layers)-1 {
 			continue
@@ -180,31 +284,77 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		}
 	}
 
-	v, err := matcher.PrepareViterbi(obsState, routeLengths, engineGpsMeasurements)
-	if err != nil {
-		return MatcherResult{}, err
+	// Make sure the last segment is there with its routeLengths
+	segments = append(segments, Segment{
+		start:        segmentStart,
+		end:          len(layers) - 1,
+		routeLengths: currentRouteLengths,
+	})
+
+	// Run Viterbi in parallel for each segment with bounded concurrency
+	results := make([]viterbiResult, len(segments))
+	var wg sync.WaitGroup
+	wg.Add(len(segments))
+
+	for i := range segments {
+		go func(i int) {
+			matcher.viterbiSemaphore <- struct{}{} // Acquire
+			defer func() {
+				<-matcher.viterbiSemaphore // Release
+				wg.Done()
+			}()
+
+			seg := &segments[i]
+			segmentObsState := obsState[seg.start : seg.end+1]
+			segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
+
+			v, err := matcher.PrepareViterbi(segmentObsState, seg.routeLengths, segmentGPS)
+			if err != nil {
+				results[i] = viterbiResult{err: err}
+				return
+			}
+
+			vpath, err := v.EvalPathLogProbabilities()
+			if err != nil {
+				results[i] = viterbiResult{err: errors.Wrapf(err, "Can't evaluate path log probabilities for segment [%d:%d]", seg.start, seg.end)}
+				return
+			}
+
+			if len(vpath.Path) != len(segmentGPS) {
+				results[i] = viterbiResult{err: fmt.Errorf("number of states in final path != number (%d and %d) of observations for segment [%d:%d]", len(vpath.Path), len(segmentGPS), seg.start, seg.end)}
+				return
+			}
+
+			results[i] = viterbiResult{vpath: vpath}
+		}(i)
 	}
 
-	vpath, err := v.EvalPathLogProbabilities()
-	if err != nil {
-		return MatcherResult{}, errors.Wrapf(err, "Can't evaluate path log probabilities")
-	}
+	wg.Wait()
 
-	if ViterbiDebug {
-		fmt.Println("prob:", vpath.Probability)
-		fmt.Println("path:")
-		for i := range vpath.Path {
-			fmt.Println("\t", vpath.Path[i].(*RoadPosition).GraphEdge.ID, vpath.Path[i].(*RoadPosition).ID())
+	// Check for errors and prepare subMatches sequentially
+	subMatches := make([]SubMatch, 0, len(segments))
+	for i := range segments {
+		if results[i].err != nil {
+			return MatcherResult{}, results[i].err
 		}
+
+		seg := &segments[i]
+		segmentLayers := layers[seg.start : seg.end+1]
+		segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
+
+		if ViterbiDebug {
+			fmt.Printf("Segment [%d:%d] prob: %f\n", seg.start, seg.end, results[i].vpath.Probability)
+			fmt.Println("path:")
+			for j := range results[i].vpath.Path {
+				fmt.Println("\t", results[i].vpath.Path[j].(*RoadPosition).GraphEdge.ID, results[i].vpath.Path[j].(*RoadPosition).ID())
+			}
+		}
+
+		subMatch := matcher.prepareSubMatch(results[i].vpath, segmentGPS, segmentLayers, chRoutes)
+		subMatches = append(subMatches, subMatch)
 	}
 
-	if len(vpath.Path) != len(engineGpsMeasurements) {
-		return MatcherResult{}, fmt.Errorf("number of states in final path != number (%d and %d) of observations. Should be unreachable error", len(vpath.Path), len(engineGpsMeasurements))
-	}
-
-	result := matcher.prepareResult(vpath, engineGpsMeasurements, chRoutes)
-
-	return result, nil
+	return MatcherResult{SubMatches: subMatches}, nil
 }
 
 // PrepareViterbi Prepares engine for doing Viterbi's algorithm (see https://github.com/LdDl/viterbi/blob/master/viterbi.go#L25)
@@ -346,4 +496,39 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 		}
 	}
 	return nil
+}
+
+// isBreakPoint checks if there are no valid routes between two consecutive layers
+func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[int][]int64) bool {
+	for m := range prevStates {
+		fromID := prevStates[m].RoadPositionID
+		if _, ok := chRoutes[fromID]; !ok {
+			continue
+		}
+		for n := range currentStates {
+			toID := currentStates[n].RoadPositionID
+			path, ok := chRoutes[fromID][toID]
+			if ok && len(path) > 0 {
+				return false // Found valid route
+			}
+		}
+	}
+	return true // No valid routes found
+}
+
+// getCachedPath is a helper function to get or compute shortest path with caching
+func getCachedPath(graphEngine *ch.Graph, vertexCache map[int64]map[int64]cachedRoute, fromVertex, toVertex int64) (float64, []int64) {
+	// Check cache first
+	if inner, ok := vertexCache[fromVertex]; ok {
+		if cached, ok := inner[toVertex]; ok {
+			return cached.cost, cached.path
+		}
+	}
+	// Compute and cache
+	rawCost, rawPath := graphEngine.ShortestPath(fromVertex, toVertex)
+	if vertexCache[fromVertex] == nil {
+		vertexCache[fromVertex] = make(map[int64]cachedRoute)
+	}
+	vertexCache[fromVertex][toVertex] = cachedRoute{cost: rawCost, path: rawPath}
+	return rawCost, rawPath
 }

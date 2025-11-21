@@ -164,11 +164,67 @@ func (x *GPSToMapMatch) GetAccuracy() float64 {
 	return 0
 }
 
+// A single continuous matched segment
+type SubMatch struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Set of matched edges for observations in this segment
+	Observations []*ObservationEdge `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
+	// Probability from Viterbi algorithm for this segment
+	// Example: -86.578520
+	Probability   float64 `protobuf:"fixed64,2,opt,name=probability,proto3" json:"probability,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubMatch) Reset() {
+	*x = SubMatch{}
+	mi := &file_map_match_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubMatch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubMatch) ProtoMessage() {}
+
+func (x *SubMatch) ProtoReflect() protoreflect.Message {
+	mi := &file_map_match_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubMatch.ProtoReflect.Descriptor instead.
+func (*SubMatch) Descriptor() ([]byte, []int) {
+	return file_map_match_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SubMatch) GetObservations() []*ObservationEdge {
+	if x != nil {
+		return x.Observations
+	}
+	return nil
+}
+
+func (x *SubMatch) GetProbability() float64 {
+	if x != nil {
+		return x.Probability
+	}
+	return 0
+}
+
 // Server's response for map matching request
 type MapMatchResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set of matched edges for each observation
-	Data []*ObservationEdge `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
+	// Array of sub-matches (segments split when route cannot be computed between consecutive points)
+	SubMatches []*SubMatch `protobuf:"bytes,1,rep,name=sub_matches,json=subMatches,proto3" json:"sub_matches,omitempty"`
 	// List of warnings
 	Warnings      []string `protobuf:"bytes,2,rep,name=warnings,proto3" json:"warnings,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -177,7 +233,7 @@ type MapMatchResponse struct {
 
 func (x *MapMatchResponse) Reset() {
 	*x = MapMatchResponse{}
-	mi := &file_map_match_proto_msgTypes[2]
+	mi := &file_map_match_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +245,7 @@ func (x *MapMatchResponse) String() string {
 func (*MapMatchResponse) ProtoMessage() {}
 
 func (x *MapMatchResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_map_match_proto_msgTypes[2]
+	mi := &file_map_match_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,12 +258,12 @@ func (x *MapMatchResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MapMatchResponse.ProtoReflect.Descriptor instead.
 func (*MapMatchResponse) Descriptor() ([]byte, []int) {
-	return file_map_match_proto_rawDescGZIP(), []int{2}
+	return file_map_match_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *MapMatchResponse) GetData() []*ObservationEdge {
+func (x *MapMatchResponse) GetSubMatches() []*SubMatch {
 	if x != nil {
-		return x.Data
+		return x.SubMatches
 	}
 	return nil
 }
@@ -247,7 +303,7 @@ type ObservationEdge struct {
 
 func (x *ObservationEdge) Reset() {
 	*x = ObservationEdge{}
-	mi := &file_map_match_proto_msgTypes[3]
+	mi := &file_map_match_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -259,7 +315,7 @@ func (x *ObservationEdge) String() string {
 func (*ObservationEdge) ProtoMessage() {}
 
 func (x *ObservationEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_map_match_proto_msgTypes[3]
+	mi := &file_map_match_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -272,7 +328,7 @@ func (x *ObservationEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObservationEdge.ProtoReflect.Descriptor instead.
 func (*ObservationEdge) Descriptor() ([]byte, []int) {
-	return file_map_match_proto_rawDescGZIP(), []int{3}
+	return file_map_match_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ObservationEdge) GetObsIdx() int32 {
@@ -348,7 +404,7 @@ type IntermediateEdge struct {
 
 func (x *IntermediateEdge) Reset() {
 	*x = IntermediateEdge{}
-	mi := &file_map_match_proto_msgTypes[4]
+	mi := &file_map_match_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -360,7 +416,7 @@ func (x *IntermediateEdge) String() string {
 func (*IntermediateEdge) ProtoMessage() {}
 
 func (x *IntermediateEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_map_match_proto_msgTypes[4]
+	mi := &file_map_match_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +429,7 @@ func (x *IntermediateEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntermediateEdge.ProtoReflect.Descriptor instead.
 func (*IntermediateEdge) Descriptor() ([]byte, []int) {
-	return file_map_match_proto_rawDescGZIP(), []int{4}
+	return file_map_match_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *IntermediateEdge) GetGeom() []*GeoPoint {
@@ -414,9 +470,13 @@ const file_map_match_proto_rawDesc = "" +
 	"\x03lon\x18\x03 \x01(\x01R\x03lon\x12\x10\n" +
 	"\x03lat\x18\x04 \x01(\x01R\x03lat\x12\x1f\n" +
 	"\baccuracy\x18\x05 \x01(\x01H\x00R\baccuracy\x88\x01\x01B\v\n" +
-	"\t_accuracy\"\\\n" +
-	"\x10MapMatchResponse\x12,\n" +
-	"\x04data\x18\x01 \x03(\v2\x18.horizon.ObservationEdgeR\x04data\x12\x1a\n" +
+	"\t_accuracy\"j\n" +
+	"\bSubMatch\x12<\n" +
+	"\fobservations\x18\x01 \x03(\v2\x18.horizon.ObservationEdgeR\fobservations\x12 \n" +
+	"\vprobability\x18\x02 \x01(\x01R\vprobability\"b\n" +
+	"\x10MapMatchResponse\x122\n" +
+	"\vsub_matches\x18\x01 \x03(\v2\x11.horizon.SubMatchR\n" +
+	"subMatches\x12\x1a\n" +
 	"\bwarnings\x18\x02 \x03(\tR\bwarnings\"\x83\x03\n" +
 	"\x0fObservationEdge\x12\x17\n" +
 	"\aobs_idx\x18\x01 \x01(\x05R\x06obsIdx\x12\x17\n" +
@@ -445,29 +505,31 @@ func file_map_match_proto_rawDescGZIP() []byte {
 	return file_map_match_proto_rawDescData
 }
 
-var file_map_match_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_map_match_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_map_match_proto_goTypes = []any{
 	(*MapMatchRequest)(nil),  // 0: horizon.MapMatchRequest
 	(*GPSToMapMatch)(nil),    // 1: horizon.GPSToMapMatch
-	(*MapMatchResponse)(nil), // 2: horizon.MapMatchResponse
-	(*ObservationEdge)(nil),  // 3: horizon.ObservationEdge
-	(*IntermediateEdge)(nil), // 4: horizon.IntermediateEdge
-	(*GeoPoint)(nil),         // 5: horizon.GeoPoint
+	(*SubMatch)(nil),         // 2: horizon.SubMatch
+	(*MapMatchResponse)(nil), // 3: horizon.MapMatchResponse
+	(*ObservationEdge)(nil),  // 4: horizon.ObservationEdge
+	(*IntermediateEdge)(nil), // 5: horizon.IntermediateEdge
+	(*GeoPoint)(nil),         // 6: horizon.GeoPoint
 }
 var file_map_match_proto_depIdxs = []int32{
 	1, // 0: horizon.MapMatchRequest.gps:type_name -> horizon.GPSToMapMatch
-	3, // 1: horizon.MapMatchResponse.data:type_name -> horizon.ObservationEdge
-	5, // 2: horizon.ObservationEdge.matched_edge:type_name -> horizon.GeoPoint
-	5, // 3: horizon.ObservationEdge.matched_edge_cut:type_name -> horizon.GeoPoint
-	5, // 4: horizon.ObservationEdge.matched_vertex:type_name -> horizon.GeoPoint
-	5, // 5: horizon.ObservationEdge.projected_point:type_name -> horizon.GeoPoint
-	4, // 6: horizon.ObservationEdge.next_edges:type_name -> horizon.IntermediateEdge
-	5, // 7: horizon.IntermediateEdge.geom:type_name -> horizon.GeoPoint
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	4, // 1: horizon.SubMatch.observations:type_name -> horizon.ObservationEdge
+	2, // 2: horizon.MapMatchResponse.sub_matches:type_name -> horizon.SubMatch
+	6, // 3: horizon.ObservationEdge.matched_edge:type_name -> horizon.GeoPoint
+	6, // 4: horizon.ObservationEdge.matched_edge_cut:type_name -> horizon.GeoPoint
+	6, // 5: horizon.ObservationEdge.matched_vertex:type_name -> horizon.GeoPoint
+	6, // 6: horizon.ObservationEdge.projected_point:type_name -> horizon.GeoPoint
+	5, // 7: horizon.ObservationEdge.next_edges:type_name -> horizon.IntermediateEdge
+	6, // 8: horizon.IntermediateEdge.geom:type_name -> horizon.GeoPoint
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_map_match_proto_init() }
@@ -484,7 +546,7 @@ func file_map_match_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_map_match_proto_rawDesc), len(file_map_match_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

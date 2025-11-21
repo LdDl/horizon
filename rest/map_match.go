@@ -36,12 +36,20 @@ type GPSToMapMatch struct {
 	Accuracy *float64 `json:"accuracy" example:"5.0"`
 }
 
+// SubMatchResponse A single continuous matched segment
+// swagger:model
+type SubMatchResponse struct {
+	// Set of matched edges for observations in this segment
+	Observations []ObservationEdgeResponse `json:"observations"`
+	// Probability from Viterbi algorithm for this segment
+	Probability float64 `json:"probability" example:"-86.578520"`
+}
+
 // MapMatchResponse Server's response for map matching request
 // swagger:model
 type MapMatchResponse struct {
-	// GeoJSON data
-	// Set of matched edges for each observation
-	Data []ObservationEdgeResponse `json:"data" `
+	// Array of sub-matches (segments split when route cannot be computed between consecutive points)
+	SubMatches []SubMatchResponse `json:"sub_matches"`
 	// Warnings
 	Warnings []string `json:"warnings" example:"Warning"`
 }
@@ -130,34 +138,43 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			log.Println(err)
 			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
 		}
-		ans.Data = make([]ObservationEdgeResponse, len(result.Observations))
-		for i := range result.Observations {
-			observationResult := result.Observations[i]
-			matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
-			var matchedEdgeCut s2.Polyline
-			if i == 0 {
-				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
-			} else if i == len(result.Observations)-1 {
-				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+		// Process all sub-matches
+		ans.SubMatches = make([]SubMatchResponse, len(result.SubMatches))
+		for s := range result.SubMatches {
+			subMatch := result.SubMatches[s]
+			subMatchResp := SubMatchResponse{
+				Observations: make([]ObservationEdgeResponse, len(subMatch.Observations)),
+				Probability:  subMatch.Probability,
 			}
-			ans.Data[i] = ObservationEdgeResponse{
-				ObservationIdx: observationResult.Observation.ID(),
-				EdgeID:         observationResult.MatchedEdge.ID,
-				MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
-				MatchedVertex:  horizon.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
-				ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observationResult.ProjectedPoint),
-				NextEdges:      make([]IntermediateEdgeResponse, len(observationResult.NextEdges)),
-			}
-			if len(matchedEdgeCut) > 0 {
-				ans.Data[i].MatchedEdgeCut = horizon.S2PolylineToGeoJSONFeature(matchedEdgeCut)
-			}
-			for j := range observationResult.NextEdges {
-				ans.Data[i].NextEdges[j] = IntermediateEdgeResponse{
-					Geom:   horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom),
-					Weight: observationResult.NextEdges[j].Weight,
-					ID:     observationResult.NextEdges[j].ID,
+			for i := range subMatch.Observations {
+				observationResult := subMatch.Observations[i]
+				matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
+				var matchedEdgeCut s2.Polyline
+				if i == 0 {
+					matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				} else if i == len(subMatch.Observations)-1 {
+					matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				}
+				subMatchResp.Observations[i] = ObservationEdgeResponse{
+					ObservationIdx: observationResult.Observation.ID(),
+					EdgeID:         observationResult.MatchedEdge.ID,
+					MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
+					MatchedVertex:  horizon.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
+					ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observationResult.ProjectedPoint),
+					NextEdges:      make([]IntermediateEdgeResponse, len(observationResult.NextEdges)),
+				}
+				if len(matchedEdgeCut) > 0 {
+					subMatchResp.Observations[i].MatchedEdgeCut = horizon.S2PolylineToGeoJSONFeature(matchedEdgeCut)
+				}
+				for j := range observationResult.NextEdges {
+					subMatchResp.Observations[i].NextEdges[j] = IntermediateEdgeResponse{
+						Geom:   horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom),
+						Weight: observationResult.NextEdges[j].Weight,
+						ID:     observationResult.NextEdges[j].ID,
+					}
 				}
 			}
+			ans.SubMatches[s] = subMatchResp
 		}
 		return ctx.Status(200).JSON(ans)
 	}

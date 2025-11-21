@@ -392,8 +392,9 @@
                 })
                 .then(response => response.json())
                 .then(function(jsoned) {
-                    clearInterval(timerAnimatedRoute);                
-                    const data = jsoned.data;
+                    clearInterval(timerAnimatedRoute);
+                    // Flatten all observations from all sub-matches
+                    const data = jsoned.sub_matches.flatMap(sm => sm.observations);
 
                     // Prepare GeoJSON features
                     const unprocessedEdges = data.flatMap(obs => obs.next_edges);

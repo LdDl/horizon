@@ -31,24 +31,29 @@ type EdgeResult struct {
 	ID     int64
 }
 
-// MatcherResult Representation of map matching algorithm's output
+// SubMatch Representation of a single continuous matched segment
 /*
-	Observations - set of ObservationResult
-	Probability - probability got from Viterbi's algotithm
-	Path - final path as s2.Polyline
-	VerticesPath - IDs of graph vertices corresponding to traveled path
+	Observations - set of ObservationResult for this segment
+	Probability - probability got from Viterbi's algorithm for this segment
 */
-type MatcherResult struct {
+type SubMatch struct {
 	Observations []ObservationResult
 	Probability  float64
 }
 
-// prepareResult Return MatcherResult for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
-func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, chRoutes map[int]map[int][]int64) MatcherResult {
-	result := MatcherResult{
+// MatcherResult Representation of map matching algorithm's output
+/*
+	SubMatches - set of SubMatch segments (split when route cannot be computed between consecutive points)
+*/
+type MatcherResult struct {
+	SubMatches []SubMatch
+}
+
+// prepareSubMatch returns SubMatch for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
+func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, layers []RoadPositions, chRoutes map[int]map[int][]int64) SubMatch {
+	subMatch := SubMatch{
 		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
-		// VerticesPath: []int64{},
 	}
 
 	rpPath := make(RoadPositions, len(vpath.Path))
@@ -56,24 +61,20 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 		rpPath[i] = vpath.Path[i].(*RoadPosition)
 	}
 
-	result.Observations[0] = ObservationResult{
+	subMatch.Observations[0] = ObservationResult{
 		Observation:        gpsMeasurements[0],
 		MatchedEdge:        *rpPath[0].GraphEdge,
 		MatchedVertex:      *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
 		ProjectedPoint:     rpPath[0].Projected.Point,
 		ProjectionPointIdx: rpPath[0].next,
 	}
-	// result.VerticesPath = append(result.VerticesPath, rpPath[0].GraphEdge.Source, rpPath[0].GraphEdge.Target)
 
-	// Cut first graph edge [next vertex to projected point : last_vertex]
-	// And then prepend projected point to given slice
-	// result.Path = append(result.Path, append(s2.Polyline{rpPath[0].Projected.Point}, (*rpPath[0].GraphEdge.Polyline)[rpPath[0].next:]...)...)
 	// Iterate other states
 	lastEdgeID := int64(-1)
 	for i := 1; i < len(rpPath); i++ {
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
-		result.Observations[i] = ObservationResult{
+		subMatch.Observations[i] = ObservationResult{
 			Observation:        gpsMeasurements[i],
 			MatchedEdge:        *currentState.GraphEdge,
 			MatchedVertex:      *matcher.engine.vertices[currentState.PickedGraphVertex],
@@ -95,24 +96,22 @@ func (matcher *MapMatcher) prepareResult(vpath viterbi.ViterbiPath, gpsMeasureme
 				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
 			}
 			if i == len(rpPath)-1 && j == len(path)-1 {
-				// fmt.Println("\t must skip#2")
 				continue
 			}
 			lastEdgeID = edge.ID
 			edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
 			copy(edgeGeomCopy, *edge.Polyline)
-			result.Observations[i-1].NextEdges = append(result.Observations[i-1].NextEdges, EdgeResult{
+			subMatch.Observations[i-1].NextEdges = append(subMatch.Observations[i-1].NextEdges, EdgeResult{
 				Geom:   edgeGeomCopy,
 				Weight: edge.Weight,
 				ID:     edge.ID,
 			})
-			// result.Path = append(result.Path, (*edge.Polyline)...)
 		}
 	}
 	if rpPath[len(rpPath)-1].GraphEdge.ID == lastEdgeID {
 		// @todo:
 		// Last edge is the same as matched
-		// return result
 	}
-	return result
+
+	return subMatch
 }
