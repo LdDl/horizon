@@ -13,6 +13,7 @@ RUN go mod download
 # Copy source code
 COPY ./rest ./rest
 COPY ./rpc ./rpc
+COPY ./spatial ./spatial
 COPY ./cmd/horizon/index.html ./cmd/horizon/index.html
 COPY ./cmd/horizon/main.go ./cmd/horizon/main.go
 COPY ./*.go ./
