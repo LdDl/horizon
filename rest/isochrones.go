@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/LdDl/horizon"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/gofiber/fiber/v2"
 	geojson "github.com/paulmach/go.geojson"
 )
@@ -72,7 +73,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 				log.Println("Empty vertex")
 				ctx.Status(500).JSON("Empty vertex")
 			}
-			f := horizon.S2PointToGeoJSONFeature(isochrone.Vertex.Point)
+			f := spatial.S2PointToGeoJSONFeature(isochrone.Vertex.Point)
 			f.ID = i
 			f.Properties["cost"] = isochrone.Cost
 			f.Properties["vertex_id"] = isochrone.Vertex.ID

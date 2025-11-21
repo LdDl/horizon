@@ -1,4 +1,4 @@
-package horizon
+package spatial
 
 import (
 	"container/heap"
@@ -31,6 +31,11 @@ func NewS2Storage(storageLevel int, degree int) *S2Storage {
 		BTree:        btree.New(degree),
 		edges:        make(map[uint64]*Edge),
 	}
+}
+
+// GetEdge Returns edge by ID from storage
+func (storage *S2Storage) GetEdge(edgeID uint64) *Edge {
+	return storage.edges[edgeID]
 }
 
 // indexedItem Object in datastore
@@ -106,6 +111,16 @@ func (storage *S2Storage) SearchInRadiusLonLat(lon, lat float64, radius float64)
 	return result, nil
 }
 
+// FindInRadius implements Storage interface
+func (storage *S2Storage) FindInRadius(pt s2.Point, radiusMeters float64) (map[uint64]float64, error) {
+	return storage.SearchInRadius(pt, radiusMeters)
+}
+
+// FindNearestInRadius implements Storage interface
+func (storage *S2Storage) FindNearestInRadius(pt s2.Point, radiusMeters float64, n int) ([]NearestObject, error) {
+	return storage.NearestNeighborsInRadius(pt, radiusMeters, n)
+}
+
 // SearchInRadius Returns edges in radius
 /*
 	pt - s2.Point
@@ -147,31 +162,12 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 
 // NearestObject Nearest object to given point
 /*
-	edgeID - unique identifier
-	distanceTo - distance to object
+	EdgeID - unique identifier
+	DistanceTo - distance to object
 */
 type NearestObject struct {
-	edgeID     uint64
-	distanceTo float64
-}
-
-// Implement heap (for getting top-N elements)
-type s2Heap []NearestObject
-
-func (h s2Heap) Less(i, j int) bool { return h[i].distanceTo < h[j].distanceTo }
-func (h s2Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h s2Heap) Len() int           { return len(h) }
-
-func (h *s2Heap) Push(x interface{}) {
-	*h = append(*h, x.(NearestObject))
-}
-
-func (h *s2Heap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
+	EdgeID     uint64
+	DistanceTo float64
 }
 
 // NearestNeighborsInRadius Returns edges in radius with max objects restriction (KNN)
@@ -185,7 +181,7 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 	if err != nil {
 		return nil, err
 	}
-	h := &s2Heap{}
+	h := &nearestHeap{}
 	heap.Init(h)
 	for k, v := range found {
 		heap.Push(h, NearestObject{k, v})

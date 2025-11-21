@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/LdDl/horizon"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
@@ -151,24 +152,24 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 				matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
 				var matchedEdgeCut s2.Polyline
 				if i == 0 {
-					matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+					matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 				} else if i == len(subMatch.Observations)-1 {
-					matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+					matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 				}
 				subMatchResp.Observations[i] = ObservationEdgeResponse{
 					ObservationIdx: observationResult.Observation.ID(),
 					EdgeID:         observationResult.MatchedEdge.ID,
-					MatchedEdge:    horizon.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
-					MatchedVertex:  horizon.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
-					ProjectedPoint: horizon.S2PointToGeoJSONFeature(&observationResult.ProjectedPoint),
+					MatchedEdge:    spatial.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
+					MatchedVertex:  spatial.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
+					ProjectedPoint: spatial.S2PointToGeoJSONFeature(&observationResult.ProjectedPoint),
 					NextEdges:      make([]IntermediateEdgeResponse, len(observationResult.NextEdges)),
 				}
 				if len(matchedEdgeCut) > 0 {
-					subMatchResp.Observations[i].MatchedEdgeCut = horizon.S2PolylineToGeoJSONFeature(matchedEdgeCut)
+					subMatchResp.Observations[i].MatchedEdgeCut = spatial.S2PolylineToGeoJSONFeature(matchedEdgeCut)
 				}
 				for j := range observationResult.NextEdges {
 					subMatchResp.Observations[i].NextEdges[j] = IntermediateEdgeResponse{
-						Geom:   horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom),
+						Geom:   spatial.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom),
 						Weight: observationResult.NextEdges[j].Weight,
 						ID:     observationResult.NextEdges[j].ID,
 					}

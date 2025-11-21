@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/LdDl/horizon"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/gofiber/fiber/v2"
 	geojson "github.com/paulmach/go.geojson"
 )
@@ -83,12 +84,12 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		subMatch := result.SubMatches[0]
 		for i := range subMatch.Observations {
 			observationResult := subMatch.Observations[i]
-			feature := horizon.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline)
+			feature := spatial.S2PolylineToGeoJSONFeature(*observationResult.MatchedEdge.Polyline)
 			feature.ID = observationResult.MatchedEdge.ID
 			feature.SetProperty("weight", observationResult.MatchedEdge.Weight)
 			ans.Data = append(ans.Data, feature)
 			for j := range observationResult.NextEdges {
-				edgeFeature := horizon.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom)
+				edgeFeature := spatial.S2PolylineToGeoJSONFeature(observationResult.NextEdges[j].Geom)
 				edgeFeature.ID = observationResult.NextEdges[j].ID
 				edgeFeature.SetProperty("weight", observationResult.NextEdges[j].Weight)
 				ans.Data = append(ans.Data, edgeFeature)

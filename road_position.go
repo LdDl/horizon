@@ -3,6 +3,7 @@ package horizon
 import (
 	"fmt"
 
+	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
@@ -20,8 +21,8 @@ type RoadPositions []*RoadPosition
 	next - index of the next vertex in s2.Polyline after the projected point
 */
 type RoadPosition struct {
-	Projected          *GeoPoint
-	GraphEdge          *Edge
+	Projected          *spatial.GeoPoint
+	GraphEdge          *spatial.Edge
 	beforeProjection   float64
 	afterProjection    float64
 	PickedGraphVertex  int64
@@ -40,7 +41,7 @@ type RoadPosition struct {
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewRoadPositionFromLonLat(stateID int, pickedGraphVertex, routingGraphVertex int64, e *Edge, lon, lat float64, srid ...int) *RoadPosition {
+func NewRoadPositionFromLonLat(stateID int, pickedGraphVertex, routingGraphVertex int64, e *spatial.Edge, lon, lat float64, srid ...int) *RoadPosition {
 	state := RoadPosition{
 		RoadPositionID:     stateID,
 		GraphEdge:          e,
@@ -50,11 +51,11 @@ func NewRoadPositionFromLonLat(stateID int, pickedGraphVertex, routingGraphVerte
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			state.Projected = NewEuclideanPoint(lon, lat)
+			state.Projected = spatial.NewEuclideanPoint(lon, lat)
 		case 4326:
-			state.Projected = NewWGS84Point(lon, lat)
+			state.Projected = spatial.NewWGS84Point(lon, lat)
 		default:
-			state.Projected = NewWGS84Point(lon, lat)
+			state.Projected = spatial.NewWGS84Point(lon, lat)
 		}
 	}
 	return &state
@@ -70,7 +71,7 @@ func NewRoadPositionFromLonLat(stateID int, pickedGraphVertex, routingGraphVerte
 	lat - latitude (Y for SRID = 0)
 	srid - SRID (see https://en.wikipedia.org/wiki/Spatial_reference_system)
 */
-func NewRoadPositionFromS2LatLng(stateID int, pickedGraphVertex, routingGraphVertex int64, e *Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
+func NewRoadPositionFromS2LatLng(stateID int, pickedGraphVertex, routingGraphVertex int64, e *spatial.Edge, latLng *s2.LatLng, srid ...int) *RoadPosition {
 	state := RoadPosition{
 		RoadPositionID:     stateID,
 		GraphEdge:          e,
@@ -80,11 +81,11 @@ func NewRoadPositionFromS2LatLng(stateID int, pickedGraphVertex, routingGraphVer
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			state.Projected = NewEuclideanPoint(latLng.Lng.Degrees(), latLng.Lat.Degrees())
+			state.Projected = spatial.NewEuclideanPoint(latLng.Lng.Degrees(), latLng.Lat.Degrees())
 		case 4326:
-			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
+			state.Projected = spatial.NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
 		default:
-			state.Projected = NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
+			state.Projected = spatial.NewWGS84Point(latLng.Lng.Degrees(), latLng.Lat.Degrees())
 		}
 	}
 	return &state
@@ -100,6 +101,6 @@ func (state RoadPosition) String() string {
 	latlng := s2.LatLngFromPoint(state.Projected.Point)
 	return fmt.Sprintf(
 		"State is:\n\tSourceVertexID => %v\n\tTargetVertexID => %v\n\tSRID: %d\n\tCoords => %v",
-		state.GraphEdge.Source, state.GraphEdge.Target, state.Projected.srid, latlng.String(),
+		state.GraphEdge.Source, state.GraphEdge.Target, state.Projected.SRID(), latlng.String(),
 	)
 }

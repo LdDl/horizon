@@ -1,4 +1,4 @@
-package horizon
+package spatial
 
 import (
 	"github.com/golang/geo/s2"

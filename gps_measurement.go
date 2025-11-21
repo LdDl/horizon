@@ -3,7 +3,7 @@ package horizon
 import (
 	"time"
 
-	geojson "github.com/paulmach/go.geojson"
+	"github.com/LdDl/horizon/spatial"
 )
 
 // GPSMeasurements Set of telematic data
@@ -17,7 +17,7 @@ type GPSMeasurements []*GPSMeasurement
 	accuracy - GPS measurement accuracy in meters (<=0 means use default sigma)
 */
 type GPSMeasurement struct {
-	*GeoPoint
+	*spatial.GeoPoint
 	dateTime time.Time
 	id       int
 	accuracy float64
@@ -55,11 +55,11 @@ func NewGPSMeasurement(id int, lon, lat float64, srid int, options ...func(*GPSM
 	}
 	switch srid {
 	case 0:
-		gps.GeoPoint = NewEuclideanPoint(lon, lat)
+		gps.GeoPoint = spatial.NewEuclideanPoint(lon, lat)
 	case 4326:
-		gps.GeoPoint = NewWGS84Point(lon, lat)
+		gps.GeoPoint = spatial.NewWGS84Point(lon, lat)
 	default:
-		gps.GeoPoint = NewWGS84Point(lon, lat)
+		gps.GeoPoint = spatial.NewWGS84Point(lon, lat)
 	}
 	for _, o := range options {
 		o(gps)
@@ -98,17 +98,12 @@ func NewGPSMeasurementFromID(id int, lon, lat float64, srid ...int) *GPSMeasurem
 	if len(srid) != 0 {
 		switch srid[0] {
 		case 0:
-			gps.GeoPoint = NewEuclideanPoint(lon, lat)
+			gps.GeoPoint = spatial.NewEuclideanPoint(lon, lat)
 		case 4326:
-			gps.GeoPoint = NewWGS84Point(lon, lat)
+			gps.GeoPoint = spatial.NewWGS84Point(lon, lat)
 		default:
-			gps.GeoPoint = NewWGS84Point(lon, lat)
+			gps.GeoPoint = spatial.NewWGS84Point(lon, lat)
 		}
 	}
 	return &gps
-}
-
-// GeoJSON Returns GeoJSON representation of GeoPoint
-func (gp *GeoPoint) GeoJSON() *geojson.Feature {
-	return S2PointToGeoJSONFeature(&gp.Point)
 }

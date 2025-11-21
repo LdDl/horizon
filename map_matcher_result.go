@@ -3,6 +3,7 @@ package horizon
 import (
 	"fmt"
 
+	"github.com/LdDl/horizon/spatial"
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
 )
@@ -18,8 +19,8 @@ import (
 */
 type ObservationResult struct {
 	Observation        *GPSMeasurement
-	MatchedEdge        Edge
-	MatchedVertex      Vertex
+	MatchedEdge        spatial.Edge
+	MatchedVertex      spatial.Vertex
 	ProjectedPoint     s2.Point
 	ProjectionPointIdx int
 	NextEdges          []EdgeResult

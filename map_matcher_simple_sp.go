@@ -3,6 +3,7 @@ package horizon
 import (
 	"fmt"
 
+	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
@@ -13,28 +14,29 @@ import (
 	statesRadiusMeters - maximum radius to search nearest polylines
 */
 func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, statesRadiusMeters float64) (MatcherResult, error) {
-	closestSource, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(source.Point, statesRadiusMeters, 1)
+	closestSource, _ := matcher.engine.storage.FindNearestInRadius(source.Point, statesRadiusMeters, 1)
+	// @todo need to handle error also
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
 		return MatcherResult{}, ErrSourceNotFound
 	}
 	if len(closestSource) > 1 {
-		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
+		// actually it's impossible if FindNearestInRadius() has been implemented correctly
 		return MatcherResult{}, ErrSourceHasMoreEdges
 	}
 
-	closestTarget, _ := matcher.engine.s2Storage.NearestNeighborsInRadius(target.Point, statesRadiusMeters, 1)
+	closestTarget, _ := matcher.engine.storage.FindNearestInRadius(target.Point, statesRadiusMeters, 1)
 	if len(closestTarget) == 0 {
 		// @todo need to handle this case properly...
 		return MatcherResult{}, ErrTargetNotFound
 	}
 	if len(closestTarget) > 1 {
-		// actually it's impossible if NearestNeighborsInRadius() has been implemented correctly
+		// actually it's impossible if FindNearestInRadius() has been implemented correctly
 		return MatcherResult{}, ErrTargetHasMoreEdges
 	}
 
-	s2polylineSource := matcher.engine.s2Storage.edges[closestSource[0].edgeID]
-	s2polylineTarget := matcher.engine.s2Storage.edges[closestTarget[0].edgeID]
+	s2polylineSource := matcher.engine.storage.GetEdge(closestSource[0].EdgeID)
+	s2polylineTarget := matcher.engine.storage.GetEdge(closestTarget[0].EdgeID)
 
 	// Find vertex for 'source' point
 	m, n := s2polylineSource.Source, s2polylineSource.Target
@@ -42,7 +44,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if edgeSource == nil {
 		return MatcherResult{}, fmt.Errorf("Edge 'source' not found in graph")
 	}
-	_, fractionSource, _ := calcProjection(*edgeSource.Polyline, source.Point)
+	_, fractionSource, _ := spatial.CalcProjection(*edgeSource.Polyline, source.Point)
 	choosenSourceVertex := n
 	if fractionSource > 0.5 {
 		choosenSourceVertex = m
@@ -56,7 +58,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if edgeTarget == nil {
 		return MatcherResult{}, fmt.Errorf("Edge 'target' not found in graph")
 	}
-	_, fractionTarget, _ := calcProjection(*edgeTarget.Polyline, target.Point)
+	_, fractionTarget, _ := spatial.CalcProjection(*edgeTarget.Polyline, target.Point)
 	choosenTargetVertex := n
 	if fractionTarget > 0.5 {
 		choosenTargetVertex = m
@@ -71,7 +73,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	if len(path) < 2 {
 		return MatcherResult{}, ErrSameVertex
 	}
-	edges := []Edge{}
+	edges := []spatial.Edge{}
 	subMatch := SubMatch{
 		Observations: make([]ObservationResult, 2),
 		Probability:  100.0,
