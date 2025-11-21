@@ -256,4 +256,53 @@ func TestMapMatcherSubMatches(t *testing.T) {
 			}
 		}
 	}
+
+	// // Generate GeoJSON output for visualization
+	// fc := geojson.NewFeatureCollection()
+
+	// // Color palette for sub-matches
+	// colors := []string{"#e41a1c", "#377eb8", "#4daf4a", "#984ea3"}
+	// for s, subMatch := range result.SubMatches {
+	// 	color := colors[s%len(colors)]
+
+	// 	for _, obs := range subMatch.Observations {
+	// 		// Add matched edge as LineString
+	// 		edgeFeature := S2PolylineToGeoJSONFeature(*obs.MatchedEdge.Polyline)
+	// 		edgeFeature.SetProperty("type", "matched_edge")
+	// 		edgeFeature.SetProperty("submatch", s)
+	// 		edgeFeature.SetProperty("obs_id", obs.Observation.ID())
+	// 		edgeFeature.SetProperty("edge", obs.MatchedEdge.Source*1000+obs.MatchedEdge.Target)
+	// 		edgeFeature.SetProperty("stroke", color)
+	// 		edgeFeature.SetProperty("stroke-width", 8)
+	// 		fc.AddFeature(edgeFeature)
+
+	// 		// Add projected point
+	// 		projFeature := S2PointToGeoJSONFeature(&obs.ProjectedPoint)
+	// 		projFeature.SetProperty("type", "projected_point")
+	// 		projFeature.SetProperty("submatch", s)
+	// 		projFeature.SetProperty("obs_id", obs.Observation.ID())
+	// 		projFeature.SetProperty("marker-color", color)
+	// 		projFeature.SetProperty("marker-size", "small")
+	// 		projFeature.SetProperty("marker-symbol", "circle")
+	// 		fc.AddFeature(projFeature)
+
+	// 		// Add original GPS observation
+	// 		obsFeature := obs.Observation.GeoJSON()
+	// 		obsFeature.SetProperty("type", "observation")
+	// 		obsFeature.SetProperty("submatch", s)
+	// 		obsFeature.SetProperty("obs_id", obs.Observation.ID())
+	// 		obsFeature.SetProperty("marker-color", "#ffff00")
+	// 		obsFeature.SetProperty("marker-size", "medium")
+	// 		obsFeature.SetProperty("marker-symbol", "star")
+	// 		fc.AddFeature(obsFeature)
+	// 	}
+	// }
+
+	// // Marshal to JSON string
+	// geojsonBytes, err := json.Marshal(fc)
+	// if err != nil {
+	// 	t.Errorf("Failed to marshal GeoJSON: %v", err)
+	// } else {
+	// 	t.Logf("Result GeoJSON:\n%s", string(geojsonBytes))
+	// }
 }
