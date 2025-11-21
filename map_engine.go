@@ -38,15 +38,60 @@ func NewMapEngineDefault() *MapEngine {
 }
 
 // NewMapEngine Returns pointer to created MapEngine with provided parameters
-/*
-	storageLevel - level for S2
-	degree - degree of b-tree
-*/
-func NewMapEngine(storageLevel int, degree int) *MapEngine {
-	index := NewS2Storage(storageLevel, degree)
-	return &MapEngine{
+func NewMapEngine(opts ...func(*MapEngine)) *MapEngine {
+	engine := &MapEngine{
 		edges:     make(map[int64]map[int64]*Edge),
-		s2Storage: index,
+		vertices:  make(map[int64]*Vertex),
+		s2Storage: nil,
+	}
+	for _, opt := range opts {
+		opt(engine)
+	}
+	return engine
+}
+
+// WithGraph is an option which sets graph for MapEngine
+func WithGraph(graph ch.Graph) func(*MapEngine) {
+	return func(engine *MapEngine) {
+		shortcutsNum := graph.GetShortcutsNum()
+		if shortcutsNum == 0 {
+			// Prepare shortcuts to speed up shortest path calculations
+			graph.PrepareContractionHierarchies()
+		}
+		engine.graph = graph
+	}
+}
+
+// WithS2Storage is an option which sets s2Storage for MapEngine
+func WithS2Storage(storage *S2Storage) func(*MapEngine) {
+	return func(engine *MapEngine) {
+		engine.s2Storage = storage
+	}
+}
+
+// WithEdges is an option which sets edges for MapEngine and populate existing spatial index
+// This option requires that s2Storage is already set in MapEngine which you can do via WithS2Storage option
+// If s2Storage is nil then edges are just set without populating spatial index!!!
+func WithEdges(edges []*Edge) func(*MapEngine) {
+	return func(engine *MapEngine) {
+		for _, edge := range edges {
+			if engine.edges[edge.Source] == nil {
+				engine.edges[edge.Source] = make(map[int64]*Edge)
+			}
+			engine.edges[edge.Source][edge.Target] = edge
+			if engine.s2Storage != nil {
+				engine.s2Storage.AddEdge(uint64(edge.ID), edge)
+			}
+		}
+	}
+}
+
+// WithVertices is an option which sets vertices for MapEngine
+func WithVertices(vertices []*Vertex) func(*MapEngine) {
+	return func(engine *MapEngine) {
+		for _, vertex := range vertices {
+			engine.vertices[vertex.ID] = vertex
+		}
 	}
 }
 

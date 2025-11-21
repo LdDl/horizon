@@ -39,7 +39,8 @@ func (ts *Microservice) GetSP(ctx context.Context, in *protos_pb.SPRequest) (*pr
 	if err != nil {
 		return nil, fmt.Errorf("something went wrong on server side: %v", err)
 	}
-	// For now, we only handle the first sub-match
+	// @todo: For now, we only handle the first sub-match
+	// Do we need to handle multiple sub-matches at all? Shortest path should exists...
 	subMatch := result.SubMatches[0]
 	for i := range subMatch.Observations {
 		observationResult := subMatch.Observations[i]

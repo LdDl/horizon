@@ -54,6 +54,12 @@ func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, 
 	return mm, nil
 }
 
+// SetEngine sets the map engine for the matcher
+// This allows building the engine programmatically without CSV files
+func (matcher *MapMatcher) SetEngine(engine *MapEngine) {
+	matcher.engine = engine
+}
+
 // Segment represents a continuous matched segment to process separately (split at break points)
 type Segment struct {
 	// First observation index in this segment
