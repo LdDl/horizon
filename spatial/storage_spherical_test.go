@@ -1,16 +1,15 @@
-package horizon
+package spatial
 
 import (
 	"testing"
 
-	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
-func TestSearchNearest(t *testing.T) {
-	storage := spatial.NewS2Storage(17, 35)
+func TestS2StorageSearchInRadius(t *testing.T) {
+	storage := NewS2Storage(17, 35)
 
-	storage.AddEdge(1, &spatial.Edge{Polyline: s2.PolylineFromLatLngs(
+	storage.AddEdge(1, &Edge{Polyline: s2.PolylineFromLatLngs(
 		[]s2.LatLng{
 			s2.LatLngFromDegrees(55.852908303860076, 37.35355854034424),
 			s2.LatLngFromDegrees(55.8523241360071, 37.353633642196655),
@@ -18,7 +17,7 @@ func TestSearchNearest(t *testing.T) {
 		})},
 	)
 
-	storage.AddEdge(2, &spatial.Edge{Polyline: s2.PolylineFromLatLngs(
+	storage.AddEdge(2, &Edge{Polyline: s2.PolylineFromLatLngs(
 		[]s2.LatLng{
 			s2.LatLngFromDegrees(55.85179867855513, 37.35383212566376),
 			s2.LatLngFromDegrees(55.85162553199324, 37.3538938164711),
@@ -48,7 +47,7 @@ func TestSearchNearest(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(found) != 1 {
+	if len(found2) != 1 {
 		t.Errorf("Should be 1 element found, but got %d", len(found2))
 	}
 
@@ -59,5 +58,14 @@ func TestSearchNearest(t *testing.T) {
 	if len(found3) != 2 {
 		t.Errorf("Should be 2 elements found, but got %d", len(found3))
 	}
+}
 
+func TestS2StorageNewStorage(t *testing.T) {
+	// Test that NewStorage creates S2Storage for StorageTypeSpherical
+	storage := NewStorage(StorageTypeSpherical)
+
+	_, ok := storage.(*S2Storage)
+	if !ok {
+		t.Error("NewStorage(StorageTypeSpherical) should return *S2Storage")
+	}
 }

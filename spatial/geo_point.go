@@ -63,8 +63,17 @@ func newGeoPoint(lon, lat float64, srid int) *GeoPoint {
 }
 
 // NewEuclideanPoint Returns pointer to created GeoPoint with SRID = 0
+// Uses raw r3.Vector to preserve exact Cartesian coordinates.
+// Note: s2.PointFromCoords normalizes to unit sphere, which would distort Euclidean coordinates.
 func NewEuclideanPoint(x, y float64) *GeoPoint {
 	return newGeoPoint(x, y, 0)
+}
+
+// NewEuclideanS2Point Returns s2.Point with raw Euclidean coordinates (not normalized)
+// Use this when you need s2.Point for EuclideanStorage without GeoPoint wrapper.
+// Note: s2.PointFromCoords normalizes to unit sphere, which would distort Euclidean coordinates.
+func NewEuclideanS2Point(x, y float64) s2.Point {
+	return s2.Point{Vector: r3.Vector{X: x, Y: y, Z: 0}}
 }
 
 // NewWGS84Point Returns pointer to created GeoPoint with SRID = 4326

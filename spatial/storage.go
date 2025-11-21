@@ -73,8 +73,9 @@ func NewStorage(storageType StorageType, opts ...StorageOption) Storage {
 	switch options.StorageType {
 	case StorageTypeSpherical:
 		return NewS2Storage(options.StorageLevel, options.BTreeDegree)
+	case StorageTypeEuclidean:
+		return NewEuclideanStorage()
 	default:
-		panic("Need to implement Euclidean storage")
-		return NewS2Storage(options.StorageLevel, options.BTreeDegree)
+		panic("Unknown storage type")
 	}
 }

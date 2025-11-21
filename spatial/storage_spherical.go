@@ -170,25 +170,6 @@ type NearestObject struct {
 	DistanceTo float64
 }
 
-// Implement heap (for getting top-N elements)
-type s2Heap []NearestObject
-
-func (h s2Heap) Less(i, j int) bool { return h[i].DistanceTo < h[j].DistanceTo }
-func (h s2Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h s2Heap) Len() int           { return len(h) }
-
-func (h *s2Heap) Push(x interface{}) {
-	*h = append(*h, x.(NearestObject))
-}
-
-func (h *s2Heap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
 // NearestNeighborsInRadius Returns edges in radius with max objects restriction (KNN)
 /*
 	pt - s2.Point
@@ -200,7 +181,7 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 	if err != nil {
 		return nil, err
 	}
-	h := &s2Heap{}
+	h := &nearestHeap{}
 	heap.Init(h)
 	for k, v := range found {
 		heap.Push(h, NearestObject{k, v})
