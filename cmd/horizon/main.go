@@ -58,7 +58,7 @@ func main() {
 
 	// Init map matcher engine
 	hmmParams := horizon.NewHmmProbabilities(*sigmaFlag, *betaFlag)
-	matcher, err := horizon.NewMapMatcher(hmmParams, *fileFlag)
+	matcher, err := horizon.NewMapMatcherFromFiles(hmmParams, *fileFlag)
 	if err != nil {
 		fmt.Println(err)
 		return

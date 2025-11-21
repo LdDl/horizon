@@ -37,11 +37,32 @@ func NewMapMatcherDefault() *MapMatcher {
 	}
 }
 
-// NewMapMatcher Returns pointer to created MapMatcher with provided parameters
+// NewMapMatcherFromFiles Returns pointer to created MapMatcher from CSV files
 /*
 	props - parameters of Hidden Markov Model
+	edgesFilename - path to the edges CSV file (e.g., "graph.csv")
+
+	This function expects three CSV files with the same prefix:
+	  - {prefix}.csv - edges file (required)
+	    Format: from_vertex_id;to_vertex_id;weight;geom;was_one_way;edge_id
+	    geom is GeoJSON LineString
+
+	  - {prefix}_vertices.csv - vertices file (required)
+	    Format: vertex_id;order_pos;importance;geom
+	    geom is GeoJSON Point
+	    order_pos and importance are used for contraction hierarchies
+
+	  - {prefix}_shortcuts.csv - shortcuts file (required, can be empty with header only)
+	    Format: from_vertex_id;to_vertex_id;weight;via_vertex_id
+	    These are precomputed contraction hierarchy shortcuts.
+	    If empty, shortcuts will be computed via PrepareContractionHierarchies()
+
+	Example: if edgesFilename is "./data/roads.csv", it will look for:
+	  - ./data/roads.csv
+	  - ./data/roads_vertices.csv
+	  - ./data/roads_shortcuts.csv
 */
-func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, error) {
+func NewMapMatcherFromFiles(props *HmmProbabilities, edgesFilename string) (*MapMatcher, error) {
 	mm := &MapMatcher{
 		hmmParams:        props,
 		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
@@ -54,10 +75,30 @@ func NewMapMatcher(props *HmmProbabilities, edgesFilename string) (*MapMatcher, 
 	return mm, nil
 }
 
-// SetEngine sets the map engine for the matcher
-// This allows building the engine programmatically without CSV files
-func (matcher *MapMatcher) SetEngine(engine *MapEngine) {
-	matcher.engine = engine
+// NewMapMatcher returns pointer to created MapMatcher with provided options
+func NewMapMatcher(ops ...func(*MapMatcher)) *MapMatcher {
+	mm := &MapMatcher{
+		hmmParams:        HmmProbabilitiesDefault(),
+		viterbiSemaphore: make(chan struct{}, runtime.NumCPU()),
+	}
+	for _, op := range ops {
+		op(mm)
+	}
+	return mm
+}
+
+// WithHmmParameters sets the HMM parameters for the matcher
+func WithHmmParameters(params *HmmProbabilities) func(*MapMatcher) {
+	return func(matcher *MapMatcher) {
+		matcher.hmmParams = params
+	}
+}
+
+// WithMapEngine sets the map engine for the matcher
+func WithMapEngine(engine *MapEngine) func(*MapMatcher) {
+	return func(matcher *MapMatcher) {
+		matcher.engine = engine
+	}
 }
 
 // Segment represents a continuous matched segment to process separately (split at break points)

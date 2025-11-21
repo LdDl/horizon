@@ -42,7 +42,7 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 	)
 
 	hmmParams := NewHmmProbabilities(sigma, beta)
-	matcher, err := NewMapMatcher(hmmParams, graphFileName)
+	matcher, err := NewMapMatcherFromFiles(hmmParams, graphFileName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -109,7 +109,7 @@ func BenchmarkMapMatcherSRID_4326(b *testing.B) {
 	)
 
 	hmmParams := NewHmmProbabilities(sigma, beta)
-	matcher, err := NewMapMatcher(hmmParams, graphFileName)
+	matcher, err := NewMapMatcherFromFiles(hmmParams, graphFileName)
 	if err != nil {
 		b.Error(err)
 	}
