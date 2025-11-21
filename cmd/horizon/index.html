@@ -377,11 +377,13 @@
                 let sourceNameProj = "source_matched_proj";
                 let sourceNameEdges = "source_matched_edges";
                 let sourceNameEdgesCuts = "source_matched_edges_cuts";
+                let sourceNameGaps = "source_submatch_gaps";
                 let layerName = "layer_matched_route";
                 let layerNameVertices = "layer_matched_vertices";
                 let layerNameProj = "layer_matched_proj";
                 let layerNameEdges = "layer_matched_edges";
                 let layerNameEdgesCuts = "layer_matched_edges_cuts";
+                let layerNameGaps = "layer_submatch_gaps";
                 fetch("/api/v0.1.0/mapmatch", {
                     method: "post",
                     headers: {
@@ -411,12 +413,45 @@
                         features: data.map(obs => { return {...obs.matched_edge_cut, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const matchedVertices = {
-                        type: 'FeatureCollection',  
+                        type: 'FeatureCollection',
                         features: data.map(obs => { return {...obs.matched_vertex, id: obs.vertex_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const projectedPoints = {
                         type: 'FeatureCollection',
                         features: data.map(obs => { return {...obs.projected_point, properties: {obs_idx: obs.obs_idx}} })
+                    };
+
+                    // Create gap lines between sub-matches
+                    const gapLines = {
+                        type: 'FeatureCollection',
+                        features: []
+                    };
+                    const subMatches = jsoned.sub_matches;
+                    for (let i = 0; i < subMatches.length - 1; i++) {
+                        const currentSubMatch = subMatches[i];
+                        const nextSubMatch = subMatches[i + 1];
+                        if (currentSubMatch.observations.length > 0 && nextSubMatch.observations.length > 0) {
+                            const lastObs = currentSubMatch.observations[currentSubMatch.observations.length - 1];
+                            const firstObs = nextSubMatch.observations[0];
+                            if (lastObs.projected_point && firstObs.projected_point) {
+                                gapLines.features.push({
+                                    type: 'Feature',
+                                    properties: {
+                                        from_submatch: i,
+                                        to_submatch: i + 1,
+                                        from_obs: lastObs.obs_idx,
+                                        to_obs: firstObs.obs_idx
+                                    },
+                                    geometry: {
+                                        type: 'LineString',
+                                        coordinates: [
+                                            lastObs.projected_point.geometry.coordinates,
+                                            firstObs.projected_point.geometry.coordinates
+                                        ]
+                                    }
+                                });
+                            }
+                        }
                     }
                 
                     // Add all sources
@@ -460,8 +495,34 @@
                             "data": matchedEdgesCuts
                         });
                     }
+                    if (map.getSource(sourceNameGaps)) {
+                        map.getSource(sourceNameGaps).setData(gapLines);
+                    } else {
+                        map.addSource(sourceNameGaps, {
+                            "type": "geojson",
+                            "data": gapLines
+                        });
+                    }
 
                     // Add all layers
+                    // Gap lines between sub-matches (orange dashed)
+                    if (!map.getLayer(layerNameGaps)) {
+                        map.addLayer({
+                            "id": layerNameGaps,
+                            "type": "line",
+                            "source": sourceNameGaps,
+                            "layout": {
+                                "line-join": "round",
+                                "line-cap": "round"
+                            },
+                            "paint": {
+                                "line-color": "#556832",
+                                "line-opacity": 0.9,
+                                "line-width": 4,
+                                "line-dasharray": [2, 4]
+                            }
+                        });
+                    }
                     if (!map.getLayer(layerNameEdges)) {
                         map.addLayer({
                             "id": layerNameEdges,
