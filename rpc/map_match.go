@@ -7,6 +7,7 @@ import (
 
 	"github.com/LdDl/horizon"
 	"github.com/LdDl/horizon/rpc/protos_pb"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
@@ -73,9 +74,9 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 
 			var matchedEdgeCut s2.Polyline
 			if i == 0 {
-				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 			} else if i == len(subMatch.Observations)-1 {
-				matchedEdgePolyline, matchedEdgeCut = horizon.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
+				matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
 			}
 
 			if observationResult.MatchedVertex.Point == nil {

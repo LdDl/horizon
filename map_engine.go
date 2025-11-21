@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LdDl/ch"
+	"github.com/LdDl/horizon/spatial"
 	geojson "github.com/paulmach/go.geojson"
 	"github.com/pkg/errors"
-
-	"github.com/LdDl/ch"
 )
 
 // MapEngine Engine for solving finding shortest path and KNN problems
@@ -21,18 +21,18 @@ import (
 // s2StorageVertices - datastore for graph vertices (with geometry property)
 // graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
 type MapEngine struct {
-	edges     map[int64]map[int64]*Edge
-	s2Storage *S2Storage
-	vertices  map[int64]*Vertex
+	edges     map[int64]map[int64]*spatial.Edge
+	s2Storage *spatial.S2Storage
+	vertices  map[int64]*spatial.Vertex
 	graph     ch.Graph
 }
 
 // NewMapEngineDefault Returns pointer to created MapEngine with default parameters
 func NewMapEngineDefault() *MapEngine {
-	index := NewS2Storage(17, 35)
+	index := spatial.NewS2Storage(17, 35)
 	return &MapEngine{
-		edges:     make(map[int64]map[int64]*Edge),
-		vertices:  make(map[int64]*Vertex),
+		edges:     make(map[int64]map[int64]*spatial.Edge),
+		vertices:  make(map[int64]*spatial.Vertex),
 		s2Storage: index,
 	}
 }
@@ -40,8 +40,8 @@ func NewMapEngineDefault() *MapEngine {
 // NewMapEngine Returns pointer to created MapEngine with provided parameters
 func NewMapEngine(opts ...func(*MapEngine)) *MapEngine {
 	engine := &MapEngine{
-		edges:     make(map[int64]map[int64]*Edge),
-		vertices:  make(map[int64]*Vertex),
+		edges:     make(map[int64]map[int64]*spatial.Edge),
+		vertices:  make(map[int64]*spatial.Vertex),
 		s2Storage: nil,
 	}
 	for _, opt := range opts {
@@ -63,7 +63,7 @@ func WithGraph(graph ch.Graph) func(*MapEngine) {
 }
 
 // WithS2Storage is an option which sets s2Storage for MapEngine
-func WithS2Storage(storage *S2Storage) func(*MapEngine) {
+func WithS2Storage(storage *spatial.S2Storage) func(*MapEngine) {
 	return func(engine *MapEngine) {
 		engine.s2Storage = storage
 	}
@@ -72,11 +72,11 @@ func WithS2Storage(storage *S2Storage) func(*MapEngine) {
 // WithEdges is an option which sets edges for MapEngine and populate existing spatial index
 // This option requires that s2Storage is already set in MapEngine which you can do via WithS2Storage option
 // If s2Storage is nil then edges are just set without populating spatial index!!!
-func WithEdges(edges []*Edge) func(*MapEngine) {
+func WithEdges(edges []*spatial.Edge) func(*MapEngine) {
 	return func(engine *MapEngine) {
 		for _, edge := range edges {
 			if engine.edges[edge.Source] == nil {
-				engine.edges[edge.Source] = make(map[int64]*Edge)
+				engine.edges[edge.Source] = make(map[int64]*spatial.Edge)
 			}
 			engine.edges[edge.Source][edge.Target] = edge
 			if engine.s2Storage != nil {
@@ -87,7 +87,7 @@ func WithEdges(edges []*Edge) func(*MapEngine) {
 }
 
 // WithVertices is an option which sets vertices for MapEngine
-func WithVertices(vertices []*Vertex) func(*MapEngine) {
+func WithVertices(vertices []*spatial.Vertex) func(*MapEngine) {
 	return func(engine *MapEngine) {
 		for _, vertex := range vertices {
 			engine.vertices[vertex.ID] = vertex
@@ -118,7 +118,7 @@ func prepareEngine(edgesFilename string) (*MapEngine, error) {
 
 func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcutsFname string) error {
 	// Allocate memory for edges
-	engine.edges = make(map[int64]map[int64]*Edge)
+	engine.edges = make(map[int64]map[int64]*spatial.Edge)
 
 	// Read edges first
 	fileEdges, err := os.Open(edgesFname)
@@ -176,14 +176,14 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
-		s2Polyline, err := GeoJSONToS2PolylineFeature(geojsonPolyline)
+		s2Polyline, err := spatial.GeoJSONToS2PolylineFeature(geojsonPolyline)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-polyline edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
 		if _, ok := engine.edges[sourceVertex]; !ok {
-			engine.edges[sourceVertex] = make(map[int64]*Edge)
+			engine.edges[sourceVertex] = make(map[int64]*spatial.Edge)
 		}
-		edge := Edge{
+		edge := spatial.Edge{
 			ID:       edgeID,
 			Source:   sourceVertex,
 			Target:   targetVertex,
@@ -244,11 +244,11 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the vertex '%d' | geom = '%s'", vertexExternal, coordinates))
 		}
-		s2Point, err := GeoJSONToS2PointFeature(geoJSONPoint)
+		s2Point, err := spatial.GeoJSONToS2PointFeature(geoJSONPoint)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-point vertex '%d' | geom = '%s'", vertexExternal, coordinates))
 		}
-		engine.vertices[vertexExternal] = &Vertex{
+		engine.vertices[vertexExternal] = &spatial.Vertex{
 			ID:    vertexExternal,
 			Point: &s2Point,
 		}

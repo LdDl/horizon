@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/LdDl/ch"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/LdDl/viterbi"
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
@@ -138,7 +139,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	layers := []RoadPositions{}
 
 	engineGpsMeasurements := []*GPSMeasurement{}
-	closestSets := [][]NearestObject{}
+	closestSets := [][]spatial.NearestObject{}
 
 	for i := 0; i < len(gpsMeasurements); i++ {
 		closest, err := matcher.engine.s2Storage.NearestNeighborsInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
@@ -164,11 +165,11 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		closest := closestSets[i]
 		localStates := make(RoadPositions, len(closest))
 		for j := range closest {
-			s2polyline := matcher.engine.s2Storage.edges[closest[j].edgeID]
+			s2polyline := matcher.engine.s2Storage.GetEdge(closest[j].EdgeID)
 			m := s2polyline.Source
 			n := s2polyline.Target
 			edge := matcher.engine.edges[m][n]
-			proj, fraction, next := calcProjection(*edge.Polyline, s2point)
+			proj, fraction, next := spatial.CalcProjection(*edge.Polyline, s2point)
 			latLng := s2.LatLngFromPoint(proj)
 			pickedGraphVertex := m
 			routingGraphVertex := m

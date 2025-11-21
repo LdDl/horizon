@@ -1,4 +1,4 @@
-package horizon
+package spatial
 
 import (
 	"container/heap"
@@ -31,6 +31,11 @@ func NewS2Storage(storageLevel int, degree int) *S2Storage {
 		BTree:        btree.New(degree),
 		edges:        make(map[uint64]*Edge),
 	}
+}
+
+// GetEdge Returns edge by ID from storage
+func (storage *S2Storage) GetEdge(edgeID uint64) *Edge {
+	return storage.edges[edgeID]
 }
 
 // indexedItem Object in datastore
@@ -147,18 +152,18 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 
 // NearestObject Nearest object to given point
 /*
-	edgeID - unique identifier
-	distanceTo - distance to object
+	EdgeID - unique identifier
+	DistanceTo - distance to object
 */
 type NearestObject struct {
-	edgeID     uint64
-	distanceTo float64
+	EdgeID     uint64
+	DistanceTo float64
 }
 
 // Implement heap (for getting top-N elements)
 type s2Heap []NearestObject
 
-func (h s2Heap) Less(i, j int) bool { return h[i].distanceTo < h[j].distanceTo }
+func (h s2Heap) Less(i, j int) bool { return h[i].DistanceTo < h[j].DistanceTo }
 func (h s2Heap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
 func (h s2Heap) Len() int           { return len(h) }
 

@@ -3,13 +3,14 @@ package horizon
 import (
 	"testing"
 
+	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
 func TestSearchNearest(t *testing.T) {
-	storage := NewS2Storage(17, 35)
+	storage := spatial.NewS2Storage(17, 35)
 
-	storage.AddEdge(1, &Edge{Polyline: s2.PolylineFromLatLngs(
+	storage.AddEdge(1, &spatial.Edge{Polyline: s2.PolylineFromLatLngs(
 		[]s2.LatLng{
 			s2.LatLngFromDegrees(55.852908303860076, 37.35355854034424),
 			s2.LatLngFromDegrees(55.8523241360071, 37.353633642196655),
@@ -17,7 +18,7 @@ func TestSearchNearest(t *testing.T) {
 		})},
 	)
 
-	storage.AddEdge(2, &Edge{Polyline: s2.PolylineFromLatLngs(
+	storage.AddEdge(2, &spatial.Edge{Polyline: s2.PolylineFromLatLngs(
 		[]s2.LatLng{
 			s2.LatLngFromDegrees(55.85179867855513, 37.35383212566376),
 			s2.LatLngFromDegrees(55.85162553199324, 37.3538938164711),

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/LdDl/ch"
+	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
@@ -115,8 +116,8 @@ func TestMapMatcherSubMatches(t *testing.T) {
 
 	// Populate graph and spatial edges, vertices storage
 	graph := ch.Graph{}
-	edgesSpatial := []*Edge{}
-	verticesSpatial := []*Vertex{}
+	edgesSpatial := []*spatial.Edge{}
+	verticesSpatial := []*spatial.Vertex{}
 	for vertexID, coords := range vertices {
 		err := graph.CreateVertex(vertexID)
 		if err != nil {
@@ -125,7 +126,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 		}
 		// Create vertex with s2 point
 		s2Point := s2.PointFromLatLng(s2.LatLngFromDegrees(coords[1], coords[0]))
-		verticesSpatial = append(verticesSpatial, &Vertex{
+		verticesSpatial = append(verticesSpatial, &spatial.Vertex{
 			Point: &s2Point,
 			ID:    vertexID,
 		})
@@ -136,7 +137,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 		sourcePt := s2.LatLngFromDegrees(source[1], source[0])
 		targetPt := s2.LatLngFromDegrees(target[1], target[0])
 
-		weight := sourcePt.Distance(targetPt).Radians() * EarthRadius
+		weight := sourcePt.Distance(targetPt).Radians() * spatial.EarthRadius
 
 		err := graph.AddEdge(edge.source, edge.target, weight)
 		if err != nil {
@@ -147,7 +148,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 			s2.PointFromLatLng(sourcePt),
 			s2.PointFromLatLng(targetPt),
 		}
-		edge := Edge{
+		edge := spatial.Edge{
 			ID:       edge.id,
 			Source:   edge.source,
 			Target:   edge.target,
@@ -158,7 +159,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 	}
 
 	// Populate spatial index
-	spatialStorage := NewS2Storage(17, 35)
+	spatialStorage := spatial.NewS2Storage(17, 35)
 
 	// Prepare engine
 	mapEngine := NewMapEngine(

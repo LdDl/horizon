@@ -1,4 +1,4 @@
-package horizon
+package spatial
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	geojson "github.com/paulmach/go.geojson"
 )
 
-// calcProjection Returns projection on line and fraction for point
+// CalcProjection Returns projection on line and fraction for point
 /*
 	line - s2.Polyline
 	point - s2.Point
@@ -16,7 +16,7 @@ import (
 	fraction - number in [0;1], describes how far projected point from first point of polyline
 	next - index of the next vertex after the projected point
 */
-func calcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64, next int) {
+func CalcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64, next int) {
 	pr, next := line.Project(point)
 	subs := s2.Polyline{}
 	for i := 0; i < next; i++ {

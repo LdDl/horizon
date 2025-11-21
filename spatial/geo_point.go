@@ -1,10 +1,11 @@
-package horizon
+package spatial
 
 import (
 	"fmt"
 
 	"github.com/golang/geo/r3"
 	"github.com/golang/geo/s2"
+	geojson "github.com/paulmach/go.geojson"
 )
 
 const (
@@ -90,4 +91,9 @@ func (gp *GeoPoint) DistanceTo(gp2 *GeoPoint) float64 {
 		// Deal with planar geometry
 		return gp.Vector.Distance(gp2.Vector)
 	}
+}
+
+// GeoJSON Returns GeoJSON representation of GeoPoint
+func (gp *GeoPoint) GeoJSON() *geojson.Feature {
+	return S2PointToGeoJSONFeature(&gp.Point)
 }

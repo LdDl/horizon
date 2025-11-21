@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/LdDl/horizon/spatial"
 	"github.com/pkg/errors"
 )
 
@@ -13,7 +14,7 @@ import (
 type IsochronesResult []*Isochrone
 
 type Isochrone struct {
-	Vertex *Vertex
+	Vertex *spatial.Vertex
 	Cost   float64
 }
 
@@ -31,14 +32,14 @@ func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float6
 		return nil, ErrSourceNotFound
 	}
 	// Find corresponding edge
-	s2polylineSource := matcher.engine.s2Storage.edges[closestSource[0].edgeID]
+	s2polylineSource := matcher.engine.s2Storage.GetEdge(closestSource[0].EdgeID)
 	// Find vertex for 'source' point
 	m, n := s2polylineSource.Source, s2polylineSource.Target
 	edgeSource := matcher.engine.edges[m][n]
 	if edgeSource == nil {
 		return nil, fmt.Errorf("Edge 'source' not found in graph")
 	}
-	_, fractionSource, _ := calcProjection(*edgeSource.Polyline, source.Point)
+	_, fractionSource, _ := spatial.CalcProjection(*edgeSource.Polyline, source.Point)
 	choosenSourceVertex := n
 	if fractionSource > 0.5 {
 		choosenSourceVertex = m
