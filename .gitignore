@@ -26,3 +26,5 @@ rest/docs/docs.go
 rest/docs/swagger.json
 rest/docs/swagger.yaml
 references_validation/
+*.prof
+*.test

@@ -20,11 +20,13 @@ import (
 // storage - spatial storage for solving KNN problem (implements spatial.Storage interface)
 // vertices - datastore for graph vertices (with geometry property)
 // graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
+// queryPool - thread-safe query pool for concurrent shortest path queries (ch v1.10.0+)
 type MapEngine struct {
-	edges    map[int64]map[int64]*spatial.Edge
-	storage  spatial.Storage
-	vertices map[int64]*spatial.Vertex
-	graph    ch.Graph
+	edges     map[int64]map[int64]*spatial.Edge
+	storage   spatial.Storage
+	vertices  map[int64]*spatial.Vertex
+	graph     ch.Graph
+	queryPool *ch.QueryPool
 }
 
 // NewMapEngineDefault Returns pointer to created MapEngine with default parameters
@@ -59,6 +61,8 @@ func WithGraph(graph ch.Graph) func(*MapEngine) {
 			graph.PrepareContractionHierarchies()
 		}
 		engine.graph = graph
+		// Initialize thread-safe query pool for concurrent shortest path queries
+		engine.queryPool = graph.NewQueryPool()
 	}
 }
 
@@ -307,5 +311,12 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 			return errors.Wrap(err, fmt.Sprintf("Can't add shortcut with source_internal_ID = '%d' and target_internal_ID = '%d' to internal map", sourceExternal, targetExternal))
 		}
 	}
+
+	// Finalize import after loading all vertices, edges, and shortcuts (required for ch v1.10.0+)
+	engine.graph.FinalizeImport()
+
+	// Initialize thread-safe query pool for concurrent shortest path queries
+	engine.queryPool = engine.graph.NewQueryPool()
+
 	return nil
 }

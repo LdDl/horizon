@@ -66,7 +66,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		choosenTargetVertex = n
 	}
 
-	ans, path := matcher.engine.graph.ShortestPath(choosenSourceVertex, choosenTargetVertex)
+	ans, path := matcher.engine.queryPool.ShortestPath(choosenSourceVertex, choosenTargetVertex)
 	if ans == -1.0 {
 		return MatcherResult{}, ErrPathNotFound
 	}
