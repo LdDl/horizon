@@ -237,7 +237,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						rawCost, rawPath := getCachedPath(&matcher.engine.graph, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
+						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						var finalCost float64
 						var finalPath []int64
 						if rawCost < 0 {
@@ -254,7 +254,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					}
 					continue
 				}
-				rawCost, rawPath := getCachedPath(&matcher.engine.graph, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
+				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
 				var finalCost float64
 				var finalPath []int64
@@ -537,15 +537,15 @@ func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[
 }
 
 // getCachedPath is a helper function to get or compute shortest path with caching
-func getCachedPath(graphEngine *ch.Graph, vertexCache map[int64]map[int64]cachedRoute, fromVertex, toVertex int64) (float64, []int64) {
+func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cachedRoute, fromVertex, toVertex int64) (float64, []int64) {
 	// Check cache first
 	if inner, ok := vertexCache[fromVertex]; ok {
 		if cached, ok := inner[toVertex]; ok {
 			return cached.cost, cached.path
 		}
 	}
-	// Compute and cache
-	rawCost, rawPath := graphEngine.ShortestPath(fromVertex, toVertex)
+	// Compute and cache using thread-safe query pool
+	rawCost, rawPath := queryPool.ShortestPath(fromVertex, toVertex)
 	if vertexCache[fromVertex] == nil {
 		vertexCache[fromVertex] = make(map[int64]cachedRoute)
 	}
