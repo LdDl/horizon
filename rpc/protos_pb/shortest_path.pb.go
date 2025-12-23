@@ -24,8 +24,8 @@ const (
 // User's request for finding shortest path
 type SPRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	// Example: 10.0
+	// Max radius of search for potential candidates (in meters).
+	// Use -1 for no limit, 0 or omit for default (100m), or positive value.
 	StateRadius *float64 `protobuf:"fixed64,1,opt,name=state_radius,json=stateRadius,proto3,oneof" json:"state_radius,omitempty"`
 	// Set of GPS data
 	Gps           []*GeoPoint `protobuf:"bytes,2,rep,name=gps,proto3" json:"gps,omitempty"`

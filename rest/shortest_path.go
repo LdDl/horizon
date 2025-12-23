@@ -68,7 +68,7 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 			ut++
 		}
-		statesRadiusMeters := ResolveRadius(data.StateRadius, DEFAULT_SP_RADIUS)
+		statesRadiusMeters := horizon.ResolveRadius(data.StateRadius, horizon.DEFAULT_SP_RADIUS)
 		ans := SPResponse{}
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {

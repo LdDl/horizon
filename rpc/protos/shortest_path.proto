@@ -6,8 +6,8 @@ import "point.proto";
 
 // User's request for finding shortest path
 message SPRequest {
-    // Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-    // Example: 10.0
+    // Max radius of search for potential candidates (in meters).
+    // Use -1 for no limit, 0 or omit for default (100m), or positive value.
     optional double state_radius = 1;
     // Set of GPS data
     repeated GeoPoint gps = 2;

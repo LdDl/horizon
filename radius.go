@@ -1,4 +1,4 @@
-package rest
+package horizon
 
 import "math"
 

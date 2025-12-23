@@ -56,7 +56,7 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		} else if data.MaxCost != nil {
 			ans.Warnings = append(ans.Warnings, "max_cost should be >= 0. Using default value: 0.0")
 		}
-		maxNearestRadius := ResolveRadius(data.MaxNearestRadius, DEFAULT_SP_RADIUS)
+		maxNearestRadius := horizon.ResolveRadius(data.MaxNearestRadius, horizon.DEFAULT_SP_RADIUS)
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)

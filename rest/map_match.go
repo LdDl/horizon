@@ -122,7 +122,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			}
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 		}
-		statesRadiusMeters := ResolveRadius(data.StateRadius, DEFAULT_STATE_RADIUS)
+		statesRadiusMeters := horizon.ResolveRadius(data.StateRadius, horizon.DEFAULT_STATE_RADIUS)
 		maxStates := 5
 		ans := MapMatchResponse{}
 		if data.MaxStates != nil && *data.MaxStates > 0 && *data.MaxStates <= 10 {

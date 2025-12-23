@@ -313,7 +313,7 @@ User&#39;s request for finding shortest path
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 10.0 |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in meters). Use -1 for no limit, 0 or omit for default (100m), or positive value. |
 | gps | [GeoPoint](#horizon-GeoPoint) | repeated | Set of GPS data |
 
 
