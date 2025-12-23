@@ -18,11 +18,19 @@ func TestBfsMarkWeakComponent(t *testing.T) {
 	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
 	engine.edges[4] = map[int64]*spatial.Edge{5: {}}
 
+	// Build reverse edges index
+	reverseEdges := make(map[int64][]int64)
+	for src, targets := range engine.edges {
+		for dst := range targets {
+			reverseEdges[dst] = append(reverseEdges[dst], src)
+		}
+	}
+
 	visited := make(map[int64]bool)
 	vertexComponent := make(map[int64]int64)
 
 	// Mark component starting from vertex 1
-	size1 := engine.bfsMarkWeakComponent(1, 0, visited, vertexComponent)
+	size1 := engine.bfsMarkWeakComponent(1, 0, visited, vertexComponent, reverseEdges)
 	if size1 != 3 {
 		t.Errorf("Expected component size 3, got %d", size1)
 	}
@@ -35,7 +43,7 @@ func TestBfsMarkWeakComponent(t *testing.T) {
 	}
 
 	// Mark component starting from vertex 4
-	size2 := engine.bfsMarkWeakComponent(4, 1, visited, vertexComponent)
+	size2 := engine.bfsMarkWeakComponent(4, 1, visited, vertexComponent, reverseEdges)
 	if size2 != 2 {
 		t.Errorf("Expected component size 2, got %d", size2)
 	}
@@ -59,11 +67,19 @@ func TestBfsMarkWeakComponentUndirected(t *testing.T) {
 	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
 	engine.edges[3] = map[int64]*spatial.Edge{2: {}}
 
+	// Build reverse edges index
+	reverseEdges := make(map[int64][]int64)
+	for src, targets := range engine.edges {
+		for dst := range targets {
+			reverseEdges[dst] = append(reverseEdges[dst], src)
+		}
+	}
+
 	visited := make(map[int64]bool)
 	vertexComponent := make(map[int64]int64)
 
 	// Start from vertex 2 - should find all connected vertices
-	size := engine.bfsMarkWeakComponent(2, 0, visited, vertexComponent)
+	size := engine.bfsMarkWeakComponent(2, 0, visited, vertexComponent, reverseEdges)
 	if size != 3 {
 		t.Errorf("Expected component size 3 (undirected), got %d", size)
 	}
@@ -86,6 +102,14 @@ func TestBfsMarkWeakComponentAlreadyVisited(t *testing.T) {
 
 	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
 
+	// Build reverse edges index
+	reverseEdges := make(map[int64][]int64)
+	for src, targets := range engine.edges {
+		for dst := range targets {
+			reverseEdges[dst] = append(reverseEdges[dst], src)
+		}
+	}
+
 	visited := make(map[int64]bool)
 	vertexComponent := make(map[int64]int64)
 
@@ -93,7 +117,7 @@ func TestBfsMarkWeakComponentAlreadyVisited(t *testing.T) {
 	visited[1] = true
 
 	// Should return 0 since start vertex is already visited
-	size := engine.bfsMarkWeakComponent(1, 0, visited, vertexComponent)
+	size := engine.bfsMarkWeakComponent(1, 0, visited, vertexComponent, reverseEdges)
 	if size != 0 {
 		t.Errorf("Expected size 0 for already visited start, got %d", size)
 	}

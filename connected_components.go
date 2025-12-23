@@ -16,8 +16,9 @@ type WeakComponentsResult struct {
 // bfsMarkWeakComponent performs BFS traversal starting from 'start' vertex
 // and marks all reachable vertices with given componentID.
 // Graph is treated as undirected (weakly connected components - see the ref. https://en.wikipedia.org/wiki/Weak_component)
+// reverseEdges is a precomputed map: target -> []sources for O(1) incoming edge lookup.
 // Returns the number of vertices in the component.
-func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, visited map[int64]bool, vertexComponent map[int64]int64) int {
+func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, visited map[int64]bool, vertexComponent map[int64]int64, reverseEdges map[int64][]int64) int {
 	if visited[start] {
 		return 0
 	}
@@ -44,12 +45,10 @@ func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, vi
 		}
 
 		// Add neighbors via incoming edges (neighbor -> v)
-		// We treat graph as undirected for weakly connected components
-		for sourceVertex, targets := range engine.edges {
-			if _, hasEdgeToV := targets[v]; hasEdgeToV {
-				if !visited[sourceVertex] {
-					queue = append(queue, sourceVertex)
-				}
+		// Using precomputed reverse index for O(degree) lookup instead of O(E)
+		for _, sourceVertex := range reverseEdges[v] {
+			if !visited[sourceVertex] {
+				queue = append(queue, sourceVertex)
 			}
 		}
 	}
@@ -69,12 +68,15 @@ func (engine *MapEngine) computeWeakConnectedComponents() WeakComponentsResult {
 	var bigComponentID int64 = -1
 	var bigComponentSize int = 0
 
-	// Collect all unique vertex IDs from edges
+	// Build reverse edges index: target -> []sources
+	// This allows O(degree) lookup for incoming edges instead of O(E)
+	reverseEdges := make(map[int64][]int64)
 	vertices := make(map[int64]bool)
 	for src, targets := range engine.edges {
 		vertices[src] = true
 		for dst := range targets {
 			vertices[dst] = true
+			reverseEdges[dst] = append(reverseEdges[dst], src)
 		}
 	}
 
@@ -84,7 +86,7 @@ func (engine *MapEngine) computeWeakConnectedComponents() WeakComponentsResult {
 			continue
 		}
 
-		size := engine.bfsMarkWeakComponent(v, componentID, visited, vertexComponent)
+		size := engine.bfsMarkWeakComponent(v, componentID, visited, vertexComponent, reverseEdges)
 		componentSizes[componentID] = size
 
 		// Track the biggest component
