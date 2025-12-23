@@ -30,6 +30,12 @@ type Storage interface {
 	// For spherical: uses s2.Point on unit sphere
 	// For Euclidean: uses s2.Point.Vector.X/Y as Cartesian coordinates
 	FindNearestInRadius(pt s2.Point, radiusMeters float64, n int) ([]NearestObject, error)
+
+	// FindNearest returns the N nearest edges using iterative cell expansion
+	// No radius limit - expands search until N edges are found or maxRings reached
+	// For spherical: uses s2.Point on unit sphere
+	// For Euclidean: uses s2.Point.Vector.X/Y as Cartesian coordinates
+	FindNearest(pt s2.Point, n int) ([]NearestObject, error)
 }
 
 // StorageOptions holds configuration for creating a Storage

@@ -142,7 +142,13 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	closestSets := [][]spatial.NearestObject{}
 
 	for i := 0; i < len(gpsMeasurements); i++ {
-		closest, err := matcher.engine.storage.FindNearestInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		var closest []spatial.NearestObject
+		var err error
+		if statesRadiusMeters < 0 {
+			closest, err = matcher.engine.storage.FindNearest(gpsMeasurements[i].Point, maxStates)
+		} else {
+			closest, err = matcher.engine.storage.FindNearestInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		}
 		if err != nil {
 			return MatcherResult{}, errors.Wrapf(err, "Can't find neighbors for point: '%s' (states radius = %f, max states = %d)", gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		}

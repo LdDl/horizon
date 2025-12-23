@@ -5,6 +5,7 @@ import (
 
 	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
+	"github.com/pkg/errors"
 )
 
 // FindShortestPath Find shortest path between two obserations (not necessary GPS points).
@@ -14,7 +15,19 @@ import (
 	statesRadiusMeters - maximum radius to search nearest polylines
 */
 func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, statesRadiusMeters float64) (MatcherResult, error) {
-	closestSource, _ := matcher.engine.storage.FindNearestInRadius(source.Point, statesRadiusMeters, 1)
+	var closestSource []spatial.NearestObject
+	var err error
+	if statesRadiusMeters < 0 {
+		closestSource, err = matcher.engine.storage.FindNearest(source.Point, 1)
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "FindNearest failed for source point %v", source.Point)
+		}
+	} else {
+		closestSource, err = matcher.engine.storage.FindNearestInRadius(source.Point, statesRadiusMeters, 1)
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "FindNearestInRadius failed for source point %v with radius %f", source.Point, statesRadiusMeters)
+		}
+	}
 	// @todo need to handle error also
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
@@ -25,7 +38,18 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		return MatcherResult{}, ErrSourceHasMoreEdges
 	}
 
-	closestTarget, _ := matcher.engine.storage.FindNearestInRadius(target.Point, statesRadiusMeters, 1)
+	var closestTarget []spatial.NearestObject
+	if statesRadiusMeters < 0 {
+		closestTarget, err = matcher.engine.storage.FindNearest(target.Point, 1)
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "FindNearest failed for target point %v", target.Point)
+		}
+	} else {
+		closestTarget, err = matcher.engine.storage.FindNearestInRadius(target.Point, statesRadiusMeters, 1)
+		if err != nil {
+			return MatcherResult{}, errors.Wrapf(err, "FindNearestInRadius failed for target point %v with radius %f", target.Point, statesRadiusMeters)
+		}
+	}
 	if len(closestTarget) == 0 {
 		// @todo need to handle this case properly...
 		return MatcherResult{}, ErrTargetNotFound

@@ -196,3 +196,173 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 	}
 	return ans, nil
 }
+
+// maxSearchRings is the maximum number of rings to expand during FindNearest
+const maxSearchRings = 50
+
+// FindNearest implements Storage interface using iterative cell expansion
+// Expands search from center cell outward until n edges are found
+func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, error) {
+	if n <= 0 {
+		return nil, nil
+	}
+
+	centerCell := s2.CellFromPoint(pt).ID().Parent(storage.storageLevel)
+	visited := make(map[s2.CellID]bool)
+	found := make(map[uint64]float64)
+	cell := s2.CellFromPoint(pt)
+
+	// Expand in rings from center
+	for ring := 0; ring <= maxSearchRings; ring++ {
+		cellsInRing := storage.getCellsAtRing(centerCell, ring)
+
+		for _, cellID := range cellsInRing {
+			if visited[cellID] {
+				continue
+			}
+			visited[cellID] = true
+
+			item := storage.BTree.Get(indexedItem{CellID: cellID})
+			if item == nil {
+				continue
+			}
+
+			for _, edgeID := range item.(indexedItem).edgesInCell {
+				if _, exists := found[edgeID]; exists {
+					continue
+				}
+
+				polyline := storage.edges[edgeID]
+				if polyline == nil || polyline.Polyline == nil {
+					continue
+				}
+
+				// Calculate minimum distance to edge
+				minDist := s1.ChordAngle(0)
+				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
+					edge := polyline.Polyline.Edge(i)
+					distance := cell.DistanceToEdge(edge.V0, edge.V1)
+					if i == 0 || distance < minDist {
+						minDist = distance
+					}
+				}
+				found[edgeID] = minDist.Angle().Radians() * EarthRadius
+			}
+		}
+
+		// Early exit: if we have enough candidates and the closest is within current ring
+		if len(found) >= n && ring > 0 {
+			// Approximate ring radius (cell size at this level * ring number)
+			ringRadius := storage.cellSizeMeters() * float64(ring)
+
+			// Find minimum distance among candidates
+			minFoundDist := float64(1e18)
+			for _, dist := range found {
+				if dist < minFoundDist {
+					minFoundDist = dist
+				}
+			}
+
+			// If closest edge is closer than ring boundary, we can stop
+			if minFoundDist < ringRadius {
+				break
+			}
+		}
+	}
+
+	// Build result using heap for top-N selection
+	h := &nearestHeap{}
+	heap.Init(h)
+	for k, v := range found {
+		heap.Push(h, NearestObject{k, v})
+	}
+
+	l := h.Len()
+	if l < n {
+		n = l
+	}
+
+	ans := make([]NearestObject, n)
+	for i := 0; i < n; i++ {
+		ans[i] = heap.Pop(h).(NearestObject)
+	}
+	return ans, nil
+}
+
+// getCellsAtRing returns all cells at a given ring distance from center
+// ring 0 = just the center cell
+// ring 1 = 8 neighbors (edge + vertex neighbors)
+// ring 2 = outer ring of those, etc.
+func (storage *S2Storage) getCellsAtRing(center s2.CellID, ring int) []s2.CellID {
+	if ring == 0 {
+		return []s2.CellID{center}
+	}
+
+	// For ring N, we get all neighbors at distance N
+	// Using a simple approach: get all cells within ring, subtract cells within ring-1
+	cellsWithin := storage.getCellsWithinRing(center, ring)
+	if ring == 1 {
+		// Ring 1 is just the immediate neighbors
+		return cellsWithin
+	}
+
+	cellsInner := storage.getCellsWithinRing(center, ring-1)
+	innerSet := make(map[s2.CellID]bool)
+	for _, c := range cellsInner {
+		innerSet[c] = true
+	}
+
+	var result []s2.CellID
+	for _, c := range cellsWithin {
+		if !innerSet[c] {
+			result = append(result, c)
+		}
+	}
+	return result
+}
+
+// getCellsWithinRing returns all cells within ring distance (inclusive)
+func (storage *S2Storage) getCellsWithinRing(center s2.CellID, ring int) []s2.CellID {
+	if ring == 0 {
+		return []s2.CellID{center}
+	}
+
+	visited := make(map[s2.CellID]bool)
+	visited[center] = true
+	current := []s2.CellID{center}
+
+	for r := 0; r < ring; r++ {
+		var next []s2.CellID
+		for _, c := range current {
+			// Get all 8 neighbors (4 edge + 4 vertex)
+			for _, neighbor := range c.EdgeNeighbors() {
+				if !visited[neighbor] {
+					visited[neighbor] = true
+					next = append(next, neighbor)
+				}
+			}
+			// Vertex neighbors for corners
+			for _, neighbor := range c.VertexNeighbors(storage.storageLevel) {
+				if !visited[neighbor] {
+					visited[neighbor] = true
+					next = append(next, neighbor)
+				}
+			}
+		}
+		current = next
+	}
+
+	result := make([]s2.CellID, 0, len(visited))
+	for c := range visited {
+		result = append(result, c)
+	}
+	return result
+}
+
+// cellSizeMeters returns approximate cell size in meters at the storage level
+func (storage *S2Storage) cellSizeMeters() float64 {
+	// S2 cell sizes (approximate, at equator):
+	// Level 0: ~9000 km, Level 10: ~10 km, Level 15: ~300 m, Level 20: ~10 m, Level 30: ~1 cm
+	// Formula: size ≈ 9000km / 2^level
+	return 9000000.0 / float64(uint64(1)<<uint(storage.storageLevel))
+}
