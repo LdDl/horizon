@@ -5,6 +5,7 @@ type WeakComponentsResult struct {
 	// matches each vertex ID to its component ID
 	VertexComponent map[int64]int64
 	// ID of the largest component
+	// Will be -1 if no components found
 	BigComponentID int64
 	// matches component ID to number of vertices in that component
 	ComponentSizes map[int64]int
@@ -65,7 +66,7 @@ func (engine *MapEngine) computeWeakConnectedComponents() WeakComponentsResult {
 	componentSizes := make(map[int64]int)
 
 	var componentID int64 = 0
-	var bigComponentID int64 = 0
+	var bigComponentID int64 = -1
 	var bigComponentSize int = 0
 
 	// Collect all unique vertex IDs from edges

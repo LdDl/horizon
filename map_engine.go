@@ -21,7 +21,7 @@ import (
 // graph - Graph(E,V). It wraps ch.Graph (see https://github.com/LdDl/ch/blob/master/graph.go#L17). It used for solving finding shortest path problem.
 // queryPool - thread-safe query pool for concurrent shortest path queries (ch v1.10.0+)
 // vertexComponent - matches vertex ID to its weakly connected component ID
-// bigComponentID - ID of the largest weakly connected component
+// bigComponentID - ID of the largest weakly connected component. -1 if no components found
 type MapEngine struct {
 	edges           map[int64]map[int64]*spatial.Edge
 	storage         spatial.Storage
@@ -311,6 +311,11 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 
 	// Initialize thread-safe query pool for concurrent shortest path queries
 	engine.queryPool = engine.graph.NewQueryPool()
+
+	// Compute weakly connected components for the graph
+	componentsResult := engine.computeWeakConnectedComponents()
+	engine.vertexComponent = componentsResult.VertexComponent
+	engine.bigComponentID = componentsResult.BigComponentID
 
 	return nil
 }
