@@ -3,6 +3,8 @@ package spatial
 import (
 	"fmt"
 	"math"
+	"strconv"
+	"strings"
 
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
@@ -143,6 +145,90 @@ func GeoJSONToS2PointFeature(pts *geojson.Geometry) (s2.Point, error) {
 func S2PointToGeoJSONFeature(pt *s2.Point) *geojson.Feature {
 	latLng := s2.LatLngFromPoint(*pt)
 	return geojson.NewPointFeature([]float64{latLng.Lng.Degrees(), latLng.Lat.Degrees()})
+}
+
+// WKTToS2PolylineFeature parses WKT LINESTRING and returns *s2.Polyline
+// Expected format: LINESTRING(lon1 lat1, lon2 lat2, ...)
+func WKTToS2PolylineFeature(wkt string) (*s2.Polyline, error) {
+	wkt = strings.TrimSpace(wkt)
+
+	// Check for LINESTRING prefix
+	if !strings.HasPrefix(strings.ToUpper(wkt), "LINESTRING") {
+		return nil, fmt.Errorf("expected LINESTRING, got: %s", wkt)
+	}
+
+	// Extract coordinates between parentheses
+	start := strings.Index(wkt, "(")
+	end := strings.LastIndex(wkt, ")")
+	if start == -1 || end == -1 || start >= end {
+		return nil, fmt.Errorf("invalid WKT LINESTRING format: %s", wkt)
+	}
+
+	coordsStr := wkt[start+1 : end]
+	pointStrs := strings.Split(coordsStr, ",")
+
+	latLngs := make([]s2.LatLng, 0, len(pointStrs))
+	for _, ptStr := range pointStrs {
+		ptStr = strings.TrimSpace(ptStr)
+		parts := strings.Fields(ptStr)
+		if len(parts) < 2 {
+			return nil, fmt.Errorf("invalid coordinate pair: %s", ptStr)
+		}
+
+		lon, err := strconv.ParseFloat(parts[0], 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid longitude: %s", parts[0])
+		}
+
+		lat, err := strconv.ParseFloat(parts[1], 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid latitude: %s", parts[1])
+		}
+
+		latLngs = append(latLngs, s2.LatLngFromDegrees(lat, lon))
+	}
+
+	if len(latLngs) < 2 {
+		return nil, fmt.Errorf("LINESTRING must have at least 2 points")
+	}
+
+	return s2.PolylineFromLatLngs(latLngs), nil
+}
+
+// WKTToS2PointFeature parses WKT POINT and returns s2.Point
+// Expected format: POINT(lon lat)
+func WKTToS2PointFeature(wkt string) (s2.Point, error) {
+	wkt = strings.TrimSpace(wkt)
+
+	// Check for POINT prefix
+	if !strings.HasPrefix(strings.ToUpper(wkt), "POINT") {
+		return s2.Point{}, fmt.Errorf("expected POINT, got: %s", wkt)
+	}
+
+	// Extract coordinates between parentheses
+	start := strings.Index(wkt, "(")
+	end := strings.LastIndex(wkt, ")")
+	if start == -1 || end == -1 || start >= end {
+		return s2.Point{}, fmt.Errorf("invalid WKT POINT format: %s", wkt)
+	}
+
+	coordsStr := strings.TrimSpace(wkt[start+1 : end])
+	parts := strings.Fields(coordsStr)
+	if len(parts) < 2 {
+		return s2.Point{}, fmt.Errorf("invalid coordinate pair: %s", coordsStr)
+	}
+
+	lon, err := strconv.ParseFloat(parts[0], 64)
+	if err != nil {
+		return s2.Point{}, fmt.Errorf("invalid longitude: %s", parts[0])
+	}
+
+	lat, err := strconv.ParseFloat(parts[1], 64)
+	if err != nil {
+		return s2.Point{}, fmt.Errorf("invalid latitude: %s", parts[1])
+	}
+
+	return s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lon)), nil
 }
 
 // ExtractCutUpTo cuts geometry between very first point and neighbor of the projected point index in the polyline
