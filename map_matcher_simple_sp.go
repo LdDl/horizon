@@ -1,109 +1,69 @@
 package horizon
 
 import (
-	"fmt"
+	"math"
 
 	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
 )
 
-// FindShortestPath Find shortest path between two obserations (not necessary GPS points).
-/*
-	NOTICE: this function snaps point to nearest edges simply (without multiple 'candidates' for each observation)
-	gpsMeasurements - Two observations
-	statesRadiusMeters - maximum radius to search nearest polylines
-*/
+const (
+	// Default number of candidates to consider when searching for a path
+	DEFAULT_CANDIDATES_LIMIT = 10
+)
+
+// candidateInfo holds information about a routing candidate
+type candidateInfo struct {
+	edgeID    uint64
+	vertex    int64
+	component int64
+	distance  float64
+	edge      *spatial.Edge
+}
+
+// FindShortestPath finds shortest path between two observations (not necessary GPS points).
+// It searches for multiple candidates and selects the best pair that are in the same connected component.
+// Priority is given to candidates in the big (main) component.
+//
+// Parameters:
+//   - source, target: GPS measurements to route between
+//   - statesRadiusMeters: maximum radius to search nearest edges (use -1 for unlimited)
 func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, statesRadiusMeters float64) (MatcherResult, error) {
-	var closestSource []spatial.NearestObject
-	var err error
-	if statesRadiusMeters < 0 {
-		closestSource, err = matcher.engine.storage.FindNearest(source.Point, 1)
-		if err != nil {
-			return MatcherResult{}, errors.Wrapf(err, "FindNearest failed for source point %v", source.Point)
-		}
-	} else {
-		closestSource, err = matcher.engine.storage.FindNearestInRadius(source.Point, statesRadiusMeters, 1)
-		if err != nil {
-			return MatcherResult{}, errors.Wrapf(err, "FindNearestInRadius failed for source point %v with radius %f", source.Point, statesRadiusMeters)
-		}
+	// Get multiple candidates for source
+	sourceCandidates, err := matcher.getCandidates(source.Point, statesRadiusMeters, DEFAULT_CANDIDATES_LIMIT)
+	if err != nil {
+		return MatcherResult{}, errors.Wrap(err, "failed to get source candidates")
 	}
-	// @todo need to handle error also
-	if len(closestSource) == 0 {
-		// @todo need to handle this case properly...
+	if len(sourceCandidates) == 0 {
 		return MatcherResult{}, ErrSourceNotFound
 	}
-	if len(closestSource) > 1 {
-		// actually it's impossible if FindNearestInRadius() has been implemented correctly
-		return MatcherResult{}, ErrSourceHasMoreEdges
-	}
 
-	var closestTarget []spatial.NearestObject
-	if statesRadiusMeters < 0 {
-		closestTarget, err = matcher.engine.storage.FindNearest(target.Point, 1)
-		if err != nil {
-			return MatcherResult{}, errors.Wrapf(err, "FindNearest failed for target point %v", target.Point)
-		}
-	} else {
-		closestTarget, err = matcher.engine.storage.FindNearestInRadius(target.Point, statesRadiusMeters, 1)
-		if err != nil {
-			return MatcherResult{}, errors.Wrapf(err, "FindNearestInRadius failed for target point %v with radius %f", target.Point, statesRadiusMeters)
-		}
+	// Get multiple candidates for target
+	targetCandidates, err := matcher.getCandidates(target.Point, statesRadiusMeters, DEFAULT_CANDIDATES_LIMIT)
+	if err != nil {
+		return MatcherResult{}, errors.Wrap(err, "failed to get target candidates")
 	}
-	if len(closestTarget) == 0 {
-		// @todo need to handle this case properly...
+	if len(targetCandidates) == 0 {
 		return MatcherResult{}, ErrTargetNotFound
 	}
-	if len(closestTarget) > 1 {
-		// actually it's impossible if FindNearestInRadius() has been implemented correctly
-		return MatcherResult{}, ErrTargetHasMoreEdges
+
+	// Find best pair: priority to big component, then any same component
+	sourceCandidate, targetCandidate, found := matcher.findBestCandidatePair(sourceCandidates, targetCandidates)
+	if !found {
+		return MatcherResult{}, errors.Wrap(ErrDifferentComponents, "no candidate pair found in the same component")
 	}
 
-	s2polylineSource := matcher.engine.storage.GetEdge(closestSource[0].EdgeID)
-	s2polylineTarget := matcher.engine.storage.GetEdge(closestTarget[0].EdgeID)
-
-	// Find vertex for 'source' point
-	m, n := s2polylineSource.Source, s2polylineSource.Target
-	edgeSource := matcher.engine.edges[m][n]
-	if edgeSource == nil {
-		return MatcherResult{}, fmt.Errorf("Edge 'source' not found in graph for edgeID=%d", closestSource[0].EdgeID)
-	}
-	_, fractionSource, _ := spatial.CalcProjection(*edgeSource.Polyline, source.Point)
-	choosenSourceVertex := n
-	if fractionSource > 0.5 {
-		choosenSourceVertex = m
-	} else {
-		choosenSourceVertex = n
-	}
-
-	// Find vertex for 'target' point
-	m, n = s2polylineTarget.Source, s2polylineTarget.Target
-	edgeTarget := matcher.engine.edges[m][n]
-	if edgeTarget == nil {
-		return MatcherResult{}, fmt.Errorf("Edge 'target' not found in graph for edgeID=%d", closestTarget[0].EdgeID)
-	}
-	_, fractionTarget, _ := spatial.CalcProjection(*edgeTarget.Polyline, target.Point)
-	choosenTargetVertex := n
-	if fractionTarget > 0.5 {
-		choosenTargetVertex = m
-	} else {
-		choosenTargetVertex = n
-	}
-
-	// Check if source and target vertices are in the same connected component
-	sourceComp, sourceExists := matcher.engine.vertexComponent[choosenSourceVertex]
-	targetComp, targetExists := matcher.engine.vertexComponent[choosenTargetVertex]
-	if sourceExists && targetExists && sourceComp != targetComp {
-		return MatcherResult{}, errors.Wrapf(ErrDifferentComponents, "vertices %d (component %d) and %d (component %d) are in different components", choosenSourceVertex, sourceComp, choosenTargetVertex, targetComp)
-	}
-
-	ans, path := matcher.engine.queryPool.ShortestPath(choosenSourceVertex, choosenTargetVertex)
+	// Route between selected candidates
+	ans, path := matcher.engine.queryPool.ShortestPath(sourceCandidate.vertex, targetCandidate.vertex)
 	if ans == -1.0 {
-		return MatcherResult{}, errors.Wrapf(ErrPathNotFound, "no path found between vertices %d and %d", choosenSourceVertex, choosenTargetVertex)
+		return MatcherResult{}, errors.Wrapf(ErrPathNotFound, "no path found between vertices %d and %d", sourceCandidate.vertex, targetCandidate.vertex)
 	}
 	if len(path) < 2 {
-		return MatcherResult{}, errors.Wrapf(ErrSameVertex, "source and target vertices are the same: %d", choosenSourceVertex)
+		return MatcherResult{}, errors.Wrapf(ErrSameVertex, "source and target vertices are the same: %d", sourceCandidate.vertex)
 	}
+
+	// Build result
 	edges := []spatial.Edge{}
 	subMatch := SubMatch{
 		Observations: make([]ObservationResult, 2),
@@ -141,4 +101,113 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	return MatcherResult{
 		SubMatches: []SubMatch{subMatch},
 	}, nil
+}
+
+// getCandidates retrieves candidate edges for a point and converts them to candidateInfo
+func (matcher *MapMatcher) getCandidates(pt s2.Point, radiusMeters float64, limit int) ([]candidateInfo, error) {
+	var nearestObjects []spatial.NearestObject
+	var err error
+
+	if radiusMeters < 0 {
+		nearestObjects, err = matcher.engine.storage.FindNearest(pt, limit)
+	} else {
+		nearestObjects, err = matcher.engine.storage.FindNearestInRadius(pt, radiusMeters, limit)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	candidates := make([]candidateInfo, 0, len(nearestObjects))
+	for _, obj := range nearestObjects {
+		edgeData := matcher.engine.storage.GetEdge(obj.EdgeID)
+		if edgeData == nil {
+			continue
+		}
+
+		m, n := edgeData.Source, edgeData.Target
+		edge := matcher.engine.edges[m][n]
+		if edge == nil {
+			continue
+		}
+
+		// Determine which vertex to use based on projection fraction
+		_, fraction, _ := spatial.CalcProjection(*edge.Polyline, pt)
+		vertex := n
+		if fraction > 0.5 {
+			vertex = m
+		}
+
+		// Get component for this vertex
+		component, exists := matcher.engine.vertexComponent[vertex]
+		if !exists {
+			component = -1
+		}
+
+		candidates = append(candidates, candidateInfo{
+			edgeID:    obj.EdgeID,
+			vertex:    vertex,
+			component: component,
+			distance:  obj.DistanceTo,
+			edge:      edge,
+		})
+	}
+
+	return candidates, nil
+}
+
+// findBestCandidatePair finds the best source-target pair with priority to big component
+func (matcher *MapMatcher) findBestCandidatePair(sources, targets []candidateInfo) (candidateInfo, candidateInfo, bool) {
+	bigComponentID := matcher.engine.bigComponentID
+
+	var bestSource, bestTarget candidateInfo
+	bestDistance := math.MaxFloat64
+	found := false
+
+	// Priority 1: find best pair where BOTH are in big component
+	for _, src := range sources {
+		if src.component != bigComponentID {
+			continue
+		}
+		for _, tgt := range targets {
+			if tgt.component != bigComponentID {
+				continue
+			}
+			totalDist := src.distance + tgt.distance
+			if totalDist < bestDistance {
+				bestDistance = totalDist
+				bestSource = src
+				bestTarget = tgt
+				found = true
+			}
+		}
+	}
+
+	if found {
+		return bestSource, bestTarget, true
+	}
+
+	// Priority 2: find best pair in ANY same component
+	bestDistance = math.MaxFloat64
+	for _, src := range sources {
+		if src.component == -1 {
+			continue
+		}
+		for _, tgt := range targets {
+			if tgt.component == -1 {
+				continue
+			}
+			if src.component != tgt.component {
+				continue
+			}
+			totalDist := src.distance + tgt.distance
+			if totalDist < bestDistance {
+				bestDistance = totalDist
+				bestSource = src
+				bestTarget = tgt
+				found = true
+			}
+		}
+	}
+
+	return bestSource, bestTarget, found
 }
