@@ -14,8 +14,9 @@ import (
 // SPRequest User's request for finding shortest path
 // swagger:model
 type SPRequest struct {
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"state_radius" example:"10.0"`
+	// Max radius of search for potential candidates.
+	// Use -1 for no limit, 0 for default (100m), or positive value.
+	StateRadius *float64 `json:"state_radius" example:"100.0"`
 	// Set of GPS data
 	Data []GPSToShortestPath `json:"gps"`
 }
@@ -67,16 +68,11 @@ func FindSP(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 			ut++
 		}
-		statesRadiusMeters := 25.0
+		statesRadiusMeters := ResolveRadius(data.StateRadius, DEFAULT_SP_RADIUS)
 		ans := SPResponse{}
-		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
-			statesRadiusMeters = *data.StateRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
-		}
 		result, err := matcher.FindShortestPath(gpsMeasurements[0], gpsMeasurements[1], statesRadiusMeters)
 		if err != nil {
-			return ctx.Status(500).JSON(fiber.Map{"Error": "Something went wrong on server side"})
+			return ctx.Status(500).JSON(fiber.Map{"Error": err.Error()})
 		}
 
 		// @todo: For now, we only handle the first sub-match
