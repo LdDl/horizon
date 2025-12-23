@@ -66,7 +66,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	m, n := s2polylineSource.Source, s2polylineSource.Target
 	edgeSource := matcher.engine.edges[m][n]
 	if edgeSource == nil {
-		return MatcherResult{}, fmt.Errorf("Edge 'source' not found in graph")
+		return MatcherResult{}, fmt.Errorf("Edge 'source' not found in graph for edgeID=%d", closestSource[0].EdgeID)
 	}
 	_, fractionSource, _ := spatial.CalcProjection(*edgeSource.Polyline, source.Point)
 	choosenSourceVertex := n
@@ -80,7 +80,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	m, n = s2polylineTarget.Source, s2polylineTarget.Target
 	edgeTarget := matcher.engine.edges[m][n]
 	if edgeTarget == nil {
-		return MatcherResult{}, fmt.Errorf("Edge 'target' not found in graph")
+		return MatcherResult{}, fmt.Errorf("Edge 'target' not found in graph for edgeID=%d", closestTarget[0].EdgeID)
 	}
 	_, fractionTarget, _ := spatial.CalcProjection(*edgeTarget.Polyline, target.Point)
 	choosenTargetVertex := n
@@ -92,10 +92,10 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 
 	ans, path := matcher.engine.queryPool.ShortestPath(choosenSourceVertex, choosenTargetVertex)
 	if ans == -1.0 {
-		return MatcherResult{}, ErrPathNotFound
+		return MatcherResult{}, errors.Wrapf(ErrPathNotFound, "no path found between vertices %d and %d", choosenSourceVertex, choosenTargetVertex)
 	}
 	if len(path) < 2 {
-		return MatcherResult{}, ErrSameVertex
+		return MatcherResult{}, errors.Wrapf(ErrSameVertex, "source and target vertices are the same: %d", choosenSourceVertex)
 	}
 	edges := []spatial.Edge{}
 	subMatch := SubMatch{
