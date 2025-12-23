@@ -1,5 +1,17 @@
 package horizon
 
+// WeakComponentsResult holds the result of weakly connected components evaluation.
+type WeakComponentsResult struct {
+	// matches each vertex ID to its component ID
+	VertexComponent map[int64]int64
+	// ID of the largest component
+	BigComponentID int64
+	// matches component ID to number of vertices in that component
+	ComponentSizes map[int64]int
+	// overall number of components found
+	TotalComponents int64
+}
+
 // bfsMarkWeakComponent performs BFS traversal starting from 'start' vertex
 // and marks all reachable vertices with given componentID.
 // Graph is treated as undirected (weakly connected components - see the ref. https://en.wikipedia.org/wiki/Weak_component)
