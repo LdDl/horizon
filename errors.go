@@ -14,4 +14,5 @@ var (
 	ErrTargetHasMoreEdges     = fmt.Errorf("more than 1 edge for 'target' point")
 	ErrPathNotFound           = fmt.Errorf("path not found")
 	ErrSameVertex             = fmt.Errorf("same vertex")
+	ErrDifferentComponents    = fmt.Errorf("vertices are in different connected components")
 )

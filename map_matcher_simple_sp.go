@@ -90,6 +90,13 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		choosenTargetVertex = n
 	}
 
+	// Check if source and target vertices are in the same connected component
+	sourceComp, sourceExists := matcher.engine.vertexComponent[choosenSourceVertex]
+	targetComp, targetExists := matcher.engine.vertexComponent[choosenTargetVertex]
+	if sourceExists && targetExists && sourceComp != targetComp {
+		return MatcherResult{}, errors.Wrapf(ErrDifferentComponents, "vertices %d (component %d) and %d (component %d) are in different components", choosenSourceVertex, sourceComp, choosenTargetVertex, targetComp)
+	}
+
 	ans, path := matcher.engine.queryPool.ShortestPath(choosenSourceVertex, choosenTargetVertex)
 	if ans == -1.0 {
 		return MatcherResult{}, errors.Wrapf(ErrPathNotFound, "no path found between vertices %d and %d", choosenSourceVertex, choosenTargetVertex)
