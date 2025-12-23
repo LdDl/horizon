@@ -11,7 +11,6 @@ import (
 
 	"github.com/LdDl/ch"
 	"github.com/LdDl/horizon/spatial"
-	geojson "github.com/paulmach/go.geojson"
 	"github.com/pkg/errors"
 )
 
@@ -183,14 +182,9 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 
 		coordinates := record[3]
-		bytesCoordinates := []byte(coordinates)
-		geojsonPolyline, err := geojson.UnmarshalGeometry(bytesCoordinates)
+		s2Polyline, err := spatial.WKTToS2PolylineFeature(coordinates)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
-		}
-		s2Polyline, err := spatial.GeoJSONToS2PolylineFeature(geojsonPolyline)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-polyline edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
+			return errors.Wrap(err, fmt.Sprintf("Can't parse WKT geometry of the edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
 		if _, ok := engine.edges[sourceVertex]; !ok {
 			engine.edges[sourceVertex] = make(map[int64]*spatial.Edge)
@@ -252,13 +246,9 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		engine.graph.Vertices[vertexInternal].SetImportance(vertexImportance)
 
 		coordinates := record[3]
-		geoJSONPoint, err := geojson.UnmarshalGeometry([]byte(coordinates))
+		s2Point, err := spatial.WKTToS2PointFeature(coordinates)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't parse GeoJSON geometry of the vertex '%d' | geom = '%s'", vertexExternal, coordinates))
-		}
-		s2Point, err := spatial.GeoJSONToS2PointFeature(geoJSONPoint)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("Can't prepare s2-point vertex '%d' | geom = '%s'", vertexExternal, coordinates))
+			return errors.Wrap(err, fmt.Sprintf("Can't parse WKT geometry of the vertex '%d' | geom = '%s'", vertexExternal, coordinates))
 		}
 		engine.vertices[vertexExternal] = &spatial.Vertex{
 			ID:    vertexExternal,
