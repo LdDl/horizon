@@ -55,3 +55,50 @@ func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, vi
 
 	return size
 }
+
+// computeWeakConnectedComponents finds all weakly connected components in the graph.
+// It iterates over all vertices, runs BFS from each unvisited vertex,
+// and identifies the biggest component (by vertex count).
+func (engine *MapEngine) computeWeakConnectedComponents() WeakComponentsResult {
+	visited := make(map[int64]bool)
+	vertexComponent := make(map[int64]int64)
+	componentSizes := make(map[int64]int)
+
+	var componentID int64 = 0
+	var bigComponentID int64 = 0
+	var bigComponentSize int = 0
+
+	// Collect all unique vertex IDs from edges
+	vertices := make(map[int64]bool)
+	for src, targets := range engine.edges {
+		vertices[src] = true
+		for dst := range targets {
+			vertices[dst] = true
+		}
+	}
+
+	// Process each vertex
+	for v := range vertices {
+		if visited[v] {
+			continue
+		}
+
+		size := engine.bfsMarkWeakComponent(v, componentID, visited, vertexComponent)
+		componentSizes[componentID] = size
+
+		// Track the biggest component
+		if size > bigComponentSize {
+			bigComponentSize = size
+			bigComponentID = componentID
+		}
+
+		componentID++
+	}
+
+	return WeakComponentsResult{
+		VertexComponent: vertexComponent,
+		BigComponentID:  bigComponentID,
+		ComponentSizes:  componentSizes,
+		TotalComponents: componentID,
+	}
+}

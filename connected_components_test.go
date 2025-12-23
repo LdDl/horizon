@@ -98,3 +98,56 @@ func TestBfsMarkWeakComponentAlreadyVisited(t *testing.T) {
 		t.Errorf("Expected size 0 for already visited start, got %d", size)
 	}
 }
+
+func TestComputeWeakConnectedComponents(t *testing.T) {
+	engine := &MapEngine{
+		edges: make(map[int64]map[int64]*spatial.Edge),
+	}
+
+	// Create graph with 3 components:
+	// Component A: 1 -> 2 -> 3 -> 4 (size 4, biggest)
+	// Component B: 10 -> 11 (size 2)
+	// Component C: 20 (isolated vertex with self-loop or outgoing edge to nowhere)
+	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
+	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
+	engine.edges[3] = map[int64]*spatial.Edge{4: {}}
+	engine.edges[10] = map[int64]*spatial.Edge{11: {}}
+	engine.edges[20] = map[int64]*spatial.Edge{21: {}}
+
+	result := engine.computeWeakConnectedComponents()
+
+	// Should have 3 components
+	if result.TotalComponents != 3 {
+		t.Errorf("Expected 3 components, got %d", result.TotalComponents)
+	}
+
+	// All vertices should be assigned to components
+	expectedVertices := []int64{1, 2, 3, 4, 10, 11, 20, 21}
+	for _, v := range expectedVertices {
+		if _, exists := result.VertexComponent[v]; !exists {
+			t.Errorf("Vertex %d should have component assigned", v)
+		}
+	}
+
+	// Vertices 1,2,3,4 should be in the same component
+	comp1 := result.VertexComponent[1]
+	for _, v := range []int64{2, 3, 4} {
+		if result.VertexComponent[v] != comp1 {
+			t.Errorf("Vertices 1 and %d should be in the same component", v)
+		}
+	}
+
+	// Vertices 10,11 should be in the same component (different from 1-4)
+	comp10 := result.VertexComponent[10]
+	if result.VertexComponent[11] != comp10 {
+		t.Errorf("Vertices 10 and 11 should be in the same component")
+	}
+	if comp10 == comp1 {
+		t.Errorf("Component of 10-11 should differ from component of 1-4")
+	}
+
+	// Big component should have size 4
+	if result.ComponentSizes[result.BigComponentID] != 4 {
+		t.Errorf("Expected big component size 4, got %d", result.ComponentSizes[result.BigComponentID])
+	}
+}
