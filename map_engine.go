@@ -23,13 +23,18 @@ import (
 // vertexComponent - matches vertex ID to its weakly connected component ID
 // bigComponentID - ID of the largest weakly connected component. -1 if no components found
 type MapEngine struct {
-	edges           map[int64]map[int64]*spatial.Edge
-	storage         spatial.Storage
-	vertices        map[int64]*spatial.Vertex
-	graph           ch.Graph
-	queryPool       *ch.QueryPool
+	edges     map[int64]map[int64]*spatial.Edge
+	storage   spatial.Storage
+	vertices  map[int64]*spatial.Vertex
+	graph     ch.Graph
+	queryPool *ch.QueryPool
+	// Weak connected components
 	vertexComponent map[int64]int64
 	bigComponentID  int64
+	// Strong connected components (SCC, Tarjan's algorithm)
+	vertexStrongComponent map[int64]int64
+	bigStrongComponentID  int64
+	isComponentVerySmall  map[int64]bool
 }
 
 // NewMapEngineDefault Returns pointer to created MapEngine with default parameters
@@ -316,6 +321,12 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 	componentsResult := engine.computeWeakConnectedComponents()
 	engine.vertexComponent = componentsResult.VertexComponent
 	engine.bigComponentID = componentsResult.BigComponentID
+
+	// Compute strongly connected components for the graph via Tarjan's algorithm
+	sccResult := engine.computeStrongConnectedComponents()
+	engine.vertexStrongComponent = sccResult.VertexComponent
+	engine.bigStrongComponentID = sccResult.BigComponentID
+	engine.isComponentVerySmall = sccResult.IsComponentVerySmall
 
 	return nil
 }

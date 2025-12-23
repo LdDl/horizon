@@ -1,6 +1,29 @@
 package horizon
 
-// Threshold for determining if a component is really small
+// Strongly Connected Components (SCC) are used instead of Weakly Connected Components
+// for routing candidate selection. The key difference:
+//
+// - Weak components: treat directed graph as undirected, guarantee only that some path
+//   exists (ignoring edge direction). Two vertices in the same weak component may have
+//   no directed path between them.
+//
+// - Strong components: guarantee that every vertex can reach every other vertex via
+//   directed paths. If source and target are in the same SCC, a route is guaranteed.
+//
+// Example: A -> B -> C (one-way chain)
+//
+//	Weak: {A, B, C} are in one component (connected if we ignore direction)
+//	Strong: {A}, {B}, {C} are separate SCCs (no way to go from C back to A)
+//	Result: routing from C to A will fail, and SCC correctly predicts this
+//
+// For road networks, the largest SCC typically contains the main road network where
+// bidirectional travel is possible (directly or via alternative routes). Small SCCs
+// represent dead-ends, one-way streets without return paths, or isolated road segments.
+//
+// This approach is inspired by OSRM's preprocessing strategy.
+// See: https://github.com/Project-OSRM/osrm-backend/blob/master/include/util/tarjan_scc.hpp
+
+// SMALL_COMPONENT_SIZE - components with fewer vertices are considered to be very small and deprioritized during routing.
 const SMALL_COMPONENT_SIZE = 1000
 
 // StrongComponentsResult holds the result of strongly connected components evaluation.

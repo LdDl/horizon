@@ -32,7 +32,7 @@ func TestTarjanSCC_SimpleChain(t *testing.T) {
 		t.Errorf("Each vertex should be in different SCC: %d, %d, %d", comp1, comp2, comp3)
 	}
 
-	// All components should be very small (size 1 < 1000)
+	// All components should be very small (size 1 < SMALL_COMPONENT_SIZE)
 	for compID := range result.ComponentSizes {
 		if !result.IsComponentVerySmall[compID] {
 			t.Errorf("Component %d with size %d should be very small", compID, result.ComponentSizes[compID])
@@ -168,7 +168,7 @@ func TestTarjanSCC_BigComponent(t *testing.T) {
 		t.Errorf("Expected big component size 5, got %d", result.ComponentSizes[result.BigComponentID])
 	}
 
-	// Component should be very small (5 < 1000)
+	// Component should be very small (5 < SMALL_COMPONENT_SIZE)
 	if !result.IsComponentVerySmall[result.BigComponentID] {
 		t.Errorf("Component with size 5 should be very small")
 	}
