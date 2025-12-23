@@ -147,20 +147,22 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
         ```
         <img src="images/inst8-grpc.png" width="720">
 
-    * For shortest path finding (_note: edge selection based just on "first nearest found" method, so results may make you upset_):
+    * For shortest path finding:
         ```shell
         curl 'http://localhost:32800/api/v0.1.0/shortest' \
             -X POST \
             -H 'accept: application/json' \
             -H  'Content-Type: application/json' \
-            --data-raw '{"state_radius":10.0,"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}' ; echo
+            --data-raw '{"gps":[{"lon_lat":[37.601249363208915,55.745374309126895]},{"lon_lat":[37.600926871550165,55.752634490168425]}]}' ; echo
         ```
+
+        _Note: You can optionally specify `state_radius` to limit the search area (in meters), but this is at your own risk — it may cause routing to fail if no candidates are found within the radius._
+
         <img src="images/inst9.png" width="720">
 
         Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
         ```shell
         grpcurl -plaintext -emit-defaults -d '{
-        "state_radius": 10.0,
         "gps": [
             {"lon": 37.601249363208915, "lat": 55.745374309126895},
             {"lon": 37.600926871550165, "lat": 55.752634490168425}
