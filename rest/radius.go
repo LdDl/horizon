@@ -1,5 +1,7 @@
 package rest
 
+import "math"
+
 // Default radius values (in meters)
 const (
 	// Default search radius for map matching
@@ -9,17 +11,14 @@ const (
 )
 
 // ResolveRadius resolves the radius value based on the API design:
-//   - < 0: no limit (returns a very large value)
+//   - < 0: no limit (returns -1 to signal unlimited search)
 //   - 0 or nil: use default
 //   - > 0: use provided value
 func ResolveRadius(radius *float64, defaultValue float64) float64 {
 	if radius == nil {
 		return defaultValue
 	}
-	if *radius < 0 {
-		return 10000.0 // 10km practical maximum for "no limit"
-	}
-	if *radius == 0 {
+	if math.Abs(*radius) < 1e-9 {
 		return defaultValue
 	}
 	return *radius

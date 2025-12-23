@@ -200,28 +200,30 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 // maxSearchRings is the maximum number of rings to expand during FindNearest
 const maxSearchRings = 50
 
-// FindNearest implements Storage interface using iterative cell expansion
-// Expands search from center cell outward until n edges are found
+// FindNearest implements Storage interface using iterative cell expansion.
+// Expands search from center cell outward until n edges are found.
+// Uses incremental frontier expansion to avoid recalculating BFS on each ring.
 func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, error) {
 	if n <= 0 {
 		return nil, nil
 	}
 
 	centerCell := s2.CellFromPoint(pt).ID().Parent(storage.storageLevel)
-	visited := make(map[s2.CellID]bool)
-	found := make(map[uint64]float64)
 	cell := s2.CellFromPoint(pt)
 
-	// Expand in rings from center
-	for ring := 0; ring <= maxSearchRings; ring++ {
-		cellsInRing := storage.getCellsAtRing(centerCell, ring)
+	// Track visited cells and found edges
+	visited := make(map[s2.CellID]bool)
+	found := make(map[uint64]float64)
 
-		for _, cellID := range cellsInRing {
-			if visited[cellID] {
-				continue
-			}
-			visited[cellID] = true
+	// Frontier-based expansion: start with center cell
+	frontier := []s2.CellID{centerCell}
+	visited[centerCell] = true
 
+	cellSize := storage.cellSizeMeters()
+
+	for ring := 0; ring <= maxSearchRings && len(frontier) > 0; ring++ {
+		// Process all cells in current frontier (ring)
+		for _, cellID := range frontier {
 			item := storage.BTree.Get(indexedItem{CellID: cellID})
 			if item == nil {
 				continue
@@ -250,10 +252,9 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 			}
 		}
 
-		// Early exit: if we have enough candidates and the closest is within current ring
+		// Early exit check
 		if len(found) >= n && ring > 0 {
-			// Approximate ring radius (cell size at this level * ring number)
-			ringRadius := storage.cellSizeMeters() * float64(ring)
+			ringRadius := cellSize * float64(ring)
 
 			// Find minimum distance among candidates
 			minFoundDist := float64(1e18)
@@ -268,6 +269,27 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 				break
 			}
 		}
+
+		// Expand frontier to next ring
+		// Collect all unvisited neighbors of current frontier
+		nextFrontier := make([]s2.CellID, 0, len(frontier)*4)
+		for _, cellID := range frontier {
+			// Edge neighbors (4 cells sharing an edge)
+			for _, neighbor := range cellID.EdgeNeighbors() {
+				if !visited[neighbor] {
+					visited[neighbor] = true
+					nextFrontier = append(nextFrontier, neighbor)
+				}
+			}
+			// Vertex neighbors (cells sharing only a vertex - corners)
+			for _, neighbor := range cellID.VertexNeighbors(storage.storageLevel) {
+				if !visited[neighbor] {
+					visited[neighbor] = true
+					nextFrontier = append(nextFrontier, neighbor)
+				}
+			}
+		}
+		frontier = nextFrontier
 	}
 
 	// Build result using heap for top-N selection
