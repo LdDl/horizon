@@ -15,11 +15,11 @@ const (
 
 // candidateInfo holds information about a routing candidate
 type candidateInfo struct {
-	edgeID    uint64
-	vertex    int64
-	component int64
-	distance  float64
-	edge      *spatial.Edge
+	edgeID       uint64
+	vertex       int64
+	sccComponent int64
+	distance     float64
+	edge         *spatial.Edge
 }
 
 // FindShortestPath finds shortest path between two observations (not necessary GPS points).
@@ -48,10 +48,11 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 		return MatcherResult{}, ErrTargetNotFound
 	}
 
-	// Find best pair: priority to big component, then any same component
+	// Find best pair: priority to big SCC, then same SCC, then closest (fallback)
 	sourceCandidate, targetCandidate, found := matcher.findBestCandidatePair(sourceCandidates, targetCandidates)
 	if !found {
-		return MatcherResult{}, errors.Wrap(ErrDifferentComponents, "no candidate pair found in the same component")
+		// Should not happen if we have candidates, but handle defensively
+		return MatcherResult{}, errors.Wrapf(ErrCandidatesNotFound, "no routable candidate pair found for source %d and target %d", sourceCandidate.vertex, targetCandidate.vertex)
 	}
 
 	// Route between selected candidates
@@ -137,39 +138,48 @@ func (matcher *MapMatcher) getCandidates(pt s2.Point, radiusMeters float64, limi
 			vertex = m
 		}
 
-		// Get component for this vertex
-		component, exists := matcher.engine.vertexComponent[vertex]
+		// Get SCC component for this vertex
+		sccComponent, exists := matcher.engine.vertexStrongComponent[vertex]
 		if !exists {
-			component = -1
+			sccComponent = -1
 		}
 
 		candidates = append(candidates, candidateInfo{
-			edgeID:    obj.EdgeID,
-			vertex:    vertex,
-			component: component,
-			distance:  obj.DistanceTo,
-			edge:      edge,
+			edgeID:       obj.EdgeID,
+			vertex:       vertex,
+			sccComponent: sccComponent,
+			distance:     obj.DistanceTo,
+			edge:         edge,
 		})
 	}
 
 	return candidates, nil
 }
 
-// findBestCandidatePair finds the best source-target pair with priority to big component
+// findBestCandidatePair finds the best source-target pair with priority to non-tiny SCC.
+// Work in the following order:
+// 1 both candidates in the same non-tiny SCC (size >= SMALL_COMPONENT_SIZE)
+// 2: both candidates in the same SCC (including small ones)
+// 3: closest candidates regardless of SCC (fallback, routing may fail)
 func (matcher *MapMatcher) findBestCandidatePair(sources, targets []candidateInfo) (candidateInfo, candidateInfo, bool) {
-	bigComponentID := matcher.engine.bigComponentID
+	if len(sources) == 0 || len(targets) == 0 {
+		return candidateInfo{}, candidateInfo{}, false
+	}
 
 	var bestSource, bestTarget candidateInfo
 	bestDistance := math.MaxFloat64
 	found := false
 
-	// Priority 1: find best pair where BOTH are in big component
+	// Priority 1: find best pair where BOTH are in the same non-tiny SCC
 	for _, src := range sources {
-		if src.component != bigComponentID {
+		if src.sccComponent == -1 {
+			continue
+		}
+		if matcher.engine.isComponentVerySmall[src.sccComponent] {
 			continue
 		}
 		for _, tgt := range targets {
-			if tgt.component != bigComponentID {
+			if tgt.sccComponent != src.sccComponent {
 				continue
 			}
 			totalDist := src.distance + tgt.distance
@@ -186,17 +196,17 @@ func (matcher *MapMatcher) findBestCandidatePair(sources, targets []candidateInf
 		return bestSource, bestTarget, true
 	}
 
-	// Priority 2: find best pair in ANY same component
+	// Priority 2: find best pair in ANY same SCC (including very small ones)
 	bestDistance = math.MaxFloat64
 	for _, src := range sources {
-		if src.component == -1 {
+		if src.sccComponent == -1 {
 			continue
 		}
 		for _, tgt := range targets {
-			if tgt.component == -1 {
+			if tgt.sccComponent == -1 {
 				continue
 			}
-			if src.component != tgt.component {
+			if src.sccComponent != tgt.sccComponent {
 				continue
 			}
 			totalDist := src.distance + tgt.distance
@@ -209,5 +219,37 @@ func (matcher *MapMatcher) findBestCandidatePair(sources, targets []candidateInf
 		}
 	}
 
-	return bestSource, bestTarget, found
+	if found {
+		return bestSource, bestTarget, true
+	}
+
+	// Priority 3: fallback - try routing pairs sorted by distance until one works
+	// @todo: this is huge performance hit, but it is what it is.
+	type candidatePair struct {
+		src, tgt candidateInfo
+		dist     float64
+	}
+	pairs := make([]candidatePair, 0, len(sources)*len(targets))
+	for _, src := range sources {
+		for _, tgt := range targets {
+			pairs = append(pairs, candidatePair{src, tgt, src.distance + tgt.distance})
+		}
+	}
+	// Sort by total distance
+	for i := 0; i < len(pairs)-1; i++ {
+		for j := i + 1; j < len(pairs); j++ {
+			if pairs[j].dist < pairs[i].dist {
+				pairs[i], pairs[j] = pairs[j], pairs[i]
+			}
+		}
+	}
+	// Try pairs in order until we find a routable one
+	for _, p := range pairs {
+		ans, _ := matcher.engine.queryPool.ShortestPath(p.src.vertex, p.tgt.vertex)
+		if ans != -1.0 {
+			return p.src, p.tgt, true
+		}
+	}
+
+	return candidateInfo{}, candidateInfo{}, false
 }
