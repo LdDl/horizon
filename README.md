@@ -1,4 +1,4 @@
-# Horizon v0.9.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.10.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -25,12 +25,12 @@ Demonstration:
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.9.0
+go install github.com/LdDl/horizon/cmd/horizon@v0.10.0
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.9.0/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.9.0/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.10.0/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.10.0/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
@@ -87,11 +87,11 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 3. Convert *.osm.pbf to CSV via [osm2ch](https://github.com/LdDl/osm2ch#osm2ch).
 
     Notice:
-    * osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change those default values. We are going to extract only edges adapted for cars also. 
+    * osm2ch's default output geometry format is WKT and units is 'km' (kilometers). We are going to change units to meters. We are going to extract only edges adapted for cars also.
     * Don't forget to prepare contraction hierarchies via flag 'contract=true'
 
     ```shell
-    osm2ch --file map.osm.pbf --out map.csv --geomf geojson --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link --contract=true
+    osm2ch --file map.osm.pbf --out map.csv --geomf wkt --units m --tags motorway,primary,primary_link,road,secondary,secondary_link,residential,tertiary,tertiary_link,unclassified,trunk,trunk_link --contract=true
     ```
     <img src="images/inst6.png" width="720">
 
