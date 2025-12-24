@@ -184,6 +184,7 @@ Relation between observation and matched edge
 | ----- | ---- | ----- | ----------- |
 | obs_idx | [int32](#int32) |  | Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed Example: 0 |
 | is_matched | [bool](#bool) |  | Whether this observation was successfully matched to a road (false if no candidates were found) Example: true |
+| code | [uint32](#uint32) |  | Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation Example: 900 |
 | edge_id | [int64](#int64) |  | Matched edge identifier (0 if is_matched=false) Example: 3149 |
 | vertex_id | [int64](#int64) |  | Matched vertex identifier (0 if is_matched=false) Example: 44014 |
 | matched_edge | [GeoPoint](#horizon-GeoPoint) | repeated | Corresponding matched edge as line feature (empty if is_matched=false) |

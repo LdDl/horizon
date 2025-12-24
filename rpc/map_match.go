@@ -69,6 +69,7 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 				subMatchResp.Observations[i] = &protos_pb.ObservationEdge{
 					ObsIdx:    int32(observationResult.Observation.ID()),
 					IsMatched: false,
+					Code:      uint32(observationResult.Code),
 					OriginalPoint: &protos_pb.GeoPoint{
 						Lon: originalPoint.Lng.Degrees(),
 						Lat: originalPoint.Lat.Degrees(),
@@ -109,6 +110,7 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 			subMatchResp.Observations[i] = &protos_pb.ObservationEdge{
 				ObsIdx:      int32(observationResult.Observation.ID()),
 				IsMatched:   true,
+				Code:        uint32(observationResult.Code),
 				EdgeId:      observationResult.MatchedEdge.ID,
 				MatchedEdge: line,
 				MatchedVertex: &protos_pb.GeoPoint{

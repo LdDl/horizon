@@ -73,6 +73,8 @@ type ObservationEdgeResponse struct {
 	ObservationIdx int `json:"obs_idx" example:"0"`
 	// Whether this observation was successfully matched to a road (false if no candidates were found)
 	IsMatched bool `json:"is_matched" example:"true"`
+	// Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation
+	Code horizon.MatcherCode `json:"code" example:"900"`
 	// Matched edge identifier (0 if is_matched=false)
 	EdgeID int64 `json:"edge_id" example:"3149"`
 	// Matched vertex identifier (0 if is_matched=false)
@@ -155,6 +157,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 					subMatchResp.Observations[i] = ObservationEdgeResponse{
 						ObservationIdx: observationResult.Observation.ID(),
 						IsMatched:      false,
+						Code:           observationResult.Code,
 						OriginalPoint:  observationResult.Observation.GeoPoint.GeoJSON(),
 						NextEdges:      []IntermediateEdgeResponse{},
 					}
@@ -172,6 +175,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 				subMatchResp.Observations[i] = ObservationEdgeResponse{
 					ObservationIdx: observationResult.Observation.ID(),
 					IsMatched:      true,
+					Code:           observationResult.Code,
 					EdgeID:         observationResult.MatchedEdge.ID,
 					MatchedEdge:    spatial.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
 					MatchedVertex:  spatial.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),
