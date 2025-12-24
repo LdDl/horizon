@@ -21,12 +21,7 @@ func (ts *Microservice) GetSP(ctx context.Context, in *protos_pb.SPRequest) (*pr
 		Warnings: []string{},
 	}
 
-	statesRadiusMeters := 25.0
-	if in.StateRadius != nil && *in.StateRadius >= 7 && *in.StateRadius <= 50 {
-		statesRadiusMeters = *in.StateRadius
-	} else {
-		response.Warnings = append(response.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
-	}
+	statesRadiusMeters := horizon.ResolveRadius(in.StateRadius, horizon.DEFAULT_SP_RADIUS)
 
 	gpsMeasurements := horizon.GPSMeasurements{}
 	ut := time.Now().UTC().Unix()

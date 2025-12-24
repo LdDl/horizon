@@ -27,8 +27,8 @@ type IsochronesRequest struct {
 	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
 	// Example: 2100.0
 	MaxCost *float64 `protobuf:"fixed64,1,opt,name=max_cost,json=maxCost,proto3,oneof" json:"max_cost,omitempty"`
-	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
-	// Example: 25.0
+	// Max radius of search for nearest vertex (in meters).
+	// Use -1 for no limit, 0 or omit for default (100m), or positive value.
 	MaxNearestRadius *float64 `protobuf:"fixed64,2,opt,name=max_nearest_radius,json=maxNearestRadius,proto3,oneof" json:"max_nearest_radius,omitempty"`
 	// Longitude
 	// Example: 37.601249363208915

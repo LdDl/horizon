@@ -13,10 +13,11 @@ import (
 // IsochronesRequest User's request for isochrones
 // swagger:model
 type IsochronesRequest struct {
-	// Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.
+	// Max cost restrictions for single isochrone. Should be >= 0.
 	MaxCost *float64 `json:"max_cost" example:"2100.0"`
-	// Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])
-	MaxNearestRadius *float64 `json:"nearest_radius" example:"25.0"`
+	// Max radius of search for nearest vertex.
+	// Use -1 for no limit, 0 for default (100m), or positive value.
+	MaxNearestRadius *float64 `json:"nearest_radius" example:"100.0"`
 	// [Longitude, Latitude]
 	LonLat [2]float64 `json:"lon_lat" example:"37.601249363208915,55.745374309126895"`
 }
@@ -52,15 +53,10 @@ func FindIsochrones(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 		ans := IsochronesResponse{}
 		if data.MaxCost != nil && *data.MaxCost >= 0 {
 			maxCost = *data.MaxCost
-		} else {
-			ans.Warnings = append(ans.Warnings, "max_cost either nil or not in range [0,+Inf]. Using default value: 0.0")
+		} else if data.MaxCost != nil {
+			ans.Warnings = append(ans.Warnings, "max_cost should be >= 0. Using default value: 0.0")
 		}
-		maxNearestRadius := 25.0
-		if data.MaxNearestRadius != nil && *data.MaxNearestRadius >= 0 {
-			maxNearestRadius = *data.MaxNearestRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "nearest_radius either nil or not in range [0,+Inf]. Using default value: 0.0")
-		}
+		maxNearestRadius := horizon.ResolveRadius(data.MaxNearestRadius, horizon.DEFAULT_SP_RADIUS)
 		result, err := matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 		if err != nil {
 			log.Println(err)

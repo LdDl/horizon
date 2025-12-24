@@ -65,7 +65,7 @@ User&#39;s request for isochrones
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | max_cost | [double](#double) | optional | Max cost restrictions for single isochrone. Should be in range [0,&#43;Inf]. Minumim is 0. Example: 2100.0 |
-| max_nearest_radius | [double](#double) | optional | Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,&#43;Inf]) Example: 25.0 |
+| max_nearest_radius | [double](#double) | optional | Max radius of search for nearest vertex (in meters). Use -1 for no limit, 0 or omit for default (100m), or positive value. |
 | lon | [double](#double) |  | Longitude Example: 37.601249363208915 |
 | lat | [double](#double) |  | Latitude Example: 55.745374309126895 |
 
@@ -150,7 +150,7 @@ User&#39;s request for map matching
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | max_states | [int32](#int32) | optional | Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on &#39;/shortest&#39; service. Example: 5 |
-| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 7.0 |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in meters). Use -1 for no limit, 0 or omit for default (50m), or positive value. |
 | gps | [GPSToMapMatch](#horizon-GPSToMapMatch) | repeated | Set of GPS data |
 
 
@@ -313,7 +313,7 @@ User&#39;s request for finding shortest path
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 10.0 |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in meters). Use -1 for no limit, 0 or omit for default (100m), or positive value. |
 | gps | [GeoPoint](#horizon-GeoPoint) | repeated | Set of GPS data |
 
 

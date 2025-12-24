@@ -26,8 +26,19 @@ type Isochrone struct {
 	maxNearestRadius - max radius of search for nearest vertex
 */
 func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float64, maxNearestRadius float64) (IsochronesResult, error) {
-	closestSource, _ := matcher.engine.storage.FindNearestInRadius(source.Point, maxNearestRadius, 1)
-	// @todo need to handle error also
+	var closestSource []spatial.NearestObject
+	var err error
+	if maxNearestRadius < 0 {
+		closestSource, err = matcher.engine.storage.FindNearest(source.Point, 1)
+		if err != nil {
+			return nil, errors.Wrapf(err, "FindNearest failed for source point %v", source.Point)
+		}
+	} else {
+		closestSource, err = matcher.engine.storage.FindNearestInRadius(source.Point, maxNearestRadius, 1)
+		if err != nil {
+			return nil, errors.Wrapf(err, "FindNearestInRadius failed for source point %v with radius %f", source.Point, maxNearestRadius)
+		}
+	}
 	if len(closestSource) == 0 {
 		// @todo need to handle this case properly...
 		return nil, ErrSourceNotFound

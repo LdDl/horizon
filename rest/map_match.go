@@ -20,8 +20,9 @@ var timestampLayout = "2006-01-02T15:04:05"
 type MapMatchRequest struct {
 	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
 	MaxStates *int `json:"max_states" example:"5"`
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	StateRadius *float64 `json:"state_radius" example:"7.0"`
+	// Max radius of search for potential candidates.
+	// Use -1 for no limit, 0 for default (50m), or positive value.
+	StateRadius *float64 `json:"state_radius" example:"50.0"`
 	// Set of GPS data
 	Data []GPSToMapMatch `json:"gps"`
 }
@@ -121,18 +122,13 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			}
 			gpsMeasurements = append(gpsMeasurements, gpsMeasurement)
 		}
-		statesRadiusMeters := 25.0
+		statesRadiusMeters := horizon.ResolveRadius(data.StateRadius, horizon.DEFAULT_STATE_RADIUS)
 		maxStates := 5
 		ans := MapMatchResponse{}
-		if data.MaxStates != nil && *data.MaxStates > 0 && *data.MaxStates < 10 {
+		if data.MaxStates != nil && *data.MaxStates > 0 && *data.MaxStates <= 10 {
 			maxStates = *data.MaxStates
-		} else {
-			ans.Warnings = append(ans.Warnings, "max_states either nil or not in range [1,10]. Using default value: 5")
-		}
-		if data.StateRadius != nil && *data.StateRadius >= 7 && *data.StateRadius <= 50 {
-			statesRadiusMeters = *data.StateRadius
-		} else {
-			ans.Warnings = append(ans.Warnings, "state_radius either nil or not in range [7,50]. Using default value: 25.0")
+		} else if data.MaxStates != nil {
+			ans.Warnings = append(ans.Warnings, "max_states not in range [1,10]. Using default value: 5")
 		}
 		result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 		if err != nil {

@@ -142,7 +142,13 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	closestSets := [][]spatial.NearestObject{}
 
 	for i := 0; i < len(gpsMeasurements); i++ {
-		closest, err := matcher.engine.storage.FindNearestInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		var closest []spatial.NearestObject
+		var err error
+		if statesRadiusMeters < 0 {
+			closest, err = matcher.engine.storage.FindNearest(gpsMeasurements[i].Point, maxStates)
+		} else {
+			closest, err = matcher.engine.storage.FindNearestInRadius(gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
+		}
 		if err != nil {
 			return MatcherResult{}, errors.Wrapf(err, "Can't find neighbors for point: '%s' (states radius = %f, max states = %d)", gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		}
@@ -237,7 +243,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
+						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						var finalCost float64
 						var finalPath []int64
 						if rawCost < 0 {
@@ -254,7 +260,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					}
 					continue
 				}
-				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
+				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
 				var finalCost float64
 				var finalPath []int64
@@ -537,7 +543,16 @@ func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[
 }
 
 // getCachedPath is a helper function to get or compute shortest path with caching
-func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cachedRoute, fromVertex, toVertex int64) (float64, []int64) {
+// It uses SCC (Strongly Connected Components) to quickly reject impossible routes
+func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
+	// SCC check: if vertices are in different SCCs, no path exists
+	fromSCC, fromOK := vertexSCC[fromVertex]
+	toSCC, toOK := vertexSCC[toVertex]
+	if fromOK && toOK && fromSCC != toSCC {
+		// Different SCCs - no path possible, return immediately
+		return -1, nil
+	}
+
 	// Check cache first
 	if inner, ok := vertexCache[fromVertex]; ok {
 		if cached, ok := inner[toVertex]; ok {

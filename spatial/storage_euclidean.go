@@ -139,6 +139,74 @@ func (storage *EuclideanStorage) FindNearestInRadius(pt s2.Point, radiusMeters f
 	return ans, nil
 }
 
+// FindNearest implements Storage interface using iterative radius expansion
+// For EuclideanStorage: uses pt.Vector.X/Y as Cartesian coordinates
+func (storage *EuclideanStorage) FindNearest(pt s2.Point, n int) ([]NearestObject, error) {
+	if n <= 0 {
+		return nil, nil
+	}
+
+	// Start with a small radius and expand until we find enough edges
+	// Initial radius based on typical edge density
+	// Start with 100 meters
+	radius := 100.0
+	// Max 100 km
+	maxRadius := 100000.0
+
+	var found map[uint64]float64
+	var err error
+
+	for radius <= maxRadius {
+		found, err = storage.FindInRadius(pt, radius)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(found) >= n {
+			// Check if closest edge is within our search radius
+			// This ensures we haven't missed any closer edges
+			minDist := math.MaxFloat64
+			for _, dist := range found {
+				if dist < minDist {
+					minDist = dist
+				}
+			}
+			// If closest is well within radius, we can stop
+			if minDist < radius*0.9 {
+				break
+			}
+		}
+
+		// Expand radius
+		radius *= 2
+	}
+
+	if found == nil {
+		return nil, nil
+	}
+
+	// Use heap for top-N selection
+	h := &nearestHeap{}
+	heap.Init(h)
+	for edgeID, dist := range found {
+		heap.Push(h, NearestObject{edgeID, dist})
+	}
+
+	l := h.Len()
+	if l < n {
+		n = l
+	}
+
+	ans := make([]NearestObject, n)
+	for i := 0; i < n; i++ {
+		ans[i] = heap.Pop(h).(NearestObject)
+	}
+	return ans, nil
+
+	// @todo
+	// consider alternative use of tidwall/rtree library functions of KNN
+}
+
 // pointToSegmentDistance calculates the minimum distance from point (px, py) to line segment (x1,y1)-(x2,y2)
 func pointToSegmentDistance(px, py, x1, y1, x2, y2 float64) float64 {
 	dx := x2 - x1

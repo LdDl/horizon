@@ -238,14 +238,14 @@
                     ]
                 },
                 "max_cost": {
-                    "description": "Max cost restrictions for single isochrone. Should be in range [0,+Inf]. Minumim is 0.",
+                    "description": "Max cost restrictions for single isochrone. Should be \u003e= 0.",
                     "type": "number",
                     "example": 2100
                 },
                 "nearest_radius": {
-                    "description": "Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,+Inf])",
+                    "description": "Max radius of search for nearest vertex.\nUse -1 for no limit, 0 for default (100m), or positive value.",
                     "type": "number",
-                    "example": 25
+                    "example": 100
                 }
             }
         },
@@ -280,20 +280,20 @@
                     "example": 5
                 },
                 "state_radius": {
-                    "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
+                    "description": "Max radius of search for potential candidates.\nUse -1 for no limit, 0 for default (50m), or positive value.",
                     "type": "number",
-                    "example": 7
+                    "example": 50
                 }
             }
         },
         "rest.MapMatchResponse": {
             "type": "object",
             "properties": {
-                "data": {
-                    "description": "GeoJSON data\nSet of matched edges for each observation",
+                "sub_matches": {
+                    "description": "Array of sub-matches (segments split when route cannot be computed between consecutive points)",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/rest.ObservationEdgeResponse"
+                        "$ref": "#/definitions/rest.SubMatchResponse"
                     }
                 },
                 "warnings": {
@@ -362,9 +362,9 @@
                     }
                 },
                 "state_radius": {
-                    "description": "Max radius of search for potential candidates (in range [7, 50], default is 25.0)",
+                    "description": "Max radius of search for potential candidates.\nUse -1 for no limit, 0 for default (100m), or positive value.",
                     "type": "number",
-                    "example": 10
+                    "example": 100
                 }
             }
         },
@@ -384,6 +384,23 @@
                     "example": [
                         "Warning"
                     ]
+                }
+            }
+        },
+        "rest.SubMatchResponse": {
+            "type": "object",
+            "properties": {
+                "observations": {
+                    "description": "Set of matched edges for observations in this segment",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rest.ObservationEdgeResponse"
+                    }
+                },
+                "probability": {
+                    "description": "Probability from Viterbi algorithm for this segment",
+                    "type": "number",
+                    "example": -86.57852
                 }
             }
         }
