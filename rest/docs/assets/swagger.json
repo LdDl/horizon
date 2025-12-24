@@ -163,6 +163,19 @@
                 }
             }
         },
+        "horizon.MatcherCode": {
+            "type": "integer",
+            "enum": [
+                900,
+                901,
+                902
+            ],
+            "x-enum-varnames": [
+                "CODE_OK",
+                "CODE_NO_CANDIDATES",
+                "CODE_ALONE_OBSERVATION"
+            ]
+        },
         "rest.GPSToMapMatch": {
             "type": "object",
             "properties": {
@@ -311,13 +324,27 @@
         "rest.ObservationEdgeResponse": {
             "type": "object",
             "properties": {
+                "code": {
+                    "description": "Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/horizon.MatcherCode"
+                        }
+                    ],
+                    "example": 900
+                },
                 "edge_id": {
-                    "description": "Matched edge identifier",
+                    "description": "Matched edge identifier (0 if is_matched=false)",
                     "type": "integer",
                     "example": 3149
                 },
+                "is_matched": {
+                    "description": "Whether this observation was successfully matched to a road (false if no candidates were found)",
+                    "type": "boolean",
+                    "example": true
+                },
                 "matched_edge": {
-                    "description": "Corresponding matched edge as GeoJSON LineString feature",
+                    "description": "Corresponding matched edge as GeoJSON LineString feature (null if is_matched=false)",
                     "type": "object"
                 },
                 "matched_edge_cut": {
@@ -325,7 +352,7 @@
                     "type": "object"
                 },
                 "matched_vertex": {
-                    "description": "Corresponding matched vertex as GeoJSON Point feature",
+                    "description": "Corresponding matched vertex as GeoJSON Point feature (null if is_matched=false)",
                     "type": "object"
                 },
                 "next_edges": {
@@ -336,16 +363,20 @@
                     }
                 },
                 "obs_idx": {
-                    "description": "Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed",
+                    "description": "Index of an observation. Index corresponds to index in incoming request",
                     "type": "integer",
                     "example": 0
                 },
+                "original_point": {
+                    "description": "Original GPS point as GeoJSON Point feature (useful when is_matched=false)",
+                    "type": "object"
+                },
                 "projected_point": {
-                    "description": "Corresponding projection on the edge as GeoJSON Point feature",
+                    "description": "Corresponding projection on the edge as GeoJSON Point feature (null if is_matched=false)",
                     "type": "object"
                 },
                 "vertex_id": {
-                    "description": "Matched vertex identifier",
+                    "description": "Matched vertex identifier (0 if is_matched=false)",
                     "type": "integer",
                     "example": 44014
                 }

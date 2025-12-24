@@ -183,12 +183,15 @@ Relation between observation and matched edge
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | obs_idx | [int32](#int32) |  | Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed Example: 0 |
-| edge_id | [int64](#int64) |  | Matched edge identifier Example: 3149 |
-| vertex_id | [int64](#int64) |  | Matched vertex identifier Example: 44014 |
-| matched_edge | [GeoPoint](#horizon-GeoPoint) | repeated | Corresponding matched edge as line feature |
+| is_matched | [bool](#bool) |  | Whether this observation was successfully matched to a road (false if no candidates were found) Example: true |
+| code | [uint32](#uint32) |  | Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation Example: 900 |
+| edge_id | [int64](#int64) |  | Matched edge identifier (0 if is_matched=false) Example: 3149 |
+| vertex_id | [int64](#int64) |  | Matched vertex identifier (0 if is_matched=false) Example: 44014 |
+| matched_edge | [GeoPoint](#horizon-GeoPoint) | repeated | Corresponding matched edge as line feature (empty if is_matched=false) |
 | matched_edge_cut | [GeoPoint](#horizon-GeoPoint) | repeated | Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge |
-| matched_vertex | [GeoPoint](#horizon-GeoPoint) |  | Corresponding matched vertex as point feature |
-| projected_point | [GeoPoint](#horizon-GeoPoint) |  | Corresponding projection on the edge as point feature |
+| matched_vertex | [GeoPoint](#horizon-GeoPoint) |  | Corresponding matched vertex as point feature (null if is_matched=false) |
+| projected_point | [GeoPoint](#horizon-GeoPoint) |  | Corresponding projection on the edge as point feature (null if is_matched=false) |
+| original_point | [GeoPoint](#horizon-GeoPoint) |  | Original GPS point as point feature (useful when is_matched=false) |
 | next_edges | [IntermediateEdge](#horizon-IntermediateEdge) | repeated | Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation |
 
 

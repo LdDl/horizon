@@ -1,4 +1,4 @@
-# Horizon v0.11.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.11.1 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -25,12 +25,12 @@ Demonstration:
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.11.0
+go install github.com/LdDl/horizon/cmd/horizon@v0.11.1
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.11.0/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.11.0/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.11.1/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.11.1/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
@@ -217,6 +217,14 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
 
     If gRPC is enabled you can navigate to http://localhost:32800/api/v0.1.0/grpc/docs/index.html to see gRPC documentation:
     <img src="images/grpc-doc-1.png" width="720">
+
+9. Each observation in either gRPC or HTTP API response has matcher code assigned. It helps to understand what was the result of matching for each observation. Here is a table of those:
+
+    | Code | Constant | Description |
+    |------|----------|-------------|
+    | 900 | CODE_OK | Successfully matched |
+    | 901 | CODE_NO_CANDIDATES | No candidates found for observation |
+    | 902 | CODE_ALONE_OBSERVATION | Interrupted segment (no route to previous/next observation), i.e. orphan observation |
 
 ### Docker
 If you don't want use binary or can't build it you can use public Docker image:

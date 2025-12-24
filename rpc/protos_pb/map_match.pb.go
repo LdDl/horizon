@@ -281,22 +281,30 @@ type ObservationEdge struct {
 	// Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
 	// Example: 0
 	ObsIdx int32 `protobuf:"varint,1,opt,name=obs_idx,json=obsIdx,proto3" json:"obs_idx,omitempty"`
-	// Matched edge identifier
+	// Whether this observation was successfully matched to a road (false if no candidates were found)
+	// Example: true
+	IsMatched bool `protobuf:"varint,2,opt,name=is_matched,json=isMatched,proto3" json:"is_matched,omitempty"`
+	// Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation
+	// Example: 900
+	Code uint32 `protobuf:"varint,3,opt,name=code,proto3" json:"code,omitempty"`
+	// Matched edge identifier (0 if is_matched=false)
 	// Example: 3149
-	EdgeId int64 `protobuf:"varint,2,opt,name=edge_id,json=edgeId,proto3" json:"edge_id,omitempty"`
-	// Matched vertex identifier
+	EdgeId int64 `protobuf:"varint,4,opt,name=edge_id,json=edgeId,proto3" json:"edge_id,omitempty"`
+	// Matched vertex identifier (0 if is_matched=false)
 	// Example: 44014
-	VertexId int64 `protobuf:"varint,3,opt,name=vertex_id,json=vertexId,proto3" json:"vertex_id,omitempty"`
-	// Corresponding matched edge as line feature
-	MatchedEdge []*GeoPoint `protobuf:"bytes,4,rep,name=matched_edge,json=matchedEdge,proto3" json:"matched_edge,omitempty"`
+	VertexId int64 `protobuf:"varint,5,opt,name=vertex_id,json=vertexId,proto3" json:"vertex_id,omitempty"`
+	// Corresponding matched edge as line feature (empty if is_matched=false)
+	MatchedEdge []*GeoPoint `protobuf:"bytes,6,rep,name=matched_edge,json=matchedEdge,proto3" json:"matched_edge,omitempty"`
 	// Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge
-	MatchedEdgeCut []*GeoPoint `protobuf:"bytes,5,rep,name=matched_edge_cut,json=matchedEdgeCut,proto3" json:"matched_edge_cut,omitempty"`
-	// Corresponding matched vertex as point feature
-	MatchedVertex *GeoPoint `protobuf:"bytes,6,opt,name=matched_vertex,json=matchedVertex,proto3" json:"matched_vertex,omitempty"`
-	// Corresponding projection on the edge as point feature
-	ProjectedPoint *GeoPoint `protobuf:"bytes,7,opt,name=projected_point,json=projectedPoint,proto3" json:"projected_point,omitempty"`
+	MatchedEdgeCut []*GeoPoint `protobuf:"bytes,7,rep,name=matched_edge_cut,json=matchedEdgeCut,proto3" json:"matched_edge_cut,omitempty"`
+	// Corresponding matched vertex as point feature (null if is_matched=false)
+	MatchedVertex *GeoPoint `protobuf:"bytes,8,opt,name=matched_vertex,json=matchedVertex,proto3" json:"matched_vertex,omitempty"`
+	// Corresponding projection on the edge as point feature (null if is_matched=false)
+	ProjectedPoint *GeoPoint `protobuf:"bytes,9,opt,name=projected_point,json=projectedPoint,proto3" json:"projected_point,omitempty"`
+	// Original GPS point as point feature (useful when is_matched=false)
+	OriginalPoint *GeoPoint `protobuf:"bytes,10,opt,name=original_point,json=originalPoint,proto3" json:"original_point,omitempty"`
 	// Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
-	NextEdges     []*IntermediateEdge `protobuf:"bytes,8,rep,name=next_edges,json=nextEdges,proto3" json:"next_edges,omitempty"`
+	NextEdges     []*IntermediateEdge `protobuf:"bytes,11,rep,name=next_edges,json=nextEdges,proto3" json:"next_edges,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -334,6 +342,20 @@ func (*ObservationEdge) Descriptor() ([]byte, []int) {
 func (x *ObservationEdge) GetObsIdx() int32 {
 	if x != nil {
 		return x.ObsIdx
+	}
+	return 0
+}
+
+func (x *ObservationEdge) GetIsMatched() bool {
+	if x != nil {
+		return x.IsMatched
+	}
+	return false
+}
+
+func (x *ObservationEdge) GetCode() uint32 {
+	if x != nil {
+		return x.Code
 	}
 	return 0
 }
@@ -376,6 +398,13 @@ func (x *ObservationEdge) GetMatchedVertex() *GeoPoint {
 func (x *ObservationEdge) GetProjectedPoint() *GeoPoint {
 	if x != nil {
 		return x.ProjectedPoint
+	}
+	return nil
+}
+
+func (x *ObservationEdge) GetOriginalPoint() *GeoPoint {
+	if x != nil {
+		return x.OriginalPoint
 	}
 	return nil
 }
@@ -477,17 +506,22 @@ const file_map_match_proto_rawDesc = "" +
 	"\x10MapMatchResponse\x122\n" +
 	"\vsub_matches\x18\x01 \x03(\v2\x11.horizon.SubMatchR\n" +
 	"subMatches\x12\x1a\n" +
-	"\bwarnings\x18\x02 \x03(\tR\bwarnings\"\x83\x03\n" +
+	"\bwarnings\x18\x02 \x03(\tR\bwarnings\"\xf0\x03\n" +
 	"\x0fObservationEdge\x12\x17\n" +
-	"\aobs_idx\x18\x01 \x01(\x05R\x06obsIdx\x12\x17\n" +
-	"\aedge_id\x18\x02 \x01(\x03R\x06edgeId\x12\x1b\n" +
-	"\tvertex_id\x18\x03 \x01(\x03R\bvertexId\x124\n" +
-	"\fmatched_edge\x18\x04 \x03(\v2\x11.horizon.GeoPointR\vmatchedEdge\x12;\n" +
-	"\x10matched_edge_cut\x18\x05 \x03(\v2\x11.horizon.GeoPointR\x0ematchedEdgeCut\x128\n" +
-	"\x0ematched_vertex\x18\x06 \x01(\v2\x11.horizon.GeoPointR\rmatchedVertex\x12:\n" +
-	"\x0fprojected_point\x18\a \x01(\v2\x11.horizon.GeoPointR\x0eprojectedPoint\x128\n" +
+	"\aobs_idx\x18\x01 \x01(\x05R\x06obsIdx\x12\x1d\n" +
 	"\n" +
-	"next_edges\x18\b \x03(\v2\x19.horizon.IntermediateEdgeR\tnextEdges\"a\n" +
+	"is_matched\x18\x02 \x01(\bR\tisMatched\x12\x12\n" +
+	"\x04code\x18\x03 \x01(\rR\x04code\x12\x17\n" +
+	"\aedge_id\x18\x04 \x01(\x03R\x06edgeId\x12\x1b\n" +
+	"\tvertex_id\x18\x05 \x01(\x03R\bvertexId\x124\n" +
+	"\fmatched_edge\x18\x06 \x03(\v2\x11.horizon.GeoPointR\vmatchedEdge\x12;\n" +
+	"\x10matched_edge_cut\x18\a \x03(\v2\x11.horizon.GeoPointR\x0ematchedEdgeCut\x128\n" +
+	"\x0ematched_vertex\x18\b \x01(\v2\x11.horizon.GeoPointR\rmatchedVertex\x12:\n" +
+	"\x0fprojected_point\x18\t \x01(\v2\x11.horizon.GeoPointR\x0eprojectedPoint\x128\n" +
+	"\x0eoriginal_point\x18\n" +
+	" \x01(\v2\x11.horizon.GeoPointR\roriginalPoint\x128\n" +
+	"\n" +
+	"next_edges\x18\v \x03(\v2\x19.horizon.IntermediateEdgeR\tnextEdges\"a\n" +
 	"\x10IntermediateEdge\x12%\n" +
 	"\x04geom\x18\x01 \x03(\v2\x11.horizon.GeoPointR\x04geom\x12\x16\n" +
 	"\x06weight\x18\x02 \x01(\x01R\x06weight\x12\x0e\n" +
@@ -516,20 +550,21 @@ var file_map_match_proto_goTypes = []any{
 	(*GeoPoint)(nil),         // 6: horizon.GeoPoint
 }
 var file_map_match_proto_depIdxs = []int32{
-	1, // 0: horizon.MapMatchRequest.gps:type_name -> horizon.GPSToMapMatch
-	4, // 1: horizon.SubMatch.observations:type_name -> horizon.ObservationEdge
-	2, // 2: horizon.MapMatchResponse.sub_matches:type_name -> horizon.SubMatch
-	6, // 3: horizon.ObservationEdge.matched_edge:type_name -> horizon.GeoPoint
-	6, // 4: horizon.ObservationEdge.matched_edge_cut:type_name -> horizon.GeoPoint
-	6, // 5: horizon.ObservationEdge.matched_vertex:type_name -> horizon.GeoPoint
-	6, // 6: horizon.ObservationEdge.projected_point:type_name -> horizon.GeoPoint
-	5, // 7: horizon.ObservationEdge.next_edges:type_name -> horizon.IntermediateEdge
-	6, // 8: horizon.IntermediateEdge.geom:type_name -> horizon.GeoPoint
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	1,  // 0: horizon.MapMatchRequest.gps:type_name -> horizon.GPSToMapMatch
+	4,  // 1: horizon.SubMatch.observations:type_name -> horizon.ObservationEdge
+	2,  // 2: horizon.MapMatchResponse.sub_matches:type_name -> horizon.SubMatch
+	6,  // 3: horizon.ObservationEdge.matched_edge:type_name -> horizon.GeoPoint
+	6,  // 4: horizon.ObservationEdge.matched_edge_cut:type_name -> horizon.GeoPoint
+	6,  // 5: horizon.ObservationEdge.matched_vertex:type_name -> horizon.GeoPoint
+	6,  // 6: horizon.ObservationEdge.projected_point:type_name -> horizon.GeoPoint
+	6,  // 7: horizon.ObservationEdge.original_point:type_name -> horizon.GeoPoint
+	5,  // 8: horizon.ObservationEdge.next_edges:type_name -> horizon.IntermediateEdge
+	6,  // 9: horizon.IntermediateEdge.geom:type_name -> horizon.GeoPoint
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_map_match_proto_init() }

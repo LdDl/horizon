@@ -62,6 +62,24 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 		}
 		for i := range subMatch.Observations {
 			observationResult := subMatch.Observations[i]
+
+			// Handle unmatched observations
+			if !observationResult.IsMatched {
+				originalPoint := s2.LatLngFromPoint(observationResult.Observation.GeoPoint.Point)
+				subMatchResp.Observations[i] = &protos_pb.ObservationEdge{
+					ObsIdx:    int32(observationResult.Observation.ID()),
+					IsMatched: false,
+					Code:      uint32(observationResult.Code),
+					OriginalPoint: &protos_pb.GeoPoint{
+						Lon: originalPoint.Lng.Degrees(),
+						Lat: originalPoint.Lat.Degrees(),
+					},
+					NextEdges: []*protos_pb.IntermediateEdge{},
+				}
+				continue
+			}
+
+			// Handle matched observations
 			if observationResult.MatchedEdge.Polyline == nil {
 				return nil, fmt.Errorf("matched edge has nil polyline nil for observation %d", observationResult.Observation.ID())
 			}
@@ -91,6 +109,8 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 			}
 			subMatchResp.Observations[i] = &protos_pb.ObservationEdge{
 				ObsIdx:      int32(observationResult.Observation.ID()),
+				IsMatched:   true,
+				Code:        uint32(observationResult.Code),
 				EdgeId:      observationResult.MatchedEdge.ID,
 				MatchedEdge: line,
 				MatchedVertex: &protos_pb.GeoPoint{

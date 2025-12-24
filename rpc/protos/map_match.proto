@@ -54,22 +54,30 @@ message ObservationEdge {
     // Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
     // Example: 0
     int32 obs_idx = 1;
-    // Matched edge identifier
+    // Whether this observation was successfully matched to a road (false if no candidates were found)
+    // Example: true
+    bool is_matched = 2;
+    // Matcher code providing additional info. 900 - OK, 901 - no candidates, 902 - orphan observation
+    // Example: 900
+    uint32 code = 3;
+    // Matched edge identifier (0 if is_matched=false)
     // Example: 3149
-    int64 edge_id = 2;
-    // Matched vertex identifier
+    int64 edge_id = 4;
+    // Matched vertex identifier (0 if is_matched=false)
     // Example: 44014
-    int64 vertex_id = 3;
-    // Corresponding matched edge as line feature
-    repeated GeoPoint matched_edge = 4;
+    int64 vertex_id = 5;
+    // Corresponding matched edge as line feature (empty if is_matched=false)
+    repeated GeoPoint matched_edge = 6;
     // Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge
-    repeated GeoPoint matched_edge_cut = 5;
-    // Corresponding matched vertex as point feature
-    GeoPoint matched_vertex = 6;
-    // Corresponding projection on the edge as point feature
-    GeoPoint projected_point = 7;
+    repeated GeoPoint matched_edge_cut = 7;
+    // Corresponding matched vertex as point feature (null if is_matched=false)
+    GeoPoint matched_vertex = 8;
+    // Corresponding projection on the edge as point feature (null if is_matched=false)
+    GeoPoint projected_point = 9;
+    // Original GPS point as point feature (useful when is_matched=false)
+    GeoPoint original_point = 10;
     // Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
-    repeated IntermediateEdge next_edges = 8;
+    repeated IntermediateEdge next_edges = 11;
 }
 
 // Edge which is not matched to any observation but helps to form whole travel path

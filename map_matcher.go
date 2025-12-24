@@ -124,6 +124,18 @@ type viterbiResult struct {
 	err   error
 }
 
+// unmatchedObs is for tracking unmatched GPS observations
+type unmatchedObs struct {
+	originalIdx int
+	gps         *GPSMeasurement
+}
+
+// indexedSubMatch needed to merge matched and unmatched SubMatches in correct order
+type indexedSubMatch struct {
+	firstObsIdx int
+	subMatch    SubMatch
+}
+
 // Run Do magic
 /*
 	gpsMeasurements - Observations
@@ -141,6 +153,12 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	engineGpsMeasurements := []*GPSMeasurement{}
 	closestSets := [][]spatial.NearestObject{}
 
+	// Array for no candidates found
+	unmatchedObservations := []unmatchedObs{}
+
+	// Maps original index to engineGpsMeasurements index (for matched points)
+	originalToEngineIdx := make(map[int]int)
+
 	for i := 0; i < len(gpsMeasurements); i++ {
 		var closest []spatial.NearestObject
 		var err error
@@ -153,16 +171,32 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			return MatcherResult{}, errors.Wrapf(err, "Can't find neighbors for point: '%s' (states radius = %f, max states = %d)", gpsMeasurements[i].Point, statesRadiusMeters, maxStates)
 		}
 		if len(closest) == 0 {
-			fmt.Printf("No candidates for %+v at pos %d. Radius: %f. Max sates: %d\n", gpsMeasurements[i].Point, i, statesRadiusMeters, maxStates)
-			// @todo need to handle this case properly...
+			// Track unmatched observation instead of just skipping as it done before
+			unmatchedObservations = append(unmatchedObservations, unmatchedObs{
+				originalIdx: i,
+				gps:         gpsMeasurements[i],
+			})
 			continue
 		}
+		originalToEngineIdx[i] = len(engineGpsMeasurements)
 		engineGpsMeasurements = append(engineGpsMeasurements, gpsMeasurements[i])
 		closestSets = append(closestSets, closest)
 	}
 
+	// If no matched observations, return all as unmatched with default SubMatches
 	if len(engineGpsMeasurements) == 0 {
-		return MatcherResult{}, ErrCandidatesNotFound
+		allUnmatched := make([]SubMatch, len(unmatchedObservations))
+		for i, unmatched := range unmatchedObservations {
+			allUnmatched[i] = SubMatch{
+				Observations: []ObservationResult{{
+					Observation: unmatched.gps,
+					IsMatched:   false,
+					Code:        CODE_NO_CANDIDATES,
+				}},
+				Probability: 0,
+			}
+		}
+		return MatcherResult{SubMatches: allUnmatched}, nil
 	}
 
 	obsState := make([]*CandidateLayer, len(engineGpsMeasurements))
@@ -334,6 +368,31 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			segmentObsState := obsState[seg.start : seg.end+1]
 			segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
 
+			// Handle single-point segment: no Viterbi needed, just pick best candidate
+			if len(segmentObsState) == 1 {
+				if len(segmentObsState[0].States) == 0 {
+					results[i] = viterbiResult{err: fmt.Errorf("no candidates for single-point segment at index %d", seg.start)}
+					return
+				}
+				// Pick first candidate (already sorted by dist to observation)
+				bestCandidate := segmentObsState[0].States[0]
+				// Compute emission log probability for single point
+				// Note: Viterbi counts emission twice for first observation (start + emission = 2 * emission)
+				sigma := matcher.hmmParams.sigma
+				if segmentObsState[0].Observation.accuracy > 0 {
+					sigma = segmentObsState[0].Observation.accuracy
+				}
+				distance := bestCandidate.Projected.DistanceTo(segmentObsState[0].Observation.GeoPoint)
+				emissionLogProb := LogNormalDistribution(sigma, distance)
+				results[i] = viterbiResult{
+					vpath: viterbi.ViterbiPath{
+						Path:        []viterbi.State{bestCandidate},
+						Probability: 2 * emissionLogProb,
+					},
+				}
+				return
+			}
+
 			v, err := matcher.PrepareViterbi(segmentObsState, seg.routeLengths, segmentGPS)
 			if err != nil {
 				results[i] = viterbiResult{err: err}
@@ -380,7 +439,60 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		subMatches = append(subMatches, subMatch)
 	}
 
-	return MatcherResult{SubMatches: subMatches}, nil
+	// If no unmatched met, return matched SubMatches directly
+	if len(unmatchedObservations) == 0 {
+		return MatcherResult{SubMatches: subMatches}, nil
+	}
+
+	// Create SubMatches for unmatched observations
+	unmatchedSubMatches := make([]SubMatch, len(unmatchedObservations))
+	for i, unmatched := range unmatchedObservations {
+		unmatchedSubMatches[i] = SubMatch{
+			Observations: []ObservationResult{{
+				Observation: unmatched.gps,
+				IsMatched:   false,
+				Code:        CODE_NO_CANDIDATES,
+			}},
+			Probability: 0,
+		}
+	}
+
+	// Merge matched and unmatched SubMatches in order of original observation indices
+	// Each SubMatch's position is determined by its first observation's ID
+	allSubMatches := make([]indexedSubMatch, 0, len(subMatches)+len(unmatchedSubMatches))
+
+	for _, sm := range subMatches {
+		if len(sm.Observations) > 0 {
+			allSubMatches = append(allSubMatches, indexedSubMatch{
+				firstObsIdx: sm.Observations[0].Observation.ID(),
+				subMatch:    sm,
+			})
+		}
+	}
+
+	for i, sm := range unmatchedSubMatches {
+		allSubMatches = append(allSubMatches, indexedSubMatch{
+			firstObsIdx: unmatchedObservations[i].originalIdx,
+			subMatch:    sm,
+		})
+	}
+
+	// Sort by first observation index
+	for i := 0; i < len(allSubMatches)-1; i++ {
+		for j := i + 1; j < len(allSubMatches); j++ {
+			if allSubMatches[i].firstObsIdx > allSubMatches[j].firstObsIdx {
+				allSubMatches[i], allSubMatches[j] = allSubMatches[j], allSubMatches[i]
+			}
+		}
+	}
+
+	// Extract sorted SubMatches
+	finalSubMatches := make([]SubMatch, len(allSubMatches))
+	for i, ism := range allSubMatches {
+		finalSubMatches[i] = ism.subMatch
+	}
+
+	return MatcherResult{SubMatches: finalSubMatches}, nil
 }
 
 // PrepareViterbi Prepares engine for doing Viterbi's algorithm (see https://github.com/LdDl/viterbi/blob/master/viterbi.go#L25)
