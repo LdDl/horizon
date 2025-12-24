@@ -27,8 +27,8 @@ type MapMatchRequest struct {
 	// Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on '/shortest' service.
 	// Example: 5
 	MaxStates *int32 `protobuf:"varint,1,opt,name=max_states,json=maxStates,proto3,oneof" json:"max_states,omitempty"`
-	// Max radius of search for potential candidates (in range [7, 50], default is 25.0)
-	// Example: 7.0
+	// Max radius of search for potential candidates (in meters).
+	// Use -1 for no limit, 0 or omit for default (50m), or positive value.
 	StateRadius *float64 `protobuf:"fixed64,2,opt,name=state_radius,json=stateRadius,proto3,oneof" json:"state_radius,omitempty"`
 	// Set of GPS data
 	Gps           []*GPSToMapMatch `protobuf:"bytes,3,rep,name=gps,proto3" json:"gps,omitempty"`

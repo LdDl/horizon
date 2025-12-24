@@ -150,7 +150,7 @@ User&#39;s request for map matching
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | max_states | [int32](#int32) | optional | Max number of states for single GPS point (in range [1, 10], default is 5). Field would be ignored for request on &#39;/shortest&#39; service. Example: 5 |
-| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in range [7, 50], default is 25.0) Example: 7.0 |
+| state_radius | [double](#double) | optional | Max radius of search for potential candidates (in meters). Use -1 for no limit, 0 or omit for default (50m), or positive value. |
 | gps | [GPSToMapMatch](#horizon-GPSToMapMatch) | repeated | Set of GPS data |
 
 

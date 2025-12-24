@@ -45,12 +45,7 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 		response.Warnings = append(response.Warnings, "maxStates either nil or not in range [1,10]. Using default value: 5")
 	}
 
-	statesRadiusMeters := 25.0
-	if in.StateRadius != nil && *in.StateRadius >= 7 && *in.StateRadius <= 50 {
-		statesRadiusMeters = *in.StateRadius
-	} else {
-		response.Warnings = append(response.Warnings, "stateRadius either nil or not in range [7,50]. Using default value: 25.0")
-	}
+	statesRadiusMeters := horizon.ResolveRadius(in.StateRadius, horizon.DEFAULT_STATE_RADIUS)
 
 	result, err := ts.matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 	if err != nil {
