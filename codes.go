@@ -1,6 +1,6 @@
 package horizon
 
-type MatcherCode uint16
+type MatcherCode uint32
 
 const (
 	// Everything is fine
