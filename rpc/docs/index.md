@@ -65,7 +65,7 @@ User&#39;s request for isochrones
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | max_cost | [double](#double) | optional | Max cost restrictions for single isochrone. Should be in range [0,&#43;Inf]. Minumim is 0. Example: 2100.0 |
-| max_nearest_radius | [double](#double) | optional | Max radius of search for nearest vertex (Optional, default is 25.0, should be in range [0,&#43;Inf]) Example: 25.0 |
+| max_nearest_radius | [double](#double) | optional | Max radius of search for nearest vertex (in meters). Use -1 for no limit, 0 or omit for default (100m), or positive value. |
 | lon | [double](#double) |  | Longitude Example: 37.601249363208915 |
 | lat | [double](#double) |  | Latitude Example: 55.745374309126895 |
 

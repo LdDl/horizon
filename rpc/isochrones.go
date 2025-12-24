@@ -25,12 +25,7 @@ func (ts *Microservice) GetIsochrones(ctx context.Context, in *protos_pb.Isochro
 		response.Warnings = append(response.Warnings, "max_cost either nil or not in range [0,+Inf]. Using default value: 0.0")
 	}
 
-	maxNearestRadius := 25.0
-	if in.MaxNearestRadius != nil && *in.MaxNearestRadius >= 0 {
-		maxNearestRadius = *in.MaxNearestRadius
-	} else {
-		response.Warnings = append(response.Warnings, "nearest_radius either nil or not in range [0,+Inf]. Using default value: 0.0")
-	}
+	maxNearestRadius := horizon.ResolveRadius(in.MaxNearestRadius, horizon.DEFAULT_SP_RADIUS)
 
 	result, err := ts.matcher.FindIsochrones(gpsMeasurement, maxCost, maxNearestRadius)
 	if err != nil {

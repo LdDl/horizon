@@ -177,15 +177,17 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
             -X POST \
             -H 'accept: application/json' \
             -H  'Content-Type: application/json' \
-            --data-raw '{"max_cost":2100.0,"nearest_radius": 25.0, "lon_lat":[37.601249363208915,55.745374309126895]}' ; echo
+            --data-raw '{"max_cost":2100.0,"lon_lat":[37.601249363208915,55.745374309126895]}' ; echo
         ```
+
+        _Note: You can optionally point field `nearest_radius` to limit the search area (in meters), but this is at your own risk — it may cause the request to fail if no vertex is found within the radius._
+
         <img src="images/inst10.png" width="720">
 
         Or with gRPC enabled on server-side you call gRPC API via any gRPC client, e.g. [grpcurl](https://github.com/fullstorydev/grpcurl) tool (make sure you've enabled reflection for it):
         ```shell
         grpcurl -plaintext -emit-defaults -d '{
         "max_cost": 2100.0,
-        "max_nearest_radius": 25.0,
         "lon": 37.601249363208915,
         "lat": 55.745374309126895
         }' localhost:32801 horizon.Service/GetIsochrones | tr -d '\n\t ' ; echo
