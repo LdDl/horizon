@@ -334,6 +334,22 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			segmentObsState := obsState[seg.start : seg.end+1]
 			segmentGPS := engineGpsMeasurements[seg.start : seg.end+1]
 
+			// Handle single-point segment: no Viterbi needed, so pick best candidate
+			if len(segmentObsState) == 1 {
+				if len(segmentObsState[0].States) == 0 {
+					results[i] = viterbiResult{err: fmt.Errorf("no candidates for single-point segment at index %d", seg.start)}
+					return
+				}
+				bestCandidate := segmentObsState[0].States[0]
+				results[i] = viterbiResult{
+					vpath: viterbi.ViterbiPath{
+						Path:        []viterbi.State{bestCandidate},
+						Probability: 0,
+					},
+				}
+				return
+			}
+
 			v, err := matcher.PrepareViterbi(segmentObsState, seg.routeLengths, segmentGPS)
 			if err != nil {
 				results[i] = viterbiResult{err: err}
