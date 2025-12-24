@@ -69,20 +69,24 @@ type IntermediateEdgeResponse struct {
 
 // Relation between observation and matched edge
 type ObservationEdgeResponse struct {
-	// Index of an observation. Index correspondes to index in incoming request. If some indices are not presented then it means that they have been trimmed
+	// Index of an observation. Index corresponds to index in incoming request
 	ObservationIdx int `json:"obs_idx" example:"0"`
-	// Matched edge identifier
+	// Whether this observation was successfully matched to a road (false if no candidates were found)
+	IsMatched bool `json:"is_matched" example:"true"`
+	// Matched edge identifier (0 if is_matched=false)
 	EdgeID int64 `json:"edge_id" example:"3149"`
-	// Matched vertex identifier
+	// Matched vertex identifier (0 if is_matched=false)
 	VertexID int64 `json:"vertex_id" example:"44014"`
-	// Corresponding matched edge as GeoJSON LineString feature
+	// Corresponding matched edge as GeoJSON LineString feature (null if is_matched=false)
 	MatchedEdge *geojson.Feature `json:"matched_edge" swaggertype:"object"`
 	// Cut for excess part of the matched edge. Will be null for every observation except the first and the last. Could be null for first/last edge when projection point corresponds to source/target vertices of the edge
 	MatchedEdgeCut *geojson.Feature `json:"matched_edge_cut" swaggertype:"object"`
-	// Corresponding matched vertex as GeoJSON Point feature
+	// Corresponding matched vertex as GeoJSON Point feature (null if is_matched=false)
 	MatchedVertex *geojson.Feature `json:"matched_vertex" swaggertype:"object"`
-	// Corresponding projection on the edge as GeoJSON Point feature
+	// Corresponding projection on the edge as GeoJSON Point feature (null if is_matched=false)
 	ProjectedPoint *geojson.Feature `json:"projected_point" swaggertype:"object"`
+	// Original GPS point as GeoJSON Point feature (useful when is_matched=false)
+	OriginalPoint *geojson.Feature `json:"original_point,omitempty" swaggertype:"object"`
 	// Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
 	NextEdges []IntermediateEdgeResponse `json:"next_edges"`
 }
@@ -145,6 +149,19 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 			}
 			for i := range subMatch.Observations {
 				observationResult := subMatch.Observations[i]
+
+				// Handle unmatched observations
+				if !observationResult.IsMatched {
+					subMatchResp.Observations[i] = ObservationEdgeResponse{
+						ObservationIdx: observationResult.Observation.ID(),
+						IsMatched:      false,
+						OriginalPoint:  observationResult.Observation.GeoPoint.GeoJSON(),
+						NextEdges:      []IntermediateEdgeResponse{},
+					}
+					continue
+				}
+
+				// Handle matched observations
 				matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
 				var matchedEdgeCut s2.Polyline
 				if i == 0 {
@@ -154,6 +171,7 @@ func MapMatch(matcher *horizon.MapMatcher) func(*fiber.Ctx) error {
 				}
 				subMatchResp.Observations[i] = ObservationEdgeResponse{
 					ObservationIdx: observationResult.Observation.ID(),
+					IsMatched:      true,
 					EdgeID:         observationResult.MatchedEdge.ID,
 					MatchedEdge:    spatial.S2PolylineToGeoJSONFeature(matchedEdgePolyline),
 					MatchedVertex:  spatial.S2PointToGeoJSONFeature(observationResult.MatchedVertex.Point),

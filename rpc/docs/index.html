@@ -614,10 +614,18 @@ Example: 0 </p></td>
                 </tr>
               
                 <tr>
+                  <td>is_matched</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Whether this observation was successfully matched to a road (false if no candidates were found)
+Example: true </p></td>
+                </tr>
+              
+                <tr>
                   <td>edge_id</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Matched edge identifier
+                  <td><p>Matched edge identifier (0 if is_matched=false)
 Example: 3149 </p></td>
                 </tr>
               
@@ -625,7 +633,7 @@ Example: 3149 </p></td>
                   <td>vertex_id</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Matched vertex identifier
+                  <td><p>Matched vertex identifier (0 if is_matched=false)
 Example: 44014 </p></td>
                 </tr>
               
@@ -633,7 +641,7 @@ Example: 44014 </p></td>
                   <td>matched_edge</td>
                   <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
                   <td>repeated</td>
-                  <td><p>Corresponding matched edge as line feature </p></td>
+                  <td><p>Corresponding matched edge as line feature (empty if is_matched=false) </p></td>
                 </tr>
               
                 <tr>
@@ -647,14 +655,21 @@ Example: 44014 </p></td>
                   <td>matched_vertex</td>
                   <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
                   <td></td>
-                  <td><p>Corresponding matched vertex as point feature </p></td>
+                  <td><p>Corresponding matched vertex as point feature (null if is_matched=false) </p></td>
                 </tr>
               
                 <tr>
                   <td>projected_point</td>
                   <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
                   <td></td>
-                  <td><p>Corresponding projection on the edge as point feature </p></td>
+                  <td><p>Corresponding projection on the edge as point feature (null if is_matched=false) </p></td>
+                </tr>
+              
+                <tr>
+                  <td>original_point</td>
+                  <td><a href="#horizon.GeoPoint">GeoPoint</a></td>
+                  <td></td>
+                  <td><p>Original GPS point as point feature (useful when is_matched=false) </p></td>
                 </tr>
               
                 <tr>

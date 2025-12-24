@@ -11,14 +11,16 @@ import (
 // ObservationResult Representation of gps measurement matched to G(v,e)
 /*
 	Observation - gps measurement itself
-	MatchedEdge - edge in G(v,e) corresponding to current gps measurement
-	MatchedVertex - stands for closest vertex to the observation
-	ProjectedPoint - projection onto the matched edge
+	IsMatched - true if observation was successfully matched to a road, false if no candidates were found
+	MatchedEdge - edge in G(v,e) corresponding to current gps measurement (empty if IsMatched is false)
+	MatchedVertex - stands for closest vertex to the observation (empty if IsMatched is false)
+	ProjectedPoint - projection onto the matched edge (empty if IsMatched is false)
 	ProjectedPointIdx - index of the point in polyline which follows projection point
 	NextEdges - set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
 */
 type ObservationResult struct {
 	Observation        *GPSMeasurement
+	IsMatched          bool
 	MatchedEdge        spatial.Edge
 	MatchedVertex      spatial.Vertex
 	ProjectedPoint     s2.Point
@@ -64,6 +66,7 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 
 	subMatch.Observations[0] = ObservationResult{
 		Observation:        gpsMeasurements[0],
+		IsMatched:          true,
 		MatchedEdge:        *rpPath[0].GraphEdge,
 		MatchedVertex:      *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
 		ProjectedPoint:     rpPath[0].Projected.Point,
@@ -77,6 +80,7 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		currentState := rpPath[i]
 		subMatch.Observations[i] = ObservationResult{
 			Observation:        gpsMeasurements[i],
+			IsMatched:          true,
 			MatchedEdge:        *currentState.GraphEdge,
 			MatchedVertex:      *matcher.engine.vertices[currentState.PickedGraphVertex],
 			ProjectedPoint:     currentState.Projected.Point,
