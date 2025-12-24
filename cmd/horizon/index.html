@@ -369,7 +369,7 @@
             function doMapMatch(gpsMeasurements) {
                 let requestData = {
                     "max_states": 5,
-                    "state_radius": 50,
+                    "state_radius": -1,
                     "gps": gpsMeasurements
                 }
                 let sourceName = "source_matched_route";
