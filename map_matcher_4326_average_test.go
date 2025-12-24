@@ -64,7 +64,7 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 	correctStates.SubMatches[0].Observations[8].MatchedEdge = *matcher.engine.edges[16788][16789]
 	correctStates.SubMatches[0].Observations[9].MatchedEdge = *matcher.engine.edges[32639][32640]
 
-	statesRadiusMeters := 7.0
+	statesRadiusMeters := -1.0
 	maxStates := 5
 	result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 	if err != nil {
@@ -123,7 +123,7 @@ func BenchmarkMapMatcherSRID_4326BIG(b *testing.B) {
 		b.Error(err)
 	}
 
-	statesRadiusMeters := 7.0
+	statesRadiusMeters := -1.0
 	maxStates := 5
 
 	b.Log("BenchmarkMapMatcherSRID_4326 is starting...")
