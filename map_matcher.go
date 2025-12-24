@@ -191,6 +191,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				Observations: []ObservationResult{{
 					Observation: unmatched.gps,
 					IsMatched:   false,
+					Code:        CODE_NO_CANDIDATES,
 				}},
 				Probability: 0,
 			}
@@ -450,6 +451,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			Observations: []ObservationResult{{
 				Observation: unmatched.gps,
 				IsMatched:   false,
+				Code:        CODE_NO_CANDIDATES,
 			}},
 			Probability: 0,
 		}

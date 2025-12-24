@@ -12,6 +12,7 @@ import (
 /*
 	Observation - gps measurement itself
 	IsMatched - true if observation was successfully matched to a road, false if no candidates were found
+	Code - matcher code providing additional info about matching result. See MatcherCode constants (enum workaround) for details
 	MatchedEdge - edge in G(v,e) corresponding to current gps measurement (empty if IsMatched is false)
 	MatchedVertex - stands for closest vertex to the observation (empty if IsMatched is false)
 	ProjectedPoint - projection onto the matched edge (empty if IsMatched is false)
@@ -21,6 +22,7 @@ import (
 type ObservationResult struct {
 	Observation        *GPSMeasurement
 	IsMatched          bool
+	Code               MatcherCode
 	MatchedEdge        spatial.Edge
 	MatchedVertex      spatial.Vertex
 	ProjectedPoint     s2.Point
@@ -64,9 +66,16 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		rpPath[i] = vpath.Path[i].(*RoadPosition)
 	}
 
+	// Determine code: single observation = alone, otherwise OK
+	code := CODE_OK
+	if len(rpPath) == 1 {
+		code = CODE_ALONE_OBSERVATION
+	}
+
 	subMatch.Observations[0] = ObservationResult{
 		Observation:        gpsMeasurements[0],
 		IsMatched:          true,
+		Code:               code,
 		MatchedEdge:        *rpPath[0].GraphEdge,
 		MatchedVertex:      *matcher.engine.vertices[rpPath[0].PickedGraphVertex],
 		ProjectedPoint:     rpPath[0].Projected.Point,
@@ -81,6 +90,7 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		subMatch.Observations[i] = ObservationResult{
 			Observation:        gpsMeasurements[i],
 			IsMatched:          true,
+			Code:               CODE_OK,
 			MatchedEdge:        *currentState.GraphEdge,
 			MatchedVertex:      *matcher.engine.vertices[currentState.PickedGraphVertex],
 			ProjectedPoint:     currentState.Projected.Point,
