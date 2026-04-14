@@ -100,6 +100,22 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     * map_vertices.csv - Information about vertices and its geometries
     * map_shortcuts.csv - Information about shortcuts which are obtained by contraction process
 
+    **CSV column lookup.** Horizon reads columns by header name, not by position. This means column order in CSV files does not matter and extra columns are safely ignored. Required columns per file:
+
+    | File | Required columns |
+    |------|-----------------|
+    | edges (map.csv) | `from_vertex_id`, `to_vertex_id`, `geom`, `edge_id` + cost (see below) |
+    | vertices (map_vertices.csv) | `vertex_id`, `order_pos`, `importance`, `geom` |
+    | shortcuts (map_shortcuts.csv) | `from_vertex_id`, `to_vertex_id`, `weight`, `via_vertex_id` |
+
+    **Edge cost resolution.** Horizon determines edge cost using a fallback chain:
+    1. `weight` column exists - use it directly (backward compatibility with osm2ch output)
+    2. `length_meters` + `free_speed` columns exist - compute travel time: `length_meters / (free_speed / 3.6)` (seconds)
+    3. Only `length_meters` exists - use distance as cost
+    4. None of the above - error
+
+    The chosen strategy is printed at startup.
+
 5. Start **horizon** server. Provide bind address, port, filename for edges file, σ and β parameters, initial longitude/latitude (in example Moscow coordinates are provided) and zoom for web page of your needs. 
     ```shell
     horizon -h 0.0.0.0 -p 32800 -f map.csv -sigma 50.0 -beta 30.0 -maplon 37.60011784074581 -maplat 55.74694688386492 -mapzoom 17.0
