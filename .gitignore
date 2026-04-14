@@ -28,3 +28,4 @@ rest/docs/swagger.yaml
 references_validation/
 *.prof
 *.test
+build/
