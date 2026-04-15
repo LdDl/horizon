@@ -2,6 +2,7 @@ package spatial
 
 import (
 	"container/heap"
+	"sort"
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
@@ -240,20 +241,12 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 			}
 		}
 
-		// Early exit check
+		// Early exit: stop when the n-th closest edge is closer than the ring boundary.
+		// This guarantees no unexplored ring can contain a closer candidate.
 		if len(found) >= n && ring > 0 {
 			ringRadius := cellSize * float64(ring)
-
-			// Find minimum distance among candidates
-			minFoundDist := float64(1e18)
-			for _, dist := range found {
-				if dist < minFoundDist {
-					minFoundDist = dist
-				}
-			}
-
-			// If closest edge is closer than ring boundary, we can stop
-			if minFoundDist < ringRadius {
+			nthDist := nthSmallestDist(found, n)
+			if nthDist < ringRadius {
 				break
 			}
 		}
@@ -375,4 +368,19 @@ func (storage *S2Storage) cellSizeMeters() float64 {
 	// Level 0: ~9000 km, Level 10: ~10 km, Level 15: ~300 m, Level 20: ~10 m, Level 30: ~1 cm
 	// Formula: size ≈ 9000km / 2^level
 	return 9000000.0 / float64(uint64(1)<<uint(storage.storageLevel))
+}
+
+// nthSmallestDist returns the n-th smallest distance value from the map.
+// Used for early-exit: we can stop expanding rings when the n-th closest
+// candidate is closer than the ring boundary (no unexplored ring can improve top-N).
+func nthSmallestDist(found map[uint64]float64, n int) float64 {
+	dists := make([]float64, 0, len(found))
+	for _, d := range found {
+		dists = append(dists, d)
+	}
+	sort.Float64s(dists)
+	if n > len(dists) {
+		return dists[len(dists)-1]
+	}
+	return dists[n-1]
 }
