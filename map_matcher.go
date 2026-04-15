@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"sort"
 	"sync"
 
 	"github.com/LdDl/ch"
@@ -478,13 +479,9 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	}
 
 	// Sort by first observation index
-	for i := 0; i < len(allSubMatches)-1; i++ {
-		for j := i + 1; j < len(allSubMatches); j++ {
-			if allSubMatches[i].firstObsIdx > allSubMatches[j].firstObsIdx {
-				allSubMatches[i], allSubMatches[j] = allSubMatches[j], allSubMatches[i]
-			}
-		}
-	}
+	sort.Slice(allSubMatches, func(i, j int) bool {
+		return allSubMatches[i].firstObsIdx < allSubMatches[j].firstObsIdx
+	})
 
 	// Extract sorted SubMatches
 	finalSubMatches := make([]SubMatch, len(allSubMatches))

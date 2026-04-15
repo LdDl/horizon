@@ -2,6 +2,7 @@ package horizon
 
 import (
 	"math"
+	"sort"
 
 	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
@@ -236,13 +237,9 @@ func (matcher *MapMatcher) findBestCandidatePair(sources, targets []candidateInf
 		}
 	}
 	// Sort by total distance
-	for i := 0; i < len(pairs)-1; i++ {
-		for j := i + 1; j < len(pairs); j++ {
-			if pairs[j].dist < pairs[i].dist {
-				pairs[i], pairs[j] = pairs[j], pairs[i]
-			}
-		}
-	}
+	sort.Slice(pairs, func(i, j int) bool {
+		return pairs[i].dist < pairs[j].dist
+	})
 	// Try pairs in order until we find a routable one
 	for _, p := range pairs {
 		ans, _ := matcher.engine.queryPool.ShortestPath(p.src.vertex, p.tgt.vertex)
