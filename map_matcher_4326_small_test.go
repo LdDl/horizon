@@ -26,16 +26,11 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 				{
 					Observations: []ObservationResult{
 						{Observation: gpsMeasurements[0]},
-					},
-					Probability: -9.887810,
-				},
-				{
-					Observations: []ObservationResult{
 						{Observation: gpsMeasurements[1]},
 						{Observation: gpsMeasurements[2]},
 						{Observation: gpsMeasurements[3]},
 					},
-					Probability: -10000000025.753883,
+					Probability: -52.195440,
 				},
 			},
 		}
@@ -48,9 +43,9 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 	}
 
 	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[1].Observations[0].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[1].Observations[1].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[1].Observations[2].MatchedEdge = *matcher.engine.edges[102][105]
+	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges[101][102]
+	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges[101][102]
+	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges[102][105]
 
 	statesRadiusMeters := 7.0
 	maxStates := 5
