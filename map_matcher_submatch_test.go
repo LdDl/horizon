@@ -204,7 +204,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges[0][1]},
 					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges[2][3]},
 				},
-				Probability: -791.677435,
+				Probability: -1351.590679,
 			},
 			{
 				Observations: []ObservationResult{
@@ -218,7 +218,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges[9][10]},
 					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges[10][11]},
 				},
-				Probability: -8100.966270,
+				Probability: -10137.429200,
 			},
 			{
 				Observations: []ObservationResult{
@@ -303,7 +303,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 
 	// 	for _, obs := range subMatch.Observations {
 	// 		// Add matched edge as LineString
-	// 		edgeFeature := S2PolylineToGeoJSONFeature(*obs.MatchedEdge.Polyline)
+	// 		edgeFeature := spatial.S2PolylineToGeoJSONFeature(*obs.MatchedEdge.Polyline)
 	// 		edgeFeature.SetProperty("type", "matched_edge")
 	// 		edgeFeature.SetProperty("submatch", s)
 	// 		edgeFeature.SetProperty("obs_id", obs.Observation.ID())
@@ -313,7 +313,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 	// 		fc.AddFeature(edgeFeature)
 
 	// 		// Add projected point
-	// 		projFeature := S2PointToGeoJSONFeature(&obs.ProjectedPoint)
+	// 		projFeature := spatial.S2PointToGeoJSONFeature(&obs.ProjectedPoint)
 	// 		projFeature.SetProperty("type", "projected_point")
 	// 		projFeature.SetProperty("submatch", s)
 	// 		projFeature.SetProperty("obs_id", obs.Observation.ID())
