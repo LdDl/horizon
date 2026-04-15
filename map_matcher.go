@@ -278,42 +278,49 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
 						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
-						var finalCost float64
+						var routeDistMeters float64
 						var finalPath []int64
 						if rawCost < 0 {
-							finalCost = math.MaxFloat64
+							routeDistMeters = math.MaxFloat64
 						} else {
-							// Apply candidate-specific penalty and copy path to avoid mutating cache
-							finalCost = rawCost + currentStates[n].GraphEdge.Weight
 							finalPath = make([]int64, len(rawPath), len(rawPath)+1)
 							copy(finalPath, rawPath)
 							finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
+							routeDistMeters = matcher.engine.routeDistanceMeters(finalPath)
 						}
 						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
-						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], finalCost)
+						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 					}
+					continue
+				}
+				// Same edge but different RoutingGraphVertex: use projected distance only if moving forward
+				// (beforeProjection increases => fraction increases => forward movement along the edge).
+				// If moving backward, the edge is likely a reverse-direction candidate — fall through to CH routing.
+				if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID && prevStates[m].beforeProjection <= currentStates[n].beforeProjection {
+					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+					currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					continue
 				}
 				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
-				var finalCost float64
+				// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
+				// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
+				// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
+				// @todo: this could lead to negative values. Need to investigate when it happens
+				// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
+				var routeDistMeters float64
 				var finalPath []int64
 				if rawCost < 0 {
-					finalCost = math.MaxFloat64
+					routeDistMeters = math.MaxFloat64
 				} else {
-					// Apply candidate-specific penalty and copy path to avoid mutating cache
-					finalCost = rawCost + currentStates[n].GraphEdge.Weight
 					finalPath = make([]int64, len(rawPath), len(rawPath)+1)
 					copy(finalPath, rawPath)
 					finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
-					// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
-					// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
-					// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
-					// @todo: this could lead to negative values. Need to investigate when it happens
-					// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
+					routeDistMeters = matcher.engine.routeDistanceMeters(finalPath)
 				}
 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
-				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], finalCost)
+				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 			}
 		}
 
@@ -626,7 +633,8 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 				currentLayer.AddTransitionProbability(from, to, -ROUTE_LENGTH_THRESHOLD)
 				continue
 			}
-			transitionLogProbability, err := matcher.hmmParams.TransitionLogProbability(routeLengths[from.RoadPositionID][to.RoadPositionID], straightDistance, timeDiff)
+			rl := routeLengths[from.RoadPositionID][to.RoadPositionID]
+			transitionLogProbability, err := matcher.hmmParams.TransitionLogProbability(rl, straightDistance, timeDiff)
 			if err != nil {
 				return err
 			}

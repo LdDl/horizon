@@ -135,6 +135,25 @@ func prepareEngine(edgesFilename string) (*MapEngine, error) {
 	return engine, nil
 }
 
+// routeDistanceMeters sums LengthMeters of edges along a path (sequence of vertex IDs).
+// Used for transition probability which needs distance in meters, not time-based cost.
+func (engine *MapEngine) routeDistanceMeters(path []int64) float64 {
+	if len(path) < 2 {
+		return 0
+	}
+	totalMeters := 0.0
+	for i := 0; i < len(path)-1; i++ {
+		from := path[i]
+		to := path[i+1]
+		if targets, ok := engine.edges[from]; ok {
+			if edge, ok := targets[to]; ok {
+				totalMeters += edge.LengthMeters
+			}
+		}
+	}
+	return totalMeters
+}
+
 func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcutsFname string) error {
 	// Allocate memory for edges
 	engine.edges = make(map[int64]map[int64]*spatial.Edge)
@@ -207,12 +226,20 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if _, ok := engine.edges[sourceVertex]; !ok {
 			engine.edges[sourceVertex] = make(map[int64]*spatial.Edge)
 		}
+		lengthMeters := weight // fallback: if no length_meters column, use weight
+		if edgesLookup.Has("length_meters") {
+			lengthMeters, err = edgesLookup.Float64(record, "length_meters")
+			if err != nil {
+				return errors.Wrap(err, "edges file: length_meters")
+			}
+		}
 		edge := spatial.Edge{
-			ID:       edgeID,
-			Source:   sourceVertex,
-			Target:   targetVertex,
-			Weight:   weight,
-			Polyline: s2Polyline,
+			ID:           edgeID,
+			Source:        sourceVertex,
+			Target:        targetVertex,
+			Weight:        weight,
+			LengthMeters: lengthMeters,
+			Polyline:     s2Polyline,
 		}
 		engine.edges[sourceVertex][targetVertex] = &edge
 

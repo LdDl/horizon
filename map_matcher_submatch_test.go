@@ -162,11 +162,12 @@ func TestMapMatcherSubMatches(t *testing.T) {
 			s2.PointFromLatLng(targetPt),
 		}
 		edge := spatial.Edge{
-			ID:       edge.id,
-			Source:   edge.source,
-			Target:   edge.target,
-			Weight:   weight,
-			Polyline: &s2Polyline,
+			ID:           edge.id,
+			Source:        edge.source,
+			Target:        edge.target,
+			Weight:        weight,
+			LengthMeters: weight,
+			Polyline:     &s2Polyline,
 		}
 		edgesSpatial = append(edgesSpatial, &edge)
 	}
@@ -303,7 +304,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 
 	// 	for _, obs := range subMatch.Observations {
 	// 		// Add matched edge as LineString
-	// 		edgeFeature := S2PolylineToGeoJSONFeature(*obs.MatchedEdge.Polyline)
+	// 		edgeFeature := spatial.S2PolylineToGeoJSONFeature(*obs.MatchedEdge.Polyline)
 	// 		edgeFeature.SetProperty("type", "matched_edge")
 	// 		edgeFeature.SetProperty("submatch", s)
 	// 		edgeFeature.SetProperty("obs_id", obs.Observation.ID())
@@ -313,7 +314,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 	// 		fc.AddFeature(edgeFeature)
 
 	// 		// Add projected point
-	// 		projFeature := S2PointToGeoJSONFeature(&obs.ProjectedPoint)
+	// 		projFeature := spatial.S2PointToGeoJSONFeature(&obs.ProjectedPoint)
 	// 		projFeature.SetProperty("type", "projected_point")
 	// 		projFeature.SetProperty("submatch", s)
 	// 		projFeature.SetProperty("obs_id", obs.Observation.ID())
@@ -512,11 +513,12 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 			spatial.NewEuclideanS2Point(target[0], target[1]),
 		}
 		edge := spatial.Edge{
-			ID:       edge.id,
-			Source:   edge.source,
-			Target:   edge.target,
-			Weight:   weight,
-			Polyline: &s2Polyline,
+			ID:           edge.id,
+			Source:        edge.source,
+			Target:        edge.target,
+			Weight:        weight,
+			LengthMeters: weight,
+			Polyline:     &s2Polyline,
 		}
 		edgesSpatial = append(edgesSpatial, &edge)
 	}
