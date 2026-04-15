@@ -279,16 +279,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
 						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
-						var routeDistMeters float64
-						var finalPath []int64
-						if rawCost < 0 {
-							routeDistMeters = math.MaxFloat64
-						} else {
-							finalPath = make([]int64, len(rawPath), len(rawPath)+1)
-							copy(finalPath, rawPath)
-							finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
-							routeDistMeters = matcher.engine.routeDistanceMeters(finalPath)
-						}
+						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
 						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 					}
@@ -296,7 +287,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				}
 				// Same edge but different RoutingGraphVertex: use projected distance only if moving forward
 				// (beforeProjection increases => fraction increases => forward movement along the edge).
-				// If moving backward, the edge is likely a reverse-direction candidate — fall through to CH routing.
+				// If moving backward, the edge is likely a reverse-direction candidate => fall through to CH routing.
 				if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID && prevStates[m].beforeProjection <= currentStates[n].beforeProjection {
 					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
 					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
@@ -310,16 +301,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
 				// @todo: this could lead to negative values. Need to investigate when it happens
 				// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
-				var routeDistMeters float64
-				var finalPath []int64
-				if rawCost < 0 {
-					routeDistMeters = math.MaxFloat64
-				} else {
-					finalPath = make([]int64, len(rawPath), len(rawPath)+1)
-					copy(finalPath, rawPath)
-					finalPath = append(finalPath, currentStates[n].GraphEdge.Target)
-					routeDistMeters = matcher.engine.routeDistanceMeters(finalPath)
-				}
+				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
 				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
 				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 			}
@@ -683,4 +665,16 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cach
 	}
 	vertexCache[fromVertex][toVertex] = cachedRoute{cost: rawCost, path: rawPath}
 	return rawCost, rawPath
+}
+
+// resolveRoute builds final path from cached CH result and computes route distance in meters.
+// rawPath comes from cache and must not be mutated, so a copy is made.
+func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, targetVertex int64) (float64, []int64) {
+	if rawCost < 0 {
+		return math.MaxFloat64, nil
+	}
+	finalPath := make([]int64, len(rawPath), len(rawPath)+1)
+	copy(finalPath, rawPath)
+	finalPath = append(finalPath, targetVertex)
+	return matcher.engine.routeDistanceMeters(finalPath), finalPath
 }

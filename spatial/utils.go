@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
 	geojson "github.com/paulmach/go.geojson"
 )
@@ -21,12 +22,15 @@ import (
 */
 func CalcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fraction float64, next int) {
 	pr, next := line.Project(point)
-	subs := s2.Polyline{}
-	for i := 0; i < next; i++ {
-		subs = append(subs, line[i])
+	// Calculate length up to projection without allocating a sub-polyline
+	lengthToProj := s1.Angle(0)
+	for i := 0; i < next-1; i++ {
+		lengthToProj += line[i].Distance(line[i+1])
 	}
-	subs = append(subs, pr)
-	return pr, (subs.Length() / line.Length()).Radians(), next
+	if next > 0 {
+		lengthToProj += line[next-1].Distance(pr)
+	}
+	return pr, (lengthToProj / line.Length()).Radians(), next
 }
 
 // CalcProjectionEuclidean Returns projection on line and fraction for point (Euclidean/planar geometry)
