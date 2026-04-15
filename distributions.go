@@ -12,14 +12,16 @@ var (
 
 // NormalDistribution https://en.wikipedia.org/wiki/Normal_distribution
 func NormalDistribution(sigma, x float64) float64 {
-	return 1.0 / (sqrtTwoPi * sigma) * math.Exp(-0.5*math.Pow(x/sigma, 2))
+	xOverSigma := x / sigma
+	return 1.0 / (sqrtTwoPi * sigma) * math.Exp(-0.5*xOverSigma*xOverSigma)
 }
 
 // LogNormalDistribution computes log of normal distribution PDF (normalized)
 // log(f(x)) = log(1/(sigma*sqrt(2*pi))) - 0.5*(x/sigma)^2
 // Note: Can return positive values when density > 1 (valid for PDFs)
 func LogNormalDistribution(sigma, x float64) float64 {
-	return math.Log(1.0/(sqrtTwoPi*sigma)) + (-0.5 * math.Pow(x/sigma, 2))
+	xOverSigma := x / sigma
+	return math.Log(1.0/(sqrtTwoPi*sigma)) + (-0.5 * xOverSigma * xOverSigma)
 }
 
 // LogNormalDistributionUnnormalized computes unnormalized log of normal distribution PDF
@@ -28,7 +30,8 @@ func LogNormalDistribution(sigma, x float64) float64 {
 // Reference: GraphHopper/OSRM implementations
 // Always returns values <= 0
 func LogNormalDistributionUnnormalized(sigma, x float64) float64 {
-	return -0.5 * math.Pow(x/sigma, 2)
+	xOverSigma := x / sigma
+	return -0.5 * xOverSigma * xOverSigma
 }
 
 // ExponentialDistribution computes (1/beta) * exp(-x/beta), where beta = 1/lambda
