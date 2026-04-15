@@ -2,7 +2,6 @@ package spatial
 
 import (
 	"container/heap"
-	"sort"
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
@@ -204,6 +203,12 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 	visited := make(map[s2.CellID]bool)
 	found := make(map[uint64]float64)
 
+	// Bounded top-n tracker: keeps up to n smallest distances.
+	// topDists[topMaxIdx] is the n-th smallest (the largest among top-n).
+	// No interface boxing — O(n) insert, O(1) peek. n is small (typically 5-10).
+	topDists := make([]float64, 0, n)
+	topMaxIdx := 0
+
 	// Frontier-based expansion: start with center cell
 	frontier := []s2.CellID{centerCell}
 	visited[centerCell] = true
@@ -237,16 +242,32 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 						minDist = distance
 					}
 				}
-				found[edgeID] = minDist.Angle().Radians() * EarthRadius
+				dist := minDist.Angle().Radians() * EarthRadius
+				found[edgeID] = dist
+
+				// Maintain bounded top-n tracker
+				if len(topDists) < n {
+					topDists = append(topDists, dist)
+					if dist > topDists[topMaxIdx] {
+						topMaxIdx = len(topDists) - 1
+					}
+				} else if dist < topDists[topMaxIdx] {
+					topDists[topMaxIdx] = dist
+					// Rescan for new max (n is small, typically 5-10)
+					for j := range topDists {
+						if topDists[j] > topDists[topMaxIdx] {
+							topMaxIdx = j
+						}
+					}
+				}
 			}
 		}
 
 		// Early exit: stop when the n-th closest edge is closer than the ring boundary.
-		// This guarantees no unexplored ring can contain a closer candidate.
-		if len(found) >= n && ring > 0 {
+		// topDists[topMaxIdx] is the largest among top-n = the n-th smallest distance.
+		if len(topDists) >= n && ring > 0 {
 			ringRadius := cellSize * float64(ring)
-			nthDist := nthSmallestDist(found, n)
-			if nthDist < ringRadius {
+			if topDists[topMaxIdx] < ringRadius {
 				break
 			}
 		}
@@ -273,7 +294,7 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 		frontier = nextFrontier
 	}
 
-	// Build result using heap for top-N selection
+	// Build result from found map using min-heap for top-N selection
 	h := &nearestHeap{}
 	heap.Init(h)
 	for k, v := range found {
@@ -368,19 +389,4 @@ func (storage *S2Storage) cellSizeMeters() float64 {
 	// Level 0: ~9000 km, Level 10: ~10 km, Level 15: ~300 m, Level 20: ~10 m, Level 30: ~1 cm
 	// Formula: size ≈ 9000km / 2^level
 	return 9000000.0 / float64(uint64(1)<<uint(storage.storageLevel))
-}
-
-// nthSmallestDist returns the n-th smallest distance value from the map.
-// Used for early-exit: we can stop expanding rings when the n-th closest
-// candidate is closer than the ring boundary (no unexplored ring can improve top-N).
-func nthSmallestDist(found map[uint64]float64, n int) float64 {
-	dists := make([]float64, 0, len(found))
-	for _, d := range found {
-		dists = append(dists, d)
-	}
-	sort.Float64s(dists)
-	if n > len(dists) {
-		return dists[len(dists)-1]
-	}
-	return dists[n-1]
 }
