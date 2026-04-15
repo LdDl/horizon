@@ -1,7 +1,5 @@
 package horizon
 
-import "github.com/LdDl/horizon/spatial"
-
 // Strongly Connected Components (SCC) are used instead of Weakly Connected Components
 // for routing candidate selection. The key difference:
 //
@@ -66,20 +64,16 @@ func newTarjanState() *tarjanState {
 // tarjanFrame represents a single stack frame for iterative Tarjan's DFS.
 // It replaces the recursive call stack: vertex being processed + position in its neighbor list.
 type tarjanFrame struct {
-	v         int64
-	neighbors []int64 // pre-collected neighbor keys (map iteration can't be paused)
-	pos       int     // next neighbor index to process
+	v   int64
+	pos int // next neighbor index to process in adjacency[v]
 }
 
 // strongConnect is the iterative DFS function for Tarjan's algorithm.
 // Uses an explicit call stack to avoid Go stack growth overhead on large graphs.
-func (engine *MapEngine) strongConnect(root int64, state *tarjanState) {
+// adjacency is a pre-built map of vertex -> []neighbor (built once, shared across calls).
+func (engine *MapEngine) strongConnect(root int64, state *tarjanState, adjacency map[int64][]int64) {
 	// Initialize root frame
-	callStack := []tarjanFrame{{
-		v:         root,
-		neighbors: edgeKeys(engine.edges[root]),
-		pos:       0,
-	}}
+	callStack := []tarjanFrame{{v: root, pos: 0}}
 	state.indexMap[root] = state.index
 	state.lowLink[root] = state.index
 	state.index++
@@ -88,9 +82,10 @@ func (engine *MapEngine) strongConnect(root int64, state *tarjanState) {
 
 	for len(callStack) > 0 {
 		frame := &callStack[len(callStack)-1]
+		neighbors := adjacency[frame.v]
 
-		if frame.pos < len(frame.neighbors) {
-			neighbor := frame.neighbors[frame.pos]
+		if frame.pos < len(neighbors) {
+			neighbor := neighbors[frame.pos]
 			frame.pos++
 
 			if _, visited := state.indexMap[neighbor]; !visited {
@@ -101,11 +96,7 @@ func (engine *MapEngine) strongConnect(root int64, state *tarjanState) {
 				state.stack = append(state.stack, neighbor)
 				state.onStack[neighbor] = true
 
-				callStack = append(callStack, tarjanFrame{
-					v:         neighbor,
-					neighbors: edgeKeys(engine.edges[neighbor]),
-					pos:       0,
-				})
+				callStack = append(callStack, tarjanFrame{v: neighbor, pos: 0})
 			} else if state.onStack[neighbor] {
 				if state.indexMap[neighbor] < state.lowLink[frame.v] {
 					state.lowLink[frame.v] = state.indexMap[neighbor]
@@ -142,37 +133,30 @@ func (engine *MapEngine) strongConnect(root int64, state *tarjanState) {
 	}
 }
 
-// edgeKeys returns the keys of a map as a slice.
-func edgeKeys(m map[int64]*spatial.Edge) []int64 {
-	if len(m) == 0 {
-		return nil
-	}
-	keys := make([]int64, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
 // computeStrongConnectedComponents finds all strongly connected components using Tarjan's algorithm.
 // A strongly connected component is a maximal set of vertices where every vertex
 // can reach every other vertex via directed paths. See the ref. https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
 func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResult {
 	state := newTarjanState()
 
-	// Collect all vertices
+	// Pre-build adjacency list: map iteration can't be paused/resumed,
+	// so we convert map[int64]*Edge to []int64 once, shared across all strongConnect calls.
+	adjacency := make(map[int64][]int64, len(engine.edges))
 	vertices := make(map[int64]bool)
 	for src, targets := range engine.edges {
 		vertices[src] = true
+		neighbors := make([]int64, 0, len(targets))
 		for dst := range targets {
 			vertices[dst] = true
+			neighbors = append(neighbors, dst)
 		}
+		adjacency[src] = neighbors
 	}
 
 	// Run Tarjan's algorithm from each unvisited vertex
 	for v := range vertices {
 		if _, visited := state.indexMap[v]; !visited {
-			engine.strongConnect(v, state)
+			engine.strongConnect(v, state, adjacency)
 		}
 	}
 
