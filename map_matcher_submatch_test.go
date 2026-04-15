@@ -162,11 +162,12 @@ func TestMapMatcherSubMatches(t *testing.T) {
 			s2.PointFromLatLng(targetPt),
 		}
 		edge := spatial.Edge{
-			ID:       edge.id,
-			Source:   edge.source,
-			Target:   edge.target,
-			Weight:   weight,
-			Polyline: &s2Polyline,
+			ID:           edge.id,
+			Source:        edge.source,
+			Target:        edge.target,
+			Weight:        weight,
+			LengthMeters: weight,
+			Polyline:     &s2Polyline,
 		}
 		edgesSpatial = append(edgesSpatial, &edge)
 	}
@@ -204,7 +205,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges[0][1]},
 					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges[2][3]},
 				},
-				Probability: -1351.590679,
+				Probability: -791.677435,
 			},
 			{
 				Observations: []ObservationResult{
@@ -218,7 +219,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges[9][10]},
 					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges[10][11]},
 				},
-				Probability: -10137.429200,
+				Probability: -8100.966270,
 			},
 			{
 				Observations: []ObservationResult{
@@ -512,11 +513,12 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 			spatial.NewEuclideanS2Point(target[0], target[1]),
 		}
 		edge := spatial.Edge{
-			ID:       edge.id,
-			Source:   edge.source,
-			Target:   edge.target,
-			Weight:   weight,
-			Polyline: &s2Polyline,
+			ID:           edge.id,
+			Source:        edge.source,
+			Target:        edge.target,
+			Weight:        weight,
+			LengthMeters: weight,
+			Polyline:     &s2Polyline,
 		}
 		edgesSpatial = append(edgesSpatial, &edge)
 	}
