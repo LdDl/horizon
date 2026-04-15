@@ -24,11 +24,12 @@ func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, vi
 	}
 
 	queue := []int64{start}
+	head := 0
 	size := 0
 
-	for len(queue) > 0 {
-		v := queue[0]
-		queue = queue[1:]
+	for head < len(queue) {
+		v := queue[head]
+		head++
 
 		if visited[v] {
 			continue

@@ -90,17 +90,11 @@ func (storage *S2Storage) SearchInRadiusLonLat(lon, lat float64, radius float64)
 		if item != nil {
 			for _, edgeID := range item.(indexedItem).edgesInCell {
 				polyline := storage.edges[edgeID]
-				minEdge := s2.Edge{}
 				minDist := s1.ChordAngle(0)
 				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
-					if i == 0 {
-						minEdge = polyline.Polyline.Edge(0)
-						minDist = cell.DistanceToEdge(minEdge.V0, minEdge.V1)
-						continue
-					}
 					edge := polyline.Polyline.Edge(i)
 					distance := cell.DistanceToEdge(edge.V0, edge.V1)
-					if distance < minDist {
+					if i == 0 || distance < minDist {
 						minDist = distance
 					}
 				}
@@ -139,17 +133,11 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 		if item != nil {
 			for _, edgeID := range item.(indexedItem).edgesInCell {
 				polyline := storage.edges[edgeID]
-				minEdge := s2.Edge{}
 				minDist := s1.ChordAngle(0)
 				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
-					if i == 0 {
-						minEdge = polyline.Polyline.Edge(0)
-						minDist = cell.DistanceToEdge(minEdge.V0, minEdge.V1)
-						continue
-					}
 					edge := polyline.Polyline.Edge(i)
 					distance := cell.DistanceToEdge(edge.V0, edge.V1)
-					if distance < minDist {
+					if i == 0 || distance < minDist {
 						minDist = distance
 					}
 				}
