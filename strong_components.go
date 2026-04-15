@@ -139,18 +139,26 @@ func (engine *MapEngine) strongConnect(root int64, state *tarjanState, adjacency
 func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResult {
 	state := newTarjanState()
 
-	// Pre-build adjacency list: map iteration can't be paused/resumed,
-	// so we convert map[int64]*Edge to []int64 once, shared across all strongConnect calls.
-	adjacency := make(map[int64][]int64, len(engine.edges))
+	// Pre-build flat adjacency list (CSR-style): one allocation for all neighbor data.
+	// adjacencyFlat holds all neighbor IDs concatenated; adjacency[v] is a sub-slice into it.
+	// This replaces 40k+ individual slice allocations with a single flat buffer.
+	totalEdges := 0
 	vertices := make(map[int64]bool)
 	for src, targets := range engine.edges {
 		vertices[src] = true
-		neighbors := make([]int64, 0, len(targets))
+		totalEdges += len(targets)
 		for dst := range targets {
 			vertices[dst] = true
-			neighbors = append(neighbors, dst)
 		}
-		adjacency[src] = neighbors
+	}
+	adjacencyFlat := make([]int64, 0, totalEdges)
+	adjacency := make(map[int64][]int64, len(engine.edges))
+	for src, targets := range engine.edges {
+		start := len(adjacencyFlat)
+		for dst := range targets {
+			adjacencyFlat = append(adjacencyFlat, dst)
+		}
+		adjacency[src] = adjacencyFlat[start:len(adjacencyFlat):len(adjacencyFlat)]
 	}
 
 	// Run Tarjan's algorithm from each unvisited vertex
