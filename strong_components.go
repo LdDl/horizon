@@ -133,6 +133,7 @@ func (engine *MapEngine) strongConnect(root int64, state *tarjanState, adjacency
 			}
 		}
 	}
+	return callStack
 }
 
 // computeStrongConnectedComponents finds all strongly connected components using Tarjan's algorithm.
@@ -163,10 +164,12 @@ func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResu
 		adjacency[src] = adjacencyFlat[start:len(adjacencyFlat):len(adjacencyFlat)]
 	}
 
-	// Run Tarjan's algorithm from each unvisited vertex
+	// Run Tarjan's algorithm from each unvisited vertex.
+	// callStack is reused across calls to avoid repeated allocations.
+	callStack := make([]tarjanFrame, 0, 256)
 	for v := range vertices {
 		if _, visited := state.indexMap[v]; !visited {
-			engine.strongConnect(v, state, adjacency)
+			callStack = engine.strongConnect(v, state, adjacency, callStack)
 		}
 	}
 
