@@ -29,3 +29,4 @@ references_validation/
 *.prof
 *.test
 build/
+test_data_big/
