@@ -72,8 +72,9 @@ type tarjanFrame struct {
 // Uses an explicit call stack to avoid Go stack growth overhead on large graphs.
 // adjacency is a pre-built map of vertex -> []neighbor (built once, shared across calls).
 func (engine *MapEngine) strongConnect(root int64, state *tarjanState, adjacency map[int64][]int64) {
-	// Initialize root frame
-	callStack := []tarjanFrame{{v: root, pos: 0}}
+	// Initialize root frame with pre-allocated capacity
+	callStack := make([]tarjanFrame, 1, 256)
+	callStack[0] = tarjanFrame{v: root, pos: 0}
 	state.indexMap[root] = state.index
 	state.lowLink[root] = state.index
 	state.index++
