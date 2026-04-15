@@ -1,5 +1,7 @@
 package horizon
 
+import "github.com/LdDl/horizon/spatial"
+
 // Strongly Connected Components (SCC) are used instead of Weakly Connected Components
 // for routing candidate selection. The key difference:
 //
@@ -61,45 +63,95 @@ func newTarjanState() *tarjanState {
 	}
 }
 
-// strongConnect is the recursive DFS function for Tarjan's algorithm
-func (engine *MapEngine) strongConnect(v int64, state *tarjanState) {
-	// Set the depth index for v to the smallest unused index
-	state.indexMap[v] = state.index
-	state.lowLink[v] = state.index
+// tarjanFrame represents a single stack frame for iterative Tarjan's DFS.
+// It replaces the recursive call stack: vertex being processed + position in its neighbor list.
+type tarjanFrame struct {
+	v         int64
+	neighbors []int64 // pre-collected neighbor keys (map iteration can't be paused)
+	pos       int     // next neighbor index to process
+}
+
+// strongConnect is the iterative DFS function for Tarjan's algorithm.
+// Uses an explicit call stack to avoid Go stack growth overhead on large graphs.
+func (engine *MapEngine) strongConnect(root int64, state *tarjanState) {
+	// Initialize root frame
+	callStack := []tarjanFrame{{
+		v:         root,
+		neighbors: edgeKeys(engine.edges[root]),
+		pos:       0,
+	}}
+	state.indexMap[root] = state.index
+	state.lowLink[root] = state.index
 	state.index++
-	state.stack = append(state.stack, v)
-	state.onStack[v] = true
+	state.stack = append(state.stack, root)
+	state.onStack[root] = true
 
-	// Consider successors of v (only outgoing edges for SCC)
-	for neighbor := range engine.edges[v] {
-		if _, visited := state.indexMap[neighbor]; !visited {
-			// Successor has not yet been visited; recurse on it
-			engine.strongConnect(neighbor, state)
-			if state.lowLink[neighbor] < state.lowLink[v] {
-				state.lowLink[v] = state.lowLink[neighbor]
+	for len(callStack) > 0 {
+		frame := &callStack[len(callStack)-1]
+
+		if frame.pos < len(frame.neighbors) {
+			neighbor := frame.neighbors[frame.pos]
+			frame.pos++
+
+			if _, visited := state.indexMap[neighbor]; !visited {
+				// "Recurse": push new frame
+				state.indexMap[neighbor] = state.index
+				state.lowLink[neighbor] = state.index
+				state.index++
+				state.stack = append(state.stack, neighbor)
+				state.onStack[neighbor] = true
+
+				callStack = append(callStack, tarjanFrame{
+					v:         neighbor,
+					neighbors: edgeKeys(engine.edges[neighbor]),
+					pos:       0,
+				})
+			} else if state.onStack[neighbor] {
+				if state.indexMap[neighbor] < state.lowLink[frame.v] {
+					state.lowLink[frame.v] = state.indexMap[neighbor]
+				}
 			}
-		} else if state.onStack[neighbor] {
-			// Successor is on stack and hence in the current SCC
-			if state.indexMap[neighbor] < state.lowLink[v] {
-				state.lowLink[v] = state.indexMap[neighbor]
+		} else {
+			// All neighbors processed — "return" from this frame
+			v := frame.v
+			callStack = callStack[:len(callStack)-1]
+
+			// Post-order: update parent's lowLink (equivalent to after recursive call returns)
+			if len(callStack) > 0 {
+				parent := &callStack[len(callStack)-1]
+				if state.lowLink[v] < state.lowLink[parent.v] {
+					state.lowLink[parent.v] = state.lowLink[v]
+				}
+			}
+
+			// If v is a root node, pop the SCC stack and generate a component
+			if state.lowLink[v] == state.indexMap[v] {
+				component := make([]int64, 0)
+				for {
+					w := state.stack[len(state.stack)-1]
+					state.stack = state.stack[:len(state.stack)-1]
+					state.onStack[w] = false
+					component = append(component, w)
+					if w == v {
+						break
+					}
+				}
+				state.components = append(state.components, component)
 			}
 		}
 	}
+}
 
-	// If v is a root node, pop the stack and generate an SCC
-	if state.lowLink[v] == state.indexMap[v] {
-		component := make([]int64, 0)
-		for {
-			w := state.stack[len(state.stack)-1]
-			state.stack = state.stack[:len(state.stack)-1]
-			state.onStack[w] = false
-			component = append(component, w)
-			if w == v {
-				break
-			}
-		}
-		state.components = append(state.components, component)
+// edgeKeys returns the keys of a map as a slice.
+func edgeKeys(m map[int64]*spatial.Edge) []int64 {
+	if len(m) == 0 {
+		return nil
 	}
+	keys := make([]int64, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
 }
 
 // computeStrongConnectedComponents finds all strongly connected components using Tarjan's algorithm.
