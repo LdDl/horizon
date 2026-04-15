@@ -203,6 +203,12 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 	visited := make(map[s2.CellID]bool)
 	found := make(map[uint64]float64)
 
+	// Bounded top-n tracker: keeps up to n smallest distances.
+	// topDists[topMaxIdx] is the n-th smallest (the largest among top-n).
+	// No interface boxing — O(n) insert, O(1) peek. n is small (typically 5-10).
+	topDists := make([]float64, 0, n)
+	topMaxIdx := 0
+
 	// Frontier-based expansion: start with center cell
 	frontier := []s2.CellID{centerCell}
 	visited[centerCell] = true
@@ -236,24 +242,32 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 						minDist = distance
 					}
 				}
-				found[edgeID] = minDist.Angle().Radians() * EarthRadius
+				dist := minDist.Angle().Radians() * EarthRadius
+				found[edgeID] = dist
+
+				// Maintain bounded top-n tracker
+				if len(topDists) < n {
+					topDists = append(topDists, dist)
+					if dist > topDists[topMaxIdx] {
+						topMaxIdx = len(topDists) - 1
+					}
+				} else if dist < topDists[topMaxIdx] {
+					topDists[topMaxIdx] = dist
+					// Rescan for new max (n is small, typically 5-10)
+					for j := range topDists {
+						if topDists[j] > topDists[topMaxIdx] {
+							topMaxIdx = j
+						}
+					}
+				}
 			}
 		}
 
-		// Early exit check
-		if len(found) >= n && ring > 0 {
+		// Early exit: stop when the n-th closest edge is closer than the ring boundary.
+		// topDists[topMaxIdx] is the largest among top-n = the n-th smallest distance.
+		if len(topDists) >= n && ring > 0 {
 			ringRadius := cellSize * float64(ring)
-
-			// Find minimum distance among candidates
-			minFoundDist := float64(1e18)
-			for _, dist := range found {
-				if dist < minFoundDist {
-					minFoundDist = dist
-				}
-			}
-
-			// If closest edge is closer than ring boundary, we can stop
-			if minFoundDist < ringRadius {
+			if topDists[topMaxIdx] < ringRadius {
 				break
 			}
 		}
@@ -280,7 +294,7 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 		frontier = nextFrontier
 	}
 
-	// Build result using heap for top-N selection
+	// Build result from found map using min-heap for top-N selection
 	h := &nearestHeap{}
 	heap.Init(h)
 	for k, v := range found {
