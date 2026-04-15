@@ -8,21 +8,21 @@ import (
 
 func TestBfsMarkWeakComponent(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create a simple graph:
 	// Component 1: 1 -> 2 -> 3
 	// Component 2: 4 -> 5 (isolated from component 1)
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
-	engine.edges[4] = map[int64]*spatial.Edge{5: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 3, &spatial.Edge{})
+	engine.edges.Set(4, 5, &spatial.Edge{})
 
 	// Build reverse edges index
 	reverseEdges := make(map[int64][]int64)
-	for src, targets := range engine.edges {
-		for dst := range targets {
-			reverseEdges[dst] = append(reverseEdges[dst], src)
+	for src, entries := range engine.edges.Adj() {
+		for _, entry := range entries {
+			reverseEdges[entry.Target] = append(reverseEdges[entry.Target], src)
 		}
 	}
 
@@ -58,20 +58,20 @@ func TestBfsMarkWeakComponent(t *testing.T) {
 
 func TestBfsMarkWeakComponentUndirected(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create a graph where vertices are connected only via incoming edges:
 	// 1 -> 2, 3 -> 2
 	// Starting from vertex 3, we should still reach 1 and 2 (undirected traversal)
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[3] = map[int64]*spatial.Edge{2: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(3, 2, &spatial.Edge{})
 
 	// Build reverse edges index
 	reverseEdges := make(map[int64][]int64)
-	for src, targets := range engine.edges {
-		for dst := range targets {
-			reverseEdges[dst] = append(reverseEdges[dst], src)
+	for src, entries := range engine.edges.Adj() {
+		for _, entry := range entries {
+			reverseEdges[entry.Target] = append(reverseEdges[entry.Target], src)
 		}
 	}
 
@@ -97,16 +97,16 @@ func TestBfsMarkWeakComponentUndirected(t *testing.T) {
 
 func TestBfsMarkWeakComponentAlreadyVisited(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
 
 	// Build reverse edges index
 	reverseEdges := make(map[int64][]int64)
-	for src, targets := range engine.edges {
-		for dst := range targets {
-			reverseEdges[dst] = append(reverseEdges[dst], src)
+	for src, entries := range engine.edges.Adj() {
+		for _, entry := range entries {
+			reverseEdges[entry.Target] = append(reverseEdges[entry.Target], src)
 		}
 	}
 
@@ -125,18 +125,18 @@ func TestBfsMarkWeakComponentAlreadyVisited(t *testing.T) {
 
 func TestComputeWeakConnectedComponents(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create graph with 3 components:
 	// Component A: 1 -> 2 -> 3 -> 4 (size 4, biggest)
 	// Component B: 10 -> 11 (size 2)
 	// Component C: 20 (isolated vertex with self-loop or outgoing edge to nowhere)
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
-	engine.edges[3] = map[int64]*spatial.Edge{4: {}}
-	engine.edges[10] = map[int64]*spatial.Edge{11: {}}
-	engine.edges[20] = map[int64]*spatial.Edge{21: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 3, &spatial.Edge{})
+	engine.edges.Set(3, 4, &spatial.Edge{})
+	engine.edges.Set(10, 11, &spatial.Edge{})
+	engine.edges.Set(20, 21, &spatial.Edge{})
 
 	result := engine.computeWeakConnectedComponents()
 

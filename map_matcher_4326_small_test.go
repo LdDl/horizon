@@ -42,10 +42,10 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		t.Error(err)
 	}
 
-	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges[101][102]
-	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges[102][105]
+	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges.Get(101, 102)
+	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges.Get(101, 102)
+	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges.Get(101, 102)
+	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges.Get(102, 105)
 
 	statesRadiusMeters := 7.0
 	maxStates := 5

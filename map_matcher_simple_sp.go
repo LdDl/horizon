@@ -76,7 +76,7 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	for i := 1; i < len(path); i++ {
 		s := path[i-1]
 		t := path[i]
-		edge := matcher.engine.edges[s][t]
+		edge := matcher.engine.edges.Get(s, t)
 		edges = append(edges, *edge)
 		edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
 		copy(edgeGeomCopy, *edge.Polyline)
@@ -127,7 +127,7 @@ func (matcher *MapMatcher) getCandidates(pt s2.Point, radiusMeters float64, limi
 		}
 
 		m, n := edgeData.Source, edgeData.Target
-		edge := matcher.engine.edges[m][n]
+		edge := matcher.engine.edges.Get(m, n)
 		if edge == nil {
 			continue
 		}

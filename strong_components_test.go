@@ -8,13 +8,13 @@ import (
 
 func TestTarjanSCC_SimpleChain(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create a simple chain: 1 -> 2 -> 3
 	// Each vertex is its own SCC (no cycles)
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 3, &spatial.Edge{})
 
 	result := engine.computeStrongConnectedComponents()
 
@@ -42,14 +42,14 @@ func TestTarjanSCC_SimpleChain(t *testing.T) {
 
 func TestTarjanSCC_SimpleCycle(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create a cycle: 1 -> 2 -> 3 -> 1
 	// All vertices should be in one SCC
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
-	engine.edges[3] = map[int64]*spatial.Edge{1: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 3, &spatial.Edge{})
+	engine.edges.Set(3, 1, &spatial.Edge{})
 
 	result := engine.computeStrongConnectedComponents()
 
@@ -75,16 +75,16 @@ func TestTarjanSCC_SimpleCycle(t *testing.T) {
 
 func TestTarjanSCC_TwoSeparateCycles(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create two separate cycles:
 	// Cycle 1: 1 -> 2 -> 1
 	// Cycle 2: 3 -> 4 -> 3
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{1: {}}
-	engine.edges[3] = map[int64]*spatial.Edge{4: {}}
-	engine.edges[4] = map[int64]*spatial.Edge{3: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 1, &spatial.Edge{})
+	engine.edges.Set(3, 4, &spatial.Edge{})
+	engine.edges.Set(4, 3, &spatial.Edge{})
 
 	result := engine.computeStrongConnectedComponents()
 
@@ -111,14 +111,14 @@ func TestTarjanSCC_TwoSeparateCycles(t *testing.T) {
 
 func TestTarjanSCC_CycleWithTail(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create: 1 -> 2 -> 3 -> 2 (cycle 2-3) with entry from 1
 	// Vertex 1 is separate, vertices 2,3 form an SCC
-	engine.edges[1] = map[int64]*spatial.Edge{2: {}}
-	engine.edges[2] = map[int64]*spatial.Edge{3: {}}
-	engine.edges[3] = map[int64]*spatial.Edge{2: {}}
+	engine.edges.Set(1, 2, &spatial.Edge{})
+	engine.edges.Set(2, 3, &spatial.Edge{})
+	engine.edges.Set(3, 2, &spatial.Edge{})
 
 	result := engine.computeStrongConnectedComponents()
 
@@ -140,7 +140,7 @@ func TestTarjanSCC_CycleWithTail(t *testing.T) {
 
 func TestTarjanSCC_BigComponent(t *testing.T) {
 	engine := &MapEngine{
-		edges: make(map[int64]map[int64]*spatial.Edge),
+		edges: NewEdgeGraph(),
 	}
 
 	// Create a large cycle (size > SMALL_COMPONENT_SIZE would not be that small)
@@ -150,10 +150,7 @@ func TestTarjanSCC_BigComponent(t *testing.T) {
 		if next > 5 {
 			next = 1
 		}
-		if engine.edges[i] == nil {
-			engine.edges[i] = make(map[int64]*spatial.Edge)
-		}
-		engine.edges[i][next] = &spatial.Edge{}
+		engine.edges.Set(i, next, &spatial.Edge{})
 	}
 
 	result := engine.computeStrongConnectedComponents()

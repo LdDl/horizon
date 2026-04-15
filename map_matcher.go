@@ -210,7 +210,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			s2polyline := matcher.engine.storage.GetEdge(closest[j].EdgeID)
 			m := s2polyline.Source
 			n := s2polyline.Target
-			edge := matcher.engine.edges[m][n]
+			edge := matcher.engine.edges.Get(m, n)
 
 			// Use appropriate projection based on SRID
 			var proj s2.Point

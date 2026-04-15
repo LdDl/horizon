@@ -106,7 +106,7 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		for j := 1; j < len(path); j++ {
 			sourceVertex := path[j-1]
 			targetVertex := path[j]
-			edge := matcher.engine.edges[sourceVertex][targetVertex]
+			edge := matcher.engine.edges.Get(sourceVertex, targetVertex)
 			if len(*edge.Polyline) < 2 {
 				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
 			}
