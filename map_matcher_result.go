@@ -114,10 +114,9 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 				continue
 			}
 			lastEdgeID = edge.ID
-			edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
-			copy(edgeGeomCopy, *edge.Polyline)
+			// Zero-copy: engine's polyline is immutable after load; caller must treat Geom as read-only.
 			subMatch.Observations[i-1].NextEdges = append(subMatch.Observations[i-1].NextEdges, EdgeResult{
-				Geom:   edgeGeomCopy,
+				Geom:   *edge.Polyline,
 				Weight: edge.Weight,
 				ID:     edge.ID,
 			})
