@@ -144,22 +144,22 @@ func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResu
 
 	// Pre-build flat adjacency list (CSR-style): one allocation for all neighbor data.
 	// adjacencyFlat holds all neighbor IDs concatenated; adjacency[v] is a sub-slice into it.
-	// This replaces 40k+ individual slice allocations with a single flat buffer.
+	// This replaces per-vertex slice allocations with a single flat buffer.
 	totalEdges := 0
 	vertices := make(map[int64]bool)
-	for src, targets := range engine.edges {
+	for src, entries := range engine.edges.Adj() {
 		vertices[src] = true
-		totalEdges += len(targets)
-		for dst := range targets {
-			vertices[dst] = true
+		totalEdges += len(entries)
+		for _, entry := range entries {
+			vertices[entry.Target] = true
 		}
 	}
 	adjacencyFlat := make([]int64, 0, totalEdges)
-	adjacency := make(map[int64][]int64, len(engine.edges))
-	for src, targets := range engine.edges {
+	adjacency := make(map[int64][]int64, engine.edges.Len())
+	for src, entries := range engine.edges.Adj() {
 		start := len(adjacencyFlat)
-		for dst := range targets {
-			adjacencyFlat = append(adjacencyFlat, dst)
+		for _, entry := range entries {
+			adjacencyFlat = append(adjacencyFlat, entry.Target)
 		}
 		adjacency[src] = adjacencyFlat[start:len(adjacencyFlat):len(adjacencyFlat)]
 	}

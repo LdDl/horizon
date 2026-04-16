@@ -22,7 +22,7 @@ import (
 // vertexComponent - matches vertex ID to its weakly connected component ID
 // bigComponentID - ID of the largest weakly connected component. -1 if no components found
 type MapEngine struct {
-	edges     map[int64]map[int64]*spatial.Edge
+	edges     *EdgeGraph
 	storage   spatial.Storage
 	vertices  map[int64]*spatial.Vertex
 	graph     ch.Graph
@@ -40,7 +40,7 @@ type MapEngine struct {
 func NewMapEngineDefault() *MapEngine {
 	storage := spatial.NewStorage(spatial.StorageTypeSpherical)
 	return &MapEngine{
-		edges:    make(map[int64]map[int64]*spatial.Edge),
+		edges:    NewEdgeGraph(),
 		vertices: make(map[int64]*spatial.Vertex),
 		storage:  storage,
 	}
@@ -49,7 +49,7 @@ func NewMapEngineDefault() *MapEngine {
 // NewMapEngine Returns pointer to created MapEngine with provided parameters
 func NewMapEngine(opts ...func(*MapEngine)) *MapEngine {
 	engine := &MapEngine{
-		edges:    make(map[int64]map[int64]*spatial.Edge),
+		edges:    NewEdgeGraph(),
 		vertices: make(map[int64]*spatial.Vertex),
 		storage:  nil,
 	}
@@ -94,10 +94,7 @@ func WithS2Storage(storage *spatial.S2Storage) func(*MapEngine) {
 func WithEdges(edges []*spatial.Edge) func(*MapEngine) {
 	return func(engine *MapEngine) {
 		for _, edge := range edges {
-			if engine.edges[edge.Source] == nil {
-				engine.edges[edge.Source] = make(map[int64]*spatial.Edge)
-			}
-			engine.edges[edge.Source][edge.Target] = edge
+			engine.edges.Set(edge.Source, edge.Target, edge)
 			if engine.storage != nil {
 				engine.storage.AddEdge(uint64(edge.ID), edge)
 			}
@@ -145,10 +142,8 @@ func (engine *MapEngine) routeDistanceMeters(path []int64) float64 {
 	for i := 0; i < len(path)-1; i++ {
 		from := path[i]
 		to := path[i+1]
-		if targets, ok := engine.edges[from]; ok {
-			if edge, ok := targets[to]; ok {
-				totalMeters += edge.LengthMeters
-			}
+		if edge := engine.edges.Get(from, to); edge != nil {
+			totalMeters += edge.LengthMeters
 		}
 	}
 	return totalMeters
@@ -156,7 +151,7 @@ func (engine *MapEngine) routeDistanceMeters(path []int64) float64 {
 
 func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcutsFname string) error {
 	// Allocate memory for edges
-	engine.edges = make(map[int64]map[int64]*spatial.Edge)
+	engine.edges = NewEdgeGraph()
 
 	// Read edges first
 	fileEdges, err := os.Open(edgesFname)
@@ -223,9 +218,6 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("Can't parse WKT geometry of the edge: from_vertex_id = '%d' | to_vertex_id = '%d' | geom = '%s'", sourceVertex, targetVertex, coordinates))
 		}
-		if _, ok := engine.edges[sourceVertex]; !ok {
-			engine.edges[sourceVertex] = make(map[int64]*spatial.Edge)
-		}
 		lengthMeters := weight // fallback: if no length_meters column, use weight
 		if edgesLookup.Has("length_meters") {
 			lengthMeters, err = edgesLookup.Float64(record, "length_meters")
@@ -241,7 +233,9 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 			LengthMeters: lengthMeters,
 			Polyline:     s2Polyline,
 		}
-		engine.edges[sourceVertex][targetVertex] = &edge
+		edge.PrecomputeCumLen()
+		edge.PrecomputeBound()
+		engine.edges.Set(sourceVertex, targetVertex, &edge)
 
 		err = engine.storage.AddEdge(uint64(edgeID), &edge)
 		if err != nil {

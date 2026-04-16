@@ -33,6 +33,29 @@ func CalcProjection(line s2.Polyline, point s2.Point) (projected s2.Point, fract
 	return pr, (lengthToProj / line.Length()).Radians(), next
 }
 
+// CalcProjectionCached Returns projection on edge's polyline and fraction for point (spherical geometry).
+// Uses precomputed Edge.CumSegLen to avoid O(P) partial-sum and line.Length() rescans.
+// Falls back to CalcProjection when CumSegLen is not populated.
+func CalcProjectionCached(edge *Edge, point s2.Point) (projected s2.Point, fraction float64, next int) {
+	line := *edge.Polyline
+	if len(edge.CumSegLen) == 0 {
+		return CalcProjection(line, point)
+	}
+	pr, next := line.Project(point)
+	var lengthToProj float64
+	if next >= 2 {
+		lengthToProj = edge.CumSegLen[next-2]
+	}
+	if next > 0 {
+		lengthToProj += float64(line[next-1].Distance(pr))
+	}
+	totalLen := edge.CumSegLen[len(edge.CumSegLen)-1]
+	if totalLen == 0 {
+		return pr, 0, next
+	}
+	return pr, lengthToProj / totalLen, next
+}
+
 // CalcProjectionEuclidean Returns projection on line and fraction for point (Euclidean/planar geometry)
 /*
 	line - s2.Polyline (using Vector.X/Y as Euclidean coordinates)

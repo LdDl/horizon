@@ -55,7 +55,7 @@ type MatcherResult struct {
 }
 
 // prepareSubMatch returns SubMatch for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
-func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, layers []RoadPositions, chRoutes map[int]map[int][]int64) SubMatch {
+func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, layers []RoadPositions, chRoutes map[[2]int][]int64) SubMatch {
 	subMatch := SubMatch{
 		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
@@ -99,14 +99,14 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
 			continue
 		}
-		path := chRoutes[previousState.RoadPositionID][currentState.RoadPositionID]
+		path := chRoutes[[2]int{previousState.RoadPositionID, currentState.RoadPositionID}]
 		if len(path) < 2 {
 			continue
 		}
 		for j := 1; j < len(path); j++ {
 			sourceVertex := path[j-1]
 			targetVertex := path[j]
-			edge := matcher.engine.edges[sourceVertex][targetVertex]
+			edge := matcher.engine.edges.Get(sourceVertex, targetVertex)
 			if len(*edge.Polyline) < 2 {
 				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
 			}
@@ -114,10 +114,9 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 				continue
 			}
 			lastEdgeID = edge.ID
-			edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
-			copy(edgeGeomCopy, *edge.Polyline)
+			// Zero-copy: engine's polyline is immutable after load; caller must treat Geom as read-only.
 			subMatch.Observations[i-1].NextEdges = append(subMatch.Observations[i-1].NextEdges, EdgeResult{
-				Geom:   edgeGeomCopy,
+				Geom:   *edge.Polyline,
 				Weight: edge.Weight,
 				ID:     edge.ID,
 			})

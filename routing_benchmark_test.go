@@ -155,7 +155,7 @@ func TestRouting_SingleRun(t *testing.T) {
 		t.Fatalf("Failed to load graph: %v", err)
 	}
 	t.Logf("Graph loaded in %v", time.Since(loadStart))
-	t.Logf("Vertices: %d, Edges: %d", len(matcher.engine.vertexStrongComponent), len(matcher.engine.edges))
+	t.Logf("Vertices: %d, Edges: %d", len(matcher.engine.vertexStrongComponent), matcher.engine.edges.Len())
 
 	source := NewGPSMeasurement(1, benchStartLon, benchStartLat, 4326, WithGPSTime(time.Now()))
 	target := NewGPSMeasurement(2, benchEndLon, benchEndLat, 4326, WithGPSTime(time.Now()))

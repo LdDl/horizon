@@ -53,16 +53,16 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		t.Error(err)
 	}
 
-	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges[13640][13641]
-	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges[13650][13651]
-	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges[13659][13660]
-	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges[13661][13662]
-	correctStates.SubMatches[0].Observations[4].MatchedEdge = *matcher.engine.edges[13663][13664]
-	correctStates.SubMatches[0].Observations[5].MatchedEdge = *matcher.engine.edges[13664][13665]
-	correctStates.SubMatches[0].Observations[6].MatchedEdge = *matcher.engine.edges[13665][13666]
-	correctStates.SubMatches[0].Observations[7].MatchedEdge = *matcher.engine.edges[16784][16785]
-	correctStates.SubMatches[0].Observations[8].MatchedEdge = *matcher.engine.edges[16788][16789]
-	correctStates.SubMatches[0].Observations[9].MatchedEdge = *matcher.engine.edges[32639][32640]
+	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges.Get(13640, 13641)
+	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges.Get(13650, 13651)
+	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges.Get(13659, 13660)
+	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges.Get(13661, 13662)
+	correctStates.SubMatches[0].Observations[4].MatchedEdge = *matcher.engine.edges.Get(13663, 13664)
+	correctStates.SubMatches[0].Observations[5].MatchedEdge = *matcher.engine.edges.Get(13664, 13665)
+	correctStates.SubMatches[0].Observations[6].MatchedEdge = *matcher.engine.edges.Get(13665, 13666)
+	correctStates.SubMatches[0].Observations[7].MatchedEdge = *matcher.engine.edges.Get(16784, 16785)
+	correctStates.SubMatches[0].Observations[8].MatchedEdge = *matcher.engine.edges.Get(16788, 16789)
+	correctStates.SubMatches[0].Observations[9].MatchedEdge = *matcher.engine.edges.Get(32639, 32640)
 
 	statesRadiusMeters := -1.0
 	maxStates := 5

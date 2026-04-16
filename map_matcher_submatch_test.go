@@ -202,28 +202,28 @@ func TestMapMatcherSubMatches(t *testing.T) {
 		SubMatches: []SubMatch{
 			{
 				Observations: []ObservationResult{
-					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges[0][1]},
-					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges[2][3]},
+					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges.Get(0, 1)},
+					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges.Get(2, 3)},
 				},
 				Probability: -791.677435,
 			},
 			{
 				Observations: []ObservationResult{
-					{Observation: gpsMeasurements[2], MatchedEdge: *mapEngine.edges[5][6]},
+					{Observation: gpsMeasurements[2], MatchedEdge: *mapEngine.edges.Get(5, 6)},
 				},
 				Probability: -954.672372,
 			},
 			{
 				Observations: []ObservationResult{
-					{Observation: gpsMeasurements[3], MatchedEdge: *mapEngine.edges[8][9]},
-					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges[9][10]},
-					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges[10][11]},
+					{Observation: gpsMeasurements[3], MatchedEdge: *mapEngine.edges.Get(8, 9)},
+					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges.Get(9, 10)},
+					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges.Get(10, 11)},
 				},
 				Probability: -8100.966270,
 			},
 			{
 				Observations: []ObservationResult{
-					{Observation: gpsMeasurements[6], MatchedEdge: *mapEngine.edges[13][14]},
+					{Observation: gpsMeasurements[6], MatchedEdge: *mapEngine.edges.Get(13, 14)},
 				},
 				Probability: -196.691325,
 			},

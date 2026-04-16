@@ -76,12 +76,11 @@ func (matcher *MapMatcher) FindShortestPath(source, target *GPSMeasurement, stat
 	for i := 1; i < len(path); i++ {
 		s := path[i-1]
 		t := path[i]
-		edge := matcher.engine.edges[s][t]
+		edge := matcher.engine.edges.Get(s, t)
 		edges = append(edges, *edge)
-		edgeGeomCopy := make(s2.Polyline, len(*edge.Polyline))
-		copy(edgeGeomCopy, *edge.Polyline)
+		// Zero-copy: engine's polyline is immutable after load; caller must treat Geom as read-only.
 		intermediateEdges = append(intermediateEdges, EdgeResult{
-			Geom:   edgeGeomCopy,
+			Geom:   *edge.Polyline,
 			Weight: edge.Weight,
 			ID:     edge.ID,
 		})
@@ -127,13 +126,13 @@ func (matcher *MapMatcher) getCandidates(pt s2.Point, radiusMeters float64, limi
 		}
 
 		m, n := edgeData.Source, edgeData.Target
-		edge := matcher.engine.edges[m][n]
+		edge := matcher.engine.edges.Get(m, n)
 		if edge == nil {
 			continue
 		}
 
 		// Determine which vertex to use based on projection fraction
-		_, fraction, _ := spatial.CalcProjection(*edge.Polyline, pt)
+		_, fraction, _ := spatial.CalcProjectionCached(edge, pt)
 		vertex := n
 		if fraction > 0.5 {
 			vertex = m

@@ -47,11 +47,11 @@ func (matcher *MapMatcher) FindIsochrones(source *GPSMeasurement, maxCost float6
 	s2polylineSource := matcher.engine.storage.GetEdge(closestSource[0].EdgeID)
 	// Find vertex for 'source' point
 	m, n := s2polylineSource.Source, s2polylineSource.Target
-	edgeSource := matcher.engine.edges[m][n]
+	edgeSource := matcher.engine.edges.Get(m, n)
 	if edgeSource == nil {
 		return nil, fmt.Errorf("Edge 'source' not found in graph")
 	}
-	_, fractionSource, _ := spatial.CalcProjection(*edgeSource.Polyline, source.Point)
+	_, fractionSource, _ := spatial.CalcProjectionCached(edgeSource, source.Point)
 	choosenSourceVertex := n
 	if fractionSource > 0.5 {
 		choosenSourceVertex = m

@@ -15,7 +15,7 @@ func BenchmarkSCC(b *testing.B) {
 		b.Fatalf("Failed to load graph: %v", err)
 	}
 
-	b.Logf("Graph has %d source vertices in edges map", len(matcher.engine.edges))
+	b.Logf("Graph has %d source vertices in edges map", matcher.engine.edges.Len())
 
 	b.ResetTimer()
 	b.ReportAllocs()

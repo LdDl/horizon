@@ -128,11 +128,23 @@ func (storage *S2Storage) SearchInRadius(pt s2.Point, radius float64) (map[uint6
 	rc := s2.RegionCoverer{MaxLevel: storage.storageLevel, MinLevel: storage.storageLevel}
 	cu := rc.Covering(cap)
 	result := make(map[uint64]float64)
+	radiusAngle := s1.Angle(centerAngle)
 	for _, cellID := range cu {
 		item := storage.BTree.Get(indexedItem{CellID: cellID})
 		if item != nil {
 			for _, edgeID := range item.(indexedItem).edgesInCell {
+				if _, exists := result[edgeID]; exists {
+					continue
+				}
 				polyline := storage.edges[edgeID]
+				// Bounding-cap prune: if the polyline's cap is entirely outside
+				// the search radius, skip the per-segment scan.
+				if polyline.BoundRadius > 0 {
+					chord := s2.ChordAngleBetweenPoints(pt, polyline.BoundCenter)
+					if chord.Angle()-polyline.BoundRadius > radiusAngle {
+						continue
+					}
+				}
 				minDist := s1.ChordAngle(0)
 				for i := 0; i < polyline.Polyline.NumEdges(); i++ {
 					edge := polyline.Polyline.Edge(i)
@@ -205,7 +217,7 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 
 	// Bounded top-n tracker: keeps up to n smallest distances.
 	// topDists[topMaxIdx] is the n-th smallest (the largest among top-n).
-	// No interface boxing — O(n) insert, O(1) peek. n is small (typically 5-10).
+	// No interface boxing, which means O(n) insert, O(1) peek. n is small (typically 5-10).
 	topDists := make([]float64, 0, n)
 	topMaxIdx := 0
 
@@ -231,6 +243,17 @@ func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, erro
 				polyline := storage.edges[edgeID]
 				if polyline == nil || polyline.Polyline == nil {
 					continue
+				}
+
+				// Bounding-cap prune: when we have n candidates, skip polylines
+				// whose spherical cap lower-bounds the true distance above topMax.
+				// Only apply when the precomputed bound is available.
+				if len(topDists) == n && polyline.BoundRadius > 0 {
+					chord := s2.ChordAngleBetweenPoints(pt, polyline.BoundCenter)
+					lbMeters := (chord.Angle() - polyline.BoundRadius).Radians() * EarthRadius
+					if lbMeters > topDists[topMaxIdx] {
+						continue
+					}
 				}
 
 				// Calculate minimum distance to edge
