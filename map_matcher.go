@@ -252,35 +252,33 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		layers = append(layers, localStates)
 		obsState[i] = NewCandidateLayer(engineGpsMeasurements[i], localStates)
 	}
-	chRoutes := make(map[int]map[int][]int64)
+	chRoutes := make(map[[2]int][]int64)
 
 	segments := []Segment{}
 	segmentStart := 0
 	currentRouteLengths := make(lengths)
 
 	// vertex-level path cache to avoid recomputing same routes
-	// key: fromVertex -> toVertex -> {rawCost, rawPath}
-	vertexCache := make(map[int64]map[int64]cachedRoute)
+	// key: [fromVertex, toVertex] -> {rawCost, rawPath}
+	vertexCache := make(map[[2]int64]cachedRoute)
 
 	// @todo: Consider to use ShortestPathOneToMany (need to deal with the order of writing data to to chRoutes and routeLengths)
 	for i := 1; i < len(layers); i++ {
 		prevStates := layers[i-1]
 		currentStates := layers[i]
 		for m := range prevStates {
-			if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
-				chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
-			}
 			for n := range currentStates {
+				key := [2]int{prevStates[m].RoadPositionID, currentStates[n].RoadPositionID}
 				if prevStates[m].RoutingGraphVertex == currentStates[n].RoutingGraphVertex {
 					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
 						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+						chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
 						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+						chRoutes[key] = finalPath
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 					}
 					continue
@@ -290,7 +288,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				// If moving backward, the edge is likely a reverse-direction candidate => fall through to CH routing.
 				if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID && prevStates[m].beforeProjection <= currentStates[n].beforeProjection {
 					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+					chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 					currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
 					continue
 				}
@@ -302,7 +300,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				// @todo: this could lead to negative values. Need to investigate when it happens
 				// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
 				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
-				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+				chRoutes[key] = finalPath
 				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 			}
 		}
@@ -486,7 +484,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	states - set of States
 	gpsMeasurements - set of Observations
 */
-func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLengths map[int]map[int]float64, gpsMeasurements []*GPSMeasurement) (*viterbi.Viterbi, error) {
+func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLengths lengths, gpsMeasurements []*GPSMeasurement) (*viterbi.Viterbi, error) {
 	v := viterbi.New()
 
 	statesIndx := make(map[int]int)
@@ -597,22 +595,22 @@ func (matcher *MapMatcher) computeEmissionLogProbabilities(layer *CandidateLayer
 	prevLayer - previous Observation
 	currentLayer - current Observation
 */
-func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentLayer *CandidateLayer, routeLengths map[int]map[int]float64) error {
+func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentLayer *CandidateLayer, routeLengths lengths) error {
 	straightDistance := prevLayer.Observation.GeoPoint.DistanceTo(currentLayer.Observation.GeoPoint)
 	timeDiff := currentLayer.Observation.dateTime.Sub(prevLayer.Observation.dateTime).Seconds()
 	for i := range prevLayer.States {
 		from := prevLayer.States[i]
 		for j := range currentLayer.States {
 			to := currentLayer.States[j]
-			if routeLengths[from.RoadPositionID][to.RoadPositionID] < 0 {
+			rl := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
+			if rl < 0 {
 				continue
 			}
-			if routeLengths[from.RoadPositionID][to.RoadPositionID] > ROUTE_LENGTH_THRESHOLD {
+			if rl > ROUTE_LENGTH_THRESHOLD {
 				// Restrict max route length assuming that too large length is just bad
 				currentLayer.AddTransitionProbability(from, to, -ROUTE_LENGTH_THRESHOLD)
 				continue
 			}
-			rl := routeLengths[from.RoadPositionID][to.RoadPositionID]
 			transitionLogProbability, err := matcher.hmmParams.TransitionLogProbability(rl, straightDistance, timeDiff)
 			if err != nil {
 				return err
@@ -624,15 +622,12 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 }
 
 // isBreakPoint checks if there are no valid routes between two consecutive layers
-func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[int][]int64) bool {
+func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[[2]int][]int64) bool {
 	for m := range prevStates {
 		fromID := prevStates[m].RoadPositionID
-		if _, ok := chRoutes[fromID]; !ok {
-			continue
-		}
 		for n := range currentStates {
 			toID := currentStates[n].RoadPositionID
-			path, ok := chRoutes[fromID][toID]
+			path, ok := chRoutes[[2]int{fromID, toID}]
 			if ok && len(path) > 0 {
 				return false // Found valid route
 			}
@@ -643,7 +638,7 @@ func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[
 
 // getCachedPath is a helper function to get or compute shortest path with caching
 // It uses SCC (Strongly Connected Components) to quickly reject impossible routes
-func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
+func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
 	// SCC check: if vertices are in different SCCs, no path exists
 	fromSCC, fromOK := vertexSCC[fromVertex]
 	toSCC, toOK := vertexSCC[toVertex]
@@ -652,18 +647,14 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cach
 		return -1, nil
 	}
 
+	key := [2]int64{fromVertex, toVertex}
 	// Check cache first
-	if inner, ok := vertexCache[fromVertex]; ok {
-		if cached, ok := inner[toVertex]; ok {
-			return cached.cost, cached.path
-		}
+	if cached, ok := vertexCache[key]; ok {
+		return cached.cost, cached.path
 	}
 	// Compute and cache using thread-safe query pool
 	rawCost, rawPath := queryPool.ShortestPath(fromVertex, toVertex)
-	if vertexCache[fromVertex] == nil {
-		vertexCache[fromVertex] = make(map[int64]cachedRoute)
-	}
-	vertexCache[fromVertex][toVertex] = cachedRoute{cost: rawCost, path: rawPath}
+	vertexCache[key] = cachedRoute{cost: rawCost, path: rawPath}
 	return rawCost, rawPath
 }
 

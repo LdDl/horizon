@@ -11,16 +11,12 @@ type transition struct {
 	prob float64
 }
 
-type lengths map[int]map[int]float64
+type lengths map[[2]int]float64
 
 func (m lengths) AddRouteLength(from, to *RoadPosition, routeLength float64) {
-	if _, ok := m[from.RoadPositionID]; !ok {
-		m[from.RoadPositionID] = make(map[int]float64)
-		m[from.RoadPositionID][to.RoadPositionID] = routeLength
-	} else {
-		if _, ok := m[from.RoadPositionID][to.RoadPositionID]; !ok {
-			m[from.RoadPositionID][to.RoadPositionID] = routeLength
-		}
+	key := [2]int{from.RoadPositionID, to.RoadPositionID}
+	if _, ok := m[key]; !ok {
+		m[key] = routeLength
 	}
 }
 

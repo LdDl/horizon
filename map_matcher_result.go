@@ -55,7 +55,7 @@ type MatcherResult struct {
 }
 
 // prepareSubMatch returns SubMatch for corresponding ViterbiPath, set of gps measurements and calculated routes' lengths
-func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, layers []RoadPositions, chRoutes map[int]map[int][]int64) SubMatch {
+func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasurements GPSMeasurements, layers []RoadPositions, chRoutes map[[2]int][]int64) SubMatch {
 	subMatch := SubMatch{
 		Observations: make([]ObservationResult, len(gpsMeasurements)),
 		Probability:  vpath.Probability,
@@ -99,7 +99,7 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
 			continue
 		}
-		path := chRoutes[previousState.RoadPositionID][currentState.RoadPositionID]
+		path := chRoutes[[2]int{previousState.RoadPositionID, currentState.RoadPositionID}]
 		if len(path) < 2 {
 			continue
 		}
