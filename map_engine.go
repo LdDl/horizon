@@ -233,6 +233,8 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 			LengthMeters: lengthMeters,
 			Polyline:     s2Polyline,
 		}
+		edge.PrecomputeCumLen()
+		edge.PrecomputeBound()
 		engine.edges.Set(sourceVertex, targetVertex, &edge)
 
 		err = engine.storage.AddEdge(uint64(edgeID), &edge)
