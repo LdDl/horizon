@@ -77,11 +77,13 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 		}
 
 		for i := range resultSubMatch.Observations {
-			if resultSubMatch.Observations[i].MatchedEdge != correctSubMatch.Observations[i].MatchedEdge {
+			gotEdge := resultSubMatch.Observations[i].MatchedEdge
+			wantEdge := correctSubMatch.Observations[i].MatchedEdge
+			if gotEdge.Source != wantEdge.Source || gotEdge.Target != wantEdge.Target || gotEdge.ID != wantEdge.ID {
 				t.Errorf("SubMatch %d, observation %d: matched edge should be %d->%d, but got %d->%d",
 					s, resultSubMatch.Observations[i].Observation.id,
-					correctSubMatch.Observations[i].MatchedEdge.Source, correctSubMatch.Observations[i].MatchedEdge.Target,
-					resultSubMatch.Observations[i].MatchedEdge.Source, resultSubMatch.Observations[i].MatchedEdge.Target,
+					wantEdge.Source, wantEdge.Target,
+					gotEdge.Source, gotEdge.Target,
 				)
 			}
 		}
