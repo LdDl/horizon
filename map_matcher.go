@@ -513,20 +513,24 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 		statesIndx = make(map[int]int)
 		idx := 0
 		for i := range obsStates {
+			layerStates := make([]viterbi.State, len(obsStates[i].States))
 			for j := range obsStates[i].States {
-				v.AddState(obsStates[i].States[j])
+				layerStates[j] = obsStates[i].States[j]
 				statesIndx[obsStates[i].States[j].ID()] = idx
 				fmt.Printf(`CustomState{Name: "%d", id: %d}%s`, obsStates[i].States[j].GraphEdge.ID, obsStates[i].States[j].ID(), ",\n")
 				idx++
 			}
+			v.AddLayer(layerStates)
 			fmt.Println()
 		}
 		fmt.Println()
 	} else {
 		for i := range obsStates {
+			layerStates := make([]viterbi.State, len(obsStates[i].States))
 			for j := range obsStates[i].States {
-				v.AddState(obsStates[i].States[j])
+				layerStates[j] = obsStates[i].States[j]
 			}
+			v.AddLayer(layerStates)
 		}
 	}
 	for i := range gpsMeasurements {
