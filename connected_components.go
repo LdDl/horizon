@@ -39,9 +39,9 @@ func (engine *MapEngine) bfsMarkWeakComponent(start int64, componentID int64, vi
 		size++
 
 		// Add neighbors via outgoing edges (v -> neighbor)
-		for neighbor := range engine.edges[v] {
-			if !visited[neighbor] {
-				queue = append(queue, neighbor)
+		for _, entry := range engine.edges.Neighbors(v) {
+			if !visited[entry.Target] {
+				queue = append(queue, entry.Target)
 			}
 		}
 
@@ -73,11 +73,11 @@ func (engine *MapEngine) computeWeakConnectedComponents() WeakComponentsResult {
 	// This allows O(degree) lookup for incoming edges instead of O(E)
 	reverseEdges := make(map[int64][]int64)
 	vertices := make(map[int64]bool)
-	for src, targets := range engine.edges {
+	for src, entries := range engine.edges.Adj() {
 		vertices[src] = true
-		for dst := range targets {
-			vertices[dst] = true
-			reverseEdges[dst] = append(reverseEdges[dst], src)
+		for _, entry := range entries {
+			vertices[entry.Target] = true
+			reverseEdges[entry.Target] = append(reverseEdges[entry.Target], src)
 		}
 	}
 

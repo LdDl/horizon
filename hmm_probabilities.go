@@ -6,23 +6,27 @@ import "math"
 type HmmProbabilities struct {
 	sigma float64
 	beta  float64
+	// precomputed 1/beta (loop-invariant)
+	invBeta float64
+	// precomputed log(1/beta) (loop-invariant)
+	logInvBeta float64
 }
 
 // HmmProbabilitiesDefault Constructor for creating HmmProbabilities with default values
 // Sigma - standard deviation of the normal distribution [m] used for modeling the GPS error
 // Beta - beta parameter of the exponential distribution used for modeling transition probabilities
 func HmmProbabilitiesDefault() *HmmProbabilities {
-	return &HmmProbabilities{
-		sigma: 4.07,
-		beta:  0.00959442,
-	}
+	return NewHmmProbabilities(4.07, 0.00959442)
 }
 
 // NewHmmProbabilities Constructor for creating HmmProbabilities with provided values
 func NewHmmProbabilities(sigma, beta float64) *HmmProbabilities {
+	invBeta := 1.0 / beta
 	return &HmmProbabilities{
-		sigma: sigma,
-		beta:  beta,
+		sigma:      sigma,
+		beta:       beta,
+		invBeta:    invBeta,
+		logInvBeta: math.Log(invBeta),
 	}
 }
 
@@ -51,7 +55,8 @@ func (hp *HmmProbabilities) TransitionLogProbability(routeLength, linearDistance
 	if err != nil {
 		return 0, err
 	}
-	return LogExponentialDistribution(hp.beta, transitionMetric), nil
+	// log(1/beta) - x/beta, with both constants precomputed
+	return hp.logInvBeta - transitionMetric*hp.invBeta, nil
 }
 
 // normalizedTransitionMetric

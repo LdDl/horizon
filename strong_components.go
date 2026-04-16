@@ -71,7 +71,8 @@ func (engine *MapEngine) strongConnect(v int64, state *tarjanState) {
 	state.onStack[v] = true
 
 	// Consider successors of v (only outgoing edges for SCC)
-	for neighbor := range engine.edges[v] {
+	for _, entry := range engine.edges.Neighbors(v) {
+		neighbor := entry.Target
 		if _, visited := state.indexMap[neighbor]; !visited {
 			// Successor has not yet been visited; recurse on it
 			engine.strongConnect(neighbor, state)
@@ -110,10 +111,10 @@ func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResu
 
 	// Collect all vertices
 	vertices := make(map[int64]bool)
-	for src, targets := range engine.edges {
+	for src, entries := range engine.edges.Adj() {
 		vertices[src] = true
-		for dst := range targets {
-			vertices[dst] = true
+		for _, entry := range entries {
+			vertices[entry.Target] = true
 		}
 	}
 

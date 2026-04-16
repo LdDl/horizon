@@ -210,7 +210,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			s2polyline := matcher.engine.storage.GetEdge(closest[j].EdgeID)
 			m := s2polyline.Source
 			n := s2polyline.Target
-			edge := matcher.engine.edges[m][n]
+			edge := matcher.engine.edges.Get(m, n)
 
 			// Use appropriate projection based on SRID
 			var proj s2.Point
@@ -220,7 +220,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 
 			if srid == 4326 {
 				// Spherical geometry (WGS84)
-				proj, fraction, next = spatial.CalcProjection(*edge.Polyline, s2point)
+				proj, fraction, next = spatial.CalcProjectionCached(edge, s2point)
 				latLng := s2.LatLngFromPoint(proj)
 				lon = latLng.Lng.Degrees()
 				lat = latLng.Lat.Degrees()
@@ -252,36 +252,49 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		layers = append(layers, localStates)
 		obsState[i] = NewCandidateLayer(engineGpsMeasurements[i], localStates)
 	}
-	chRoutes := make(map[int]map[int][]int64)
+	chRoutes := make(map[[2]int][]int64)
 
 	segments := []Segment{}
 	segmentStart := 0
 	currentRouteLengths := make(lengths)
 
 	// vertex-level path cache to avoid recomputing same routes
-	// key: fromVertex -> toVertex -> {rawCost, rawPath}
-	vertexCache := make(map[int64]map[int64]cachedRoute)
+	// key: [fromVertex, toVertex] -> {rawCost, rawPath}
+	vertexCache := make(map[[2]int64]cachedRoute)
 
 	// @todo: Consider to use ShortestPathOneToMany (need to deal with the order of writing data to to chRoutes and routeLengths)
+	//
+	// Break-point detection for sub-matches:
+	// For each consecutive pair of layers (i-1, i) we try to build a route between every candidate pair.
+	// If NO candidate pair produces a valid path, we treat layer i as a break point - the preceding part
+	// becomes a finalized Segment (→ its own SubMatch), and a fresh segment starts at layer i.
+	// `anyValidRoute` is the fused, in-loop replacement of the old isBreakPoint() helper: it is set
+	// to true in every branch that writes a non-empty path into chRoutes[key]; if it stays false after
+	// the full M×N scan, we've detected a break point.
 	for i := 1; i < len(layers); i++ {
 		prevStates := layers[i-1]
 		currentStates := layers[i]
+		anyValidRoute := false
 		for m := range prevStates {
-			if _, ok := chRoutes[prevStates[m].RoadPositionID]; !ok {
-				chRoutes[prevStates[m].RoadPositionID] = make(map[int][]int64)
-			}
 			for n := range currentStates {
+				key := [2]int{prevStates[m].RoadPositionID, currentStates[n].RoadPositionID}
 				if prevStates[m].RoutingGraphVertex == currentStates[n].RoutingGraphVertex {
 					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
+						// Trivial route on the same edge (same routing vertex, same edge) - never a break into submatches
 						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+						chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+						anyValidRoute = true
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
 						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
-						chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+						chRoutes[key] = finalPath
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
+						// Only a non-empty CH path counts for break-point detection
+						if len(finalPath) > 0 {
+							anyValidRoute = true
+						}
 					}
 					continue
 				}
@@ -290,8 +303,9 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				// If moving backward, the edge is likely a reverse-direction candidate => fall through to CH routing.
 				if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID && prevStates[m].beforeProjection <= currentStates[n].beforeProjection {
 					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-					chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
+					chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
 					currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					anyValidRoute = true
 					continue
 				}
 				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
@@ -302,20 +316,24 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				// @todo: this could lead to negative values. Need to investigate when it happens
 				// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
 				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
-				chRoutes[prevStates[m].RoadPositionID][currentStates[n].RoadPositionID] = finalPath
+				chRoutes[key] = finalPath
 				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
+				// Only a non-empty CH path counts for break-point detection
+				if len(finalPath) > 0 {
+					anyValidRoute = true
+				}
 			}
 		}
 
-		// Check for break point on-the-fly
-		if isBreakPoint(prevStates, currentStates, chRoutes) {
-			// Finalize current segment with its routeLengths
+		// Break point (submatches): the entire M×N scan produced no valid route - the trace must be split here.
+		// Finalize the current sub-match [segmentStart .. i-1] and restart with fresh routeLengths at i.
+		// Each Segment later becomes an independent SubMatch in MatcherResult.SubMatches.
+		if !anyValidRoute {
 			segments = append(segments, Segment{
 				start:        segmentStart,
 				end:          i - 1,
 				routeLengths: currentRouteLengths,
 			})
-			// Start new segment with fresh routeLengths
 			segmentStart = i
 			currentRouteLengths = make(lengths)
 		}
@@ -486,26 +504,34 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	states - set of States
 	gpsMeasurements - set of Observations
 */
-func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLengths map[int]map[int]float64, gpsMeasurements []*GPSMeasurement) (*viterbi.Viterbi, error) {
+func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLengths lengths, gpsMeasurements []*GPSMeasurement) (*viterbi.Viterbi, error) {
 	v := viterbi.New()
 
-	statesIndx := make(map[int]int)
-	idx := 0
-	for i := range obsStates {
-		for j := range obsStates[i].States {
-			v.AddState(obsStates[i].States[j])
-			statesIndx[obsStates[i].States[j].ID()] = idx
-			if ViterbiDebug {
+	// statesIndx is used only for human-readable debug output; skip populating in release mode
+	var statesIndx map[int]int
+	if ViterbiDebug {
+		statesIndx = make(map[int]int)
+		idx := 0
+		for i := range obsStates {
+			layerStates := make([]viterbi.State, len(obsStates[i].States))
+			for j := range obsStates[i].States {
+				layerStates[j] = obsStates[i].States[j]
+				statesIndx[obsStates[i].States[j].ID()] = idx
 				fmt.Printf(`CustomState{Name: "%d", id: %d}%s`, obsStates[i].States[j].GraphEdge.ID, obsStates[i].States[j].ID(), ",\n")
+				idx++
 			}
-			idx++
-		}
-		if ViterbiDebug {
+			v.AddLayer(layerStates)
 			fmt.Println()
 		}
-	}
-	if ViterbiDebug {
 		fmt.Println()
+	} else {
+		for i := range obsStates {
+			layerStates := make([]viterbi.State, len(obsStates[i].States))
+			for j := range obsStates[i].States {
+				layerStates[j] = obsStates[i].States[j]
+			}
+			v.AddLayer(layerStates)
+		}
 	}
 	for i := range gpsMeasurements {
 		if ViterbiDebug {
@@ -585,9 +611,17 @@ func (matcher *MapMatcher) computeEmissionLogProbabilities(layer *CandidateLayer
 		sigma = layer.Observation.accuracy
 	}
 
+	// Loop-invariant: log(1/(sigma*sqrt(2*pi))) and 1/sigma precomputed once per layer
+	logConst := math.Log(1.0 / (sqrtTwoPi * sigma))
+	invSigma := 1.0 / sigma
+	// Pre-allocate to exact size to avoid append-growth copies
+	if cap(layer.EmissionLogProbabilities) < len(layer.States) {
+		layer.EmissionLogProbabilities = make([]emission, 0, len(layer.States))
+	}
 	for i := range layer.States {
 		distance := layer.States[i].Projected.DistanceTo(layer.Observation.GeoPoint)
-		emissionLogProb := LogNormalDistribution(sigma, distance)
+		xOverSigma := distance * invSigma
+		emissionLogProb := logConst - 0.5*xOverSigma*xOverSigma
 		layer.AddEmissionProbability(layer.States[i], emissionLogProb)
 	}
 }
@@ -597,22 +631,27 @@ func (matcher *MapMatcher) computeEmissionLogProbabilities(layer *CandidateLayer
 	prevLayer - previous Observation
 	currentLayer - current Observation
 */
-func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentLayer *CandidateLayer, routeLengths map[int]map[int]float64) error {
+func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentLayer *CandidateLayer, routeLengths lengths) error {
 	straightDistance := prevLayer.Observation.GeoPoint.DistanceTo(currentLayer.Observation.GeoPoint)
 	timeDiff := currentLayer.Observation.dateTime.Sub(prevLayer.Observation.dateTime).Seconds()
+	// Pre-allocate to worst-case K*K size to avoid append-growth copies
+	maxPairs := len(prevLayer.States) * len(currentLayer.States)
+	if cap(currentLayer.TransitionLogProbabilities) < maxPairs {
+		currentLayer.TransitionLogProbabilities = make([]transition, 0, maxPairs)
+	}
 	for i := range prevLayer.States {
 		from := prevLayer.States[i]
 		for j := range currentLayer.States {
 			to := currentLayer.States[j]
-			if routeLengths[from.RoadPositionID][to.RoadPositionID] < 0 {
+			rl := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
+			if rl < 0 {
 				continue
 			}
-			if routeLengths[from.RoadPositionID][to.RoadPositionID] > ROUTE_LENGTH_THRESHOLD {
+			if rl > ROUTE_LENGTH_THRESHOLD {
 				// Restrict max route length assuming that too large length is just bad
 				currentLayer.AddTransitionProbability(from, to, -ROUTE_LENGTH_THRESHOLD)
 				continue
 			}
-			rl := routeLengths[from.RoadPositionID][to.RoadPositionID]
 			transitionLogProbability, err := matcher.hmmParams.TransitionLogProbability(rl, straightDistance, timeDiff)
 			if err != nil {
 				return err
@@ -623,27 +662,9 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 	return nil
 }
 
-// isBreakPoint checks if there are no valid routes between two consecutive layers
-func isBreakPoint(prevStates, currentStates RoadPositions, chRoutes map[int]map[int][]int64) bool {
-	for m := range prevStates {
-		fromID := prevStates[m].RoadPositionID
-		if _, ok := chRoutes[fromID]; !ok {
-			continue
-		}
-		for n := range currentStates {
-			toID := currentStates[n].RoadPositionID
-			path, ok := chRoutes[fromID][toID]
-			if ok && len(path) > 0 {
-				return false // Found valid route
-			}
-		}
-	}
-	return true // No valid routes found
-}
-
 // getCachedPath is a helper function to get or compute shortest path with caching
 // It uses SCC (Strongly Connected Components) to quickly reject impossible routes
-func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
+func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
 	// SCC check: if vertices are in different SCCs, no path exists
 	fromSCC, fromOK := vertexSCC[fromVertex]
 	toSCC, toOK := vertexSCC[toVertex]
@@ -652,18 +673,14 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[int64]map[int64]cach
 		return -1, nil
 	}
 
+	key := [2]int64{fromVertex, toVertex}
 	// Check cache first
-	if inner, ok := vertexCache[fromVertex]; ok {
-		if cached, ok := inner[toVertex]; ok {
-			return cached.cost, cached.path
-		}
+	if cached, ok := vertexCache[key]; ok {
+		return cached.cost, cached.path
 	}
 	// Compute and cache using thread-safe query pool
 	rawCost, rawPath := queryPool.ShortestPath(fromVertex, toVertex)
-	if vertexCache[fromVertex] == nil {
-		vertexCache[fromVertex] = make(map[int64]cachedRoute)
-	}
-	vertexCache[fromVertex][toVertex] = cachedRoute{cost: rawCost, path: rawPath}
+	vertexCache[key] = cachedRoute{cost: rawCost, path: rawPath}
 	return rawCost, rawPath
 }
 
