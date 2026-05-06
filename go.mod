@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/LdDl/ch v1.10.0
 	github.com/LdDl/viterbi v1.2.0
-	github.com/gofiber/fiber/v2 v2.52.5
+	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551
 	github.com/google/btree v1.0.0
 	github.com/paulmach/go.geojson v1.4.0
