@@ -61,46 +61,79 @@ func newTarjanState() *tarjanState {
 	}
 }
 
-// strongConnect is the recursive DFS function for Tarjan's algorithm
-func (engine *MapEngine) strongConnect(v int64, state *tarjanState) {
-	// Set the depth index for v to the smallest unused index
-	state.indexMap[v] = state.index
-	state.lowLink[v] = state.index
+// tarjanFrame represents a single stack frame for iterative Tarjan's DFS.
+// It replaces the recursive call stack: vertex being processed + position in its neighbor list.
+type tarjanFrame struct {
+	v   int64
+	pos int // next neighbor index to process in adjacency[v]
+}
+
+// strongConnect is the iterative DFS function for Tarjan's algorithm.
+// Uses an explicit call stack to avoid Go stack growth overhead on large graphs.
+// adjacency is a pre-built map of vertex -> []neighbor (built once, shared across calls).
+// callStack is a reusable buffer to avoid repeated allocations across calls.
+func (engine *MapEngine) strongConnect(root int64, state *tarjanState, adjacency map[int64][]int64, callStack []tarjanFrame) []tarjanFrame {
+	// Reset and initialize root frame
+	callStack = callStack[:1]
+	callStack[0] = tarjanFrame{v: root, pos: 0}
+	state.indexMap[root] = state.index
+	state.lowLink[root] = state.index
 	state.index++
-	state.stack = append(state.stack, v)
-	state.onStack[v] = true
+	state.stack = append(state.stack, root)
+	state.onStack[root] = true
 
-	// Consider successors of v (only outgoing edges for SCC)
-	for _, entry := range engine.edges.Neighbors(v) {
-		neighbor := entry.Target
-		if _, visited := state.indexMap[neighbor]; !visited {
-			// Successor has not yet been visited; recurse on it
-			engine.strongConnect(neighbor, state)
-			if state.lowLink[neighbor] < state.lowLink[v] {
-				state.lowLink[v] = state.lowLink[neighbor]
+	for len(callStack) > 0 {
+		frame := &callStack[len(callStack)-1]
+		neighbors := adjacency[frame.v]
+
+		if frame.pos < len(neighbors) {
+			neighbor := neighbors[frame.pos]
+			frame.pos++
+
+			if _, visited := state.indexMap[neighbor]; !visited {
+				// "Recurse": push new frame
+				state.indexMap[neighbor] = state.index
+				state.lowLink[neighbor] = state.index
+				state.index++
+				state.stack = append(state.stack, neighbor)
+				state.onStack[neighbor] = true
+
+				callStack = append(callStack, tarjanFrame{v: neighbor, pos: 0})
+			} else if state.onStack[neighbor] {
+				if state.indexMap[neighbor] < state.lowLink[frame.v] {
+					state.lowLink[frame.v] = state.indexMap[neighbor]
+				}
 			}
-		} else if state.onStack[neighbor] {
-			// Successor is on stack and hence in the current SCC
-			if state.indexMap[neighbor] < state.lowLink[v] {
-				state.lowLink[v] = state.indexMap[neighbor]
+		} else {
+			// All neighbors processed — "return" from this frame
+			v := frame.v
+			callStack = callStack[:len(callStack)-1]
+
+			// Post-order: update parent's lowLink (equivalent to after recursive call returns)
+			if len(callStack) > 0 {
+				parent := &callStack[len(callStack)-1]
+				if state.lowLink[v] < state.lowLink[parent.v] {
+					state.lowLink[parent.v] = state.lowLink[v]
+				}
+			}
+
+			// If v is a root node, pop the SCC stack and generate a component
+			if state.lowLink[v] == state.indexMap[v] {
+				component := make([]int64, 0)
+				for {
+					w := state.stack[len(state.stack)-1]
+					state.stack = state.stack[:len(state.stack)-1]
+					state.onStack[w] = false
+					component = append(component, w)
+					if w == v {
+						break
+					}
+				}
+				state.components = append(state.components, component)
 			}
 		}
 	}
-
-	// If v is a root node, pop the stack and generate an SCC
-	if state.lowLink[v] == state.indexMap[v] {
-		component := make([]int64, 0)
-		for {
-			w := state.stack[len(state.stack)-1]
-			state.stack = state.stack[:len(state.stack)-1]
-			state.onStack[w] = false
-			component = append(component, w)
-			if w == v {
-				break
-			}
-		}
-		state.components = append(state.components, component)
-	}
+	return callStack
 }
 
 // computeStrongConnectedComponents finds all strongly connected components using Tarjan's algorithm.
@@ -109,19 +142,34 @@ func (engine *MapEngine) strongConnect(v int64, state *tarjanState) {
 func (engine *MapEngine) computeStrongConnectedComponents() StrongComponentsResult {
 	state := newTarjanState()
 
-	// Collect all vertices
+	// Pre-build flat adjacency list (CSR-style): one allocation for all neighbor data.
+	// adjacencyFlat holds all neighbor IDs concatenated; adjacency[v] is a sub-slice into it.
+	// This replaces per-vertex slice allocations with a single flat buffer.
+	totalEdges := 0
 	vertices := make(map[int64]bool)
 	for src, entries := range engine.edges.Adj() {
 		vertices[src] = true
+		totalEdges += len(entries)
 		for _, entry := range entries {
 			vertices[entry.Target] = true
 		}
 	}
+	adjacencyFlat := make([]int64, 0, totalEdges)
+	adjacency := make(map[int64][]int64, engine.edges.Len())
+	for src, entries := range engine.edges.Adj() {
+		start := len(adjacencyFlat)
+		for _, entry := range entries {
+			adjacencyFlat = append(adjacencyFlat, entry.Target)
+		}
+		adjacency[src] = adjacencyFlat[start:len(adjacencyFlat):len(adjacencyFlat)]
+	}
 
-	// Run Tarjan's algorithm from each unvisited vertex
+	// Run Tarjan's algorithm from each unvisited vertex.
+	// callStack is reused across calls to avoid repeated allocations.
+	callStack := make([]tarjanFrame, 0, 256)
 	for v := range vertices {
 		if _, visited := state.indexMap[v]; !visited {
-			engine.strongConnect(v, state)
+			callStack = engine.strongConnect(v, state, adjacency, callStack)
 		}
 	}
 
