@@ -17,7 +17,7 @@ import (
 	MatchedVertex - stands for closest vertex to the observation (empty if IsMatched is false)
 	ProjectedPoint - projection onto the matched edge (empty if IsMatched is false)
 	ProjectedPointIdx - index of the point in polyline which follows projection point
-	NextEdges - set of leading edges up to next observation. Could be an empty array if observations are very close to each other or if it just last observation
+	NextEdges - intermediate route traversals before the next observation; the final traversal of its matched edge is omitted
 */
 type ObservationResult struct {
 	Observation        *GPSMeasurement
@@ -83,7 +83,6 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 	}
 
 	// Iterate other states
-	lastEdgeID := int64(-1)
 	for i := 1; i < len(rpPath); i++ {
 		previousState := rpPath[i-1]
 		currentState := rpPath[i]
@@ -110,10 +109,11 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 			if len(*edge.Polyline) < 2 {
 				fmt.Printf("[WARNING]: Edge %d have less than 2 points\n", edge.ID)
 			}
-			if i == len(rpPath)-1 && j == len(path)-1 {
+			// The arrival edge is represented by the next observation's MatchedEdge.
+			// Keep earlier traversals of that edge when the route contains a loop.
+			if j == len(path)-1 && edge.ID == currentState.GraphEdge.ID {
 				continue
 			}
-			lastEdgeID = edge.ID
 			// Zero-copy: engine's polyline is immutable after load; caller must treat Geom as read-only.
 			subMatch.Observations[i-1].NextEdges = append(subMatch.Observations[i-1].NextEdges, EdgeResult{
 				Geom:   *edge.Polyline,
@@ -122,10 +122,5 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 			})
 		}
 	}
-	if rpPath[len(rpPath)-1].GraphEdge.ID == lastEdgeID {
-		// @todo:
-		// Last edge is the same as matched
-	}
-
 	return subMatch
 }
