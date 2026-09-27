@@ -55,7 +55,7 @@ type MapMatchResponse struct {
 	Warnings []string `json:"warnings" example:"Warning"`
 }
 
-// IntermediateEdgeResponse Edge which is not matched to any observation but helps to form whole travel path
+// IntermediateEdgeResponse represents an intermediate route traversal between observations.
 // swagger:model
 type IntermediateEdgeResponse struct {
 	// Edge geometry as GeoJSON LineString feature
@@ -88,7 +88,7 @@ type ObservationEdgeResponse struct {
 	ProjectedPoint *geojson.Feature `json:"projected_point" swaggertype:"object"`
 	// Original GPS point as GeoJSON Point feature (useful when is_matched=false)
 	OriginalPoint *geojson.Feature `json:"original_point,omitempty" swaggertype:"object"`
-	// Set of leading edges up to next observation (so these edges is not matched to any observation explicitly). Could be an empty array if observations are very close to each other or if it just last observation
+	// Intermediate route traversals to the next observation. Its final matched-edge traversal is omitted; earlier visits are retained.
 	NextEdges []IntermediateEdgeResponse `json:"next_edges"`
 }
 

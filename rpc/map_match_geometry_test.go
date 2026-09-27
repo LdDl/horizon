@@ -136,6 +136,9 @@ func TestMapMatchBoundaryGeometry(t *testing.T) {
 						t.Fatal("route edge count changed")
 					}
 					for j, next := range r.NextEdges {
+						if i < last && j == len(r.NextEdges)-1 && next.Id == rpcMatch.Observations[i+1].EdgeId {
+							t.Errorf("observation %d repeats the next matched edge in next_edges", i)
+						}
 						if next.Id != original.NextEdges[j].ID || next.Weight != original.NextEdges[j].Weight ||
 							next.Id != h.NextEdges[j].ID || next.Weight != h.NextEdges[j].Weight ||
 							!reflect.DeepEqual(geometryCoordinates(next.Geom), h.NextEdges[j].Geom.Geometry.LineString) {

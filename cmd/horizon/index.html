@@ -406,19 +406,19 @@
                     };
                     const matchedEdges = {
                         type: 'FeatureCollection',
-                        features: data.map(obs => { return {...obs.matched_edge, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
+                        features: data.filter(obs => obs.matched_edge).map(obs => { return {...obs.matched_edge, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const matchedEdgesCuts = {
                         type: 'FeatureCollection',
-                        features: data.map(obs => { return {...obs.matched_edge_cut, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
+                        features: data.filter(obs => obs.matched_edge_cut).map(obs => { return {...obs.matched_edge_cut, id: obs.edge_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const matchedVertices = {
                         type: 'FeatureCollection',
-                        features: data.map(obs => { return {...obs.matched_vertex, id: obs.vertex_id, properties: {obs_idx: obs.obs_idx}} })
+                        features: data.filter(obs => obs.matched_vertex).map(obs => { return {...obs.matched_vertex, id: obs.vertex_id, properties: {obs_idx: obs.obs_idx}} })
                     };
                     const projectedPoints = {
                         type: 'FeatureCollection',
-                        features: data.map(obs => { return {...obs.projected_point, properties: {obs_idx: obs.obs_idx}} })
+                        features: data.filter(obs => obs.projected_point).map(obs => { return {...obs.projected_point, properties: {obs_idx: obs.obs_idx}} })
                     };
 
                     // Create gap lines between sub-matches
@@ -551,6 +551,7 @@
                             "paint": {
                                 "line-color": "#ff0000",
                                 "line-opacity": 0.5,
+                                "line-dasharray": [2, 2],
                                 "line-width": 4
                             }
                         });

@@ -217,13 +217,18 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     <img src="images/maplibre1.png" width="720">
     <img src="images/maplibre2.png" width="720">
 
-    - Blue - observation point (measurement)
-    - Purple - represents matched edge
-    - Yellow - represents projection of the point onto the matched edge
-    - Green - represents picked either source or target vertex of the matched edge
-    - Red - represents cuts of excessed geometries (for first and last matched edges)
-    - Dark Blue - represents intermediate edges (i.e. there are some edges between two matched edges)
-    
+    Map-matching colors:
+
+    - Blue points: input GPS observations (measurements).
+    - Pink solid lines: matched edge sections (`matched_edge`).
+    - Yellow points: projections onto the matched edges (`projected_point`), the actual matched positions.
+    - Green points: selected source or target vertices of the matched edges (`matched_vertex`). A green point can differ from the yellow projection when the projection lies inside an edge.
+    - Red dashed lines: clipped-off sections (`matched_edge_cut`) before the first projection or after the last projection of a sub-match. These sections are outside the matched portion; they can be nearly invisible when a projection coincides with an edge endpoint.
+    - Blue animated dashed lines: intermediate route edges connecting consecutive matched observations (`next_edges`). These belong to the connecting route, unlike the red clipped-off sections.
+    - Olive dashed lines: visual connections across gaps between sub-matches, not reconstructed road routes.
+
+    The backend provides the matched, intermediate and clipped-off sections; the demo displays them directly. Repeated edge IDs are allowed for observations on the same edge or repeated traversals of an edge.
+
 
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
