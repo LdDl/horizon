@@ -643,8 +643,9 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 		from := prevLayer.States[i]
 		for j := range currentLayer.States {
 			to := currentLayer.States[j]
-			rl := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
-			if rl < 0 {
+			// A missing route must not be treated as a zero-length route.
+			rl, exists := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
+			if !exists || rl < 0 {
 				continue
 			}
 			if rl > ROUTE_LENGTH_THRESHOLD {
