@@ -258,38 +258,34 @@ func WKTToS2PointFeature(wkt string) (s2.Point, error) {
 	return s2.PointFromLatLng(s2.LatLngFromDegrees(lat, lon)), nil
 }
 
-// ExtractCutUpTo cuts geometry between very first point and neighbor of the projected point index in the polyline
+// ExtractCutUpTo returns the suffix from the projection and the removed prefix.
+// Polyline must be nonempty. ProjectedIdx is the next vertex index returned by projection, in [1, len(polyline)].
+// All vertices on each side are preserved.
+// Results may be modified or appended to without changing the input or each other.
 func ExtractCutUpTo(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
-	polyCopy := polyline
-	polyCopyCut := polyline
-
-	// Cut segment from the start of the polyline up to projection poit
-	polyCopy = append(s2.Polyline{projected}, polyCopy[projectedIdx:]...)
-
-	// Cut segment from projection point up to the end of the polyline
-	part := polyCopyCut[:projectedIdx-1]
-	if len(part) == 0 {
-		polyCopyCut = s2.Polyline{polyCopyCut[0], projected}
-	} else {
-		polyCopyCut = append(polyCopyCut[:projectedIdx-1], projected)
+	prefixLen := projectedIdx
+	if prefixLen == 1 || polyline[projectedIdx-1] != projected {
+		prefixLen++
 	}
-	return polyCopy, polyCopyCut
+	// A zero-length boundary part still needs two coordinates for a LineString.
+	suffixLen := max(2, len(polyline)-projectedIdx+1)
+	buffer := make(s2.Polyline, prefixLen+suffixLen)
+	// Limit the prefix capacity so append cannot overwrite the suffix.
+	prefix := buffer[:prefixLen:prefixLen]
+	suffix := buffer[prefixLen:]
+	copy(prefix, polyline[:projectedIdx])
+	prefix[prefixLen-1] = projected
+	suffix[0] = projected
+	copy(suffix[1:], polyline[projectedIdx:])
+	if projectedIdx == len(polyline) {
+		suffix[1] = projected
+	}
+	return suffix, prefix
 }
 
-// ExtractCutUpFrom cuts geometry between neighbor of the projected point index in the polyline and last point
+// ExtractCutUpFrom returns the prefix through the projection and the removed suffix.
+// It follows the index and ownership contract of ExtractCutUpTo.
 func ExtractCutUpFrom(polyline s2.Polyline, projected s2.Point, projectedIdx int) (s2.Polyline, s2.Polyline) {
-	polyCopy := polyline
-	polyCopyCut := polyline
-
-	// Cut segment from the projection poit up to the end of the polyline
-	part := polyCopy[:projectedIdx-1]
-	if len(part) == 0 {
-		polyCopy = s2.Polyline{polyCopy[0], projected}
-	} else {
-		polyCopy = append(polyCopy[:projectedIdx-1], projected)
-	}
-
-	// Cut segment from the start of the polyline up to projection poit
-	polyCopyCut = append(s2.Polyline{projected}, polyCopyCut[projectedIdx:]...)
-	return polyCopy, polyCopyCut
+	suffix, prefix := ExtractCutUpTo(polyline, projected, projectedIdx)
+	return prefix, suffix
 }
