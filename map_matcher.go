@@ -157,9 +157,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 	// Array for no candidates found
 	unmatchedObservations := []unmatchedObs{}
 
-	// Maps original index to engineGpsMeasurements index (for matched points)
-	originalToEngineIdx := make(map[int]int)
-
 	for i := 0; i < len(gpsMeasurements); i++ {
 		var closest []spatial.NearestObject
 		var err error
@@ -179,7 +176,6 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 			})
 			continue
 		}
-		originalToEngineIdx[i] = len(engineGpsMeasurements)
 		engineGpsMeasurements = append(engineGpsMeasurements, gpsMeasurements[i])
 		closestSets = append(closestSets, closest)
 	}
