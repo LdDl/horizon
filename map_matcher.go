@@ -278,36 +278,15 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 		for m := range prevStates {
 			for n := range currentStates {
 				key := [2]int{prevStates[m].RoadPositionID, currentStates[n].RoadPositionID}
-				if prevStates[m].RoutingGraphVertex == currentStates[n].RoutingGraphVertex {
-					if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID {
-						// Trivial route on the same edge (same routing vertex, same edge) - never a break into submatches
-						ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
-						chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
-						anyValidRoute = true
-					} else {
-						// We should jump to source vertex of current state, since edges are not the same
-						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
-						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, prevStates[m], currentStates[n])
-						chRoutes[key] = finalPath
-						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
-						// Only a non-empty CH path counts for break-point detection
-						if len(finalPath) > 0 {
-							anyValidRoute = true
-						}
-					}
-					continue
-				}
-				// Same edge but different RoutingGraphVertex: use projected distance only if moving forward
-				// (beforeProjection increases => fraction increases => forward movement along the edge).
-				// If moving backward, the edge is likely a reverse-direction candidate => fall through to CH routing.
+				// Direct movement follows the directed polyline, including stops and bends.
 				if prevStates[m].GraphEdge.ID == currentStates[n].GraphEdge.ID && prevStates[m].beforeProjection <= currentStates[n].beforeProjection {
-					ans := prevStates[m].Projected.DistanceTo(currentStates[n].Projected)
+					routeDistMeters := currentStates[n].beforeProjection - prevStates[m].beforeProjection
 					chRoutes[key] = []int64{prevStates[m].GraphEdge.Source, prevStates[m].GraphEdge.Target}
-					currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], ans)
+					currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 					anyValidRoute = true
 					continue
 				}
+				// Backward movement on the same edge requires a route from its target to its source.
 				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
 				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, prevStates[m], currentStates[n])
@@ -679,7 +658,7 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute
 }
 
 // resolveRoute builds the response path and computes route distance in meters.
-// For distinct edges, rawPath connects from.GraphEdge.Target to to.GraphEdge.Source.
+// rawPath connects from.GraphEdge.Target to to.GraphEdge.Source, including same-edge returns.
 // rawPath comes from cache and must not be mutated, so a copy is made.
 // An unreachable route returns a negative length and a nil path.
 func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, from, to *RoadPosition) (float64, []int64) {
@@ -689,10 +668,6 @@ func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, from, 
 	finalPath := make([]int64, len(rawPath), len(rawPath)+1)
 	copy(finalPath, rawPath)
 	finalPath = append(finalPath, to.GraphEdge.Target)
-	if from.GraphEdge.ID == to.GraphEdge.ID {
-		// Same-edge cycles retain the full routed path distance.
-		return matcher.engine.routeDistanceMeters(finalPath), finalPath
-	}
 	// Sum nonnegative traversed portions instead of subtracting a long unused suffix.
 	distance := from.afterProjection + matcher.engine.routeDistanceMeters(rawPath) + to.beforeProjection
 	return distance, finalPath
