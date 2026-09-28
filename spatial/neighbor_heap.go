@@ -7,9 +7,16 @@ package spatial
 // for top-N selection
 type nearestHeap []NearestObject
 
-func (h nearestHeap) Less(i, j int) bool { return h[i].DistanceTo < h[j].DistanceTo }
-func (h nearestHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-func (h nearestHeap) Len() int           { return len(h) }
+// For finite distances, use the edge ID only when distances are exactly equal.
+func (h nearestHeap) Less(i, j int) bool {
+	if h[i].DistanceTo == h[j].DistanceTo {
+		return h[i].EdgeID < h[j].EdgeID
+	}
+	return h[i].DistanceTo < h[j].DistanceTo
+}
+
+func (h nearestHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h nearestHeap) Len() int      { return len(h) }
 
 func (h *nearestHeap) Push(x interface{}) {
 	*h = append(*h, x.(NearestObject))
