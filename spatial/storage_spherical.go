@@ -2,6 +2,8 @@ package spatial
 
 import (
 	"container/heap"
+	"math"
+	"sort"
 
 	"github.com/golang/geo/s1"
 	"github.com/golang/geo/s2"
@@ -183,210 +185,146 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 	return ans, nil
 }
 
-// maxSearchRings is the maximum number of rings to expand during FindNearest
-const maxSearchRings = 50
+// maxNearestCellVisits bounds index traversal work before a complete edge scan.
+const maxNearestCellVisits = 256
 
-// FindNearest implements Storage interface using iterative cell expansion.
-// Expands search from center cell outward until n edges are found.
-// Uses incremental frontier expansion to avoid recalculating BFS on each ring.
+// FindNearest returns up to n distinct edges ordered by distance and then edge ID.
+// A radius is complete only after all indexed cells in its covering have been scanned.
 func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, error) {
-	if n <= 0 {
-		return nil, nil
+	return storage.findNearest(pt, n, maxNearestCellVisits), nil
+}
+
+func (storage *S2Storage) findNearest(pt s2.Point, n, cellBudget int) []NearestObject {
+	if n <= 0 || len(storage.edges) == 0 {
+		return nil
+	}
+	if n > len(storage.edges) {
+		n = len(storage.edges)
+	}
+	search := sphericalNearestSearch{
+		storage: storage,
+		point:   pt,
+		limit:   n,
+		seen:    make(map[uint64]bool),
+		nearest: make([]NearestObject, 0, n),
 	}
 
-	centerCell := s2.CellFromPoint(pt).ID().Parent(storage.storageLevel)
-
-	// Track visited cells and found edges
-	visited := make(map[s2.CellID]bool)
-	found := make(map[uint64]float64)
-
-	// Bounded top-n tracker: keeps up to n smallest distances.
-	// topDists[topMaxIdx] is the n-th smallest (the largest among top-n).
-	// No interface boxing, which means O(n) insert, O(1) peek. n is small (typically 5-10).
-	topDists := make([]float64, 0, n)
-	topMaxIdx := 0
-
-	// Frontier-based expansion: start with center cell
-	frontier := []s2.CellID{centerCell}
-	visited[centerCell] = true
-
-	cellSize := storage.cellSizeMeters()
-
-	for ring := 0; ring <= maxSearchRings && len(frontier) > 0; ring++ {
-		// Process all cells in current frontier (ring)
-		for _, cellID := range frontier {
-			item := storage.BTree.Get(indexedItem{CellID: cellID})
-			if item == nil {
-				continue
+	// The initial width and growth factor affect work, not the stopping condition.
+	radius := s2.MinWidthMetric.Value(storage.storageLevel) * EarthRadius
+	if n < len(storage.edges) && cellBudget > 0 {
+		center := s2.CellFromPoint(pt).ID().Parent(storage.storageLevel)
+		if item := storage.BTree.Get(indexedItem{CellID: center}); item != nil {
+			cellBudget--
+			for _, id := range item.(indexedItem).edgesInCell {
+				search.add(id)
 			}
-
-			for _, edgeID := range item.(indexedItem).edgesInCell {
-				if _, exists := found[edgeID]; exists {
-					continue
-				}
-
-				polyline := storage.edges[edgeID]
-				if polyline == nil || polyline.Polyline == nil || polyline.Polyline.NumEdges() < 1 {
-					continue
-				}
-
-				// Bounding-cap prune: when we have n candidates, skip polylines
-				// whose spherical cap lower-bounds the true distance above topMax.
-				// Only apply when the precomputed bound is available.
-				if len(topDists) == n && polyline.BoundRadius > 0 {
-					chord := s2.ChordAngleBetweenPoints(pt, polyline.BoundCenter)
-					lbMeters := (chord.Angle() - polyline.BoundRadius).Radians() * EarthRadius
-					if lbMeters > topDists[topMaxIdx] {
-						continue
-					}
-				}
-
-				// Calculate minimum distance to edge
-				dist := sphericalPolylineDistance(pt, polyline.Polyline)
-				found[edgeID] = dist
-
-				// Maintain bounded top-n tracker
-				if len(topDists) < n {
-					topDists = append(topDists, dist)
-					if dist > topDists[topMaxIdx] {
-						topMaxIdx = len(topDists) - 1
-					}
-				} else if dist < topDists[topMaxIdx] {
-					topDists[topMaxIdx] = dist
-					// Rescan for new max (n is small, typically 5-10)
-					for j := range topDists {
-						if topDists[j] > topDists[topMaxIdx] {
-							topMaxIdx = j
-						}
-					}
-				}
+			// These candidates only propose a radius; the complete covering is still required.
+			if len(search.nearest) == n {
+				radius = search.nearest[0].DistanceTo
 			}
 		}
-
-		// Early exit: stop when the n-th closest edge is closer than the ring boundary.
-		// topDists[topMaxIdx] is the largest among top-n = the n-th smallest distance.
-		if len(topDists) >= n && ring > 0 {
-			ringRadius := cellSize * float64(ring)
-			if topDists[topMaxIdx] < ringRadius {
+	}
+	coverer := s2.RegionCoverer{MaxLevel: storage.storageLevel, MaxCells: 8}
+	for n < len(storage.edges) && cellBudget > 0 && radius < math.Pi*EarthRadius {
+		cap := s2.CapFromCenterAngle(pt, s1.Angle(radius/EarthRadius))
+		// Coarse covering cells are B-tree ranges; never enumerate every fine cell in a large cap.
+		for _, cell := range coverer.FastCovering(cap) {
+			storage.BTree.AscendRange(indexedItem{CellID: cell.RangeMin()}, indexedItem{CellID: cell.RangeMax() + 1}, func(item btree.Item) bool {
+				if cellBudget == 0 {
+					return false
+				}
+				cellBudget--
+				indexed := item.(indexedItem)
+				// The coarse range may contain fine cells disjoint from the query cap.
+				if !cap.IntersectsCell(s2.CellFromCellID(indexed.CellID)) {
+					return true
+				}
+				for _, id := range indexed.edgesInCell {
+					search.add(id)
+				}
+				return true
+			})
+			if cellBudget == 0 {
 				break
 			}
 		}
-
-		// Expand frontier to next ring
-		// Collect all unvisited neighbors of current frontier
-		nextFrontier := make([]s2.CellID, 0, len(frontier)*4)
-		for _, cellID := range frontier {
-			// Edge neighbors (4 cells sharing an edge)
-			for _, neighbor := range cellID.EdgeNeighbors() {
-				if !visited[neighbor] {
-					visited[neighbor] = true
-					nextFrontier = append(nextFrontier, neighbor)
-				}
-			}
-			// Vertex neighbors (cells sharing only a vertex - corners)
-			for _, neighbor := range cellID.VertexNeighbors(storage.storageLevel) {
-				if !visited[neighbor] {
-					visited[neighbor] = true
-					nextFrontier = append(nextFrontier, neighbor)
-				}
-			}
+		// An exhausted budget may have interrupted the covering; it cannot certify a radius.
+		if cellBudget == 0 {
+			break
 		}
-		frontier = nextFrontier
-	}
-
-	// Build result from found map using min-heap for top-N selection
-	h := &nearestHeap{}
-	heap.Init(h)
-	for k, v := range found {
-		heap.Push(h, NearestObject{k, v})
-	}
-
-	l := h.Len()
-	if l < n {
-		n = l
-	}
-
-	ans := make([]NearestObject, n)
-	for i := 0; i < n; i++ {
-		ans[i] = heap.Pop(h).(NearestObject)
-	}
-	return ans, nil
-}
-
-// getCellsAtRing returns all cells at a given ring distance from center
-// ring 0 = just the center cell
-// ring 1 = 8 neighbors (edge + vertex neighbors)
-// ring 2 = outer ring of those, etc.
-func (storage *S2Storage) getCellsAtRing(center s2.CellID, ring int) []s2.CellID {
-	if ring == 0 {
-		return []s2.CellID{center}
-	}
-
-	// For ring N, we get all neighbors at distance N
-	// Using a simple approach: get all cells within ring, subtract cells within ring-1
-	cellsWithin := storage.getCellsWithinRing(center, ring)
-	if ring == 1 {
-		// Ring 1 is just the immediate neighbors
-		return cellsWithin
-	}
-
-	cellsInner := storage.getCellsWithinRing(center, ring-1)
-	innerSet := make(map[s2.CellID]bool)
-	for _, c := range cellsInner {
-		innerSet[c] = true
-	}
-
-	var result []s2.CellID
-	for _, c := range cellsWithin {
-		if !innerSet[c] {
-			result = append(result, c)
+		if len(search.seen) == len(storage.edges) {
+			return search.result()
+		}
+		if len(search.nearest) == n && search.nearest[0].DistanceTo <= radius {
+			return search.result()
+		}
+		radius *= 2
+		if len(search.nearest) == n && search.nearest[0].DistanceTo > radius {
+			radius = search.nearest[0].DistanceTo
 		}
 	}
-	return result
+
+	// Sparse data, large k and exhausted budgets still require a complete answer.
+	for id := range storage.edges {
+		search.add(id)
+	}
+	return search.result()
 }
 
-// getCellsWithinRing returns all cells within ring distance (inclusive)
-func (storage *S2Storage) getCellsWithinRing(center s2.CellID, ring int) []s2.CellID {
-	if ring == 0 {
-		return []s2.CellID{center}
+type sphericalNearestSearch struct {
+	storage *S2Storage
+	point   s2.Point
+	limit   int
+	seen    map[uint64]bool
+	nearest nearestHeap
+}
+
+func (search *sphericalNearestSearch) add(id uint64) {
+	if search.seen[id] {
+		return
 	}
-
-	visited := make(map[s2.CellID]bool)
-	visited[center] = true
-	current := []s2.CellID{center}
-
-	for r := 0; r < ring; r++ {
-		var next []s2.CellID
-		for _, c := range current {
-			// Get all 8 neighbors (4 edge + 4 vertex)
-			for _, neighbor := range c.EdgeNeighbors() {
-				if !visited[neighbor] {
-					visited[neighbor] = true
-					next = append(next, neighbor)
-				}
+	search.seen[id] = true
+	edge := search.storage.edges[id]
+	if edge == nil || edge.Polyline == nil || edge.Polyline.NumEdges() < 1 {
+		return
+	}
+	distance := sphericalPolylineDistance(search.point, edge.Polyline)
+	candidate := NearestObject{EdgeID: id, DistanceTo: distance}
+	if len(search.nearest) < search.limit {
+		search.nearest = append(search.nearest, candidate)
+		// Keep the worst selected candidate at the root of a bounded max-heap.
+		for child := len(search.nearest) - 1; child > 0; {
+			parent := (child - 1) / 2
+			if !search.nearest.Less(parent, child) {
+				break
 			}
-			// Vertex neighbors for corners
-			for _, neighbor := range c.VertexNeighbors(storage.storageLevel) {
-				if !visited[neighbor] {
-					visited[neighbor] = true
-					next = append(next, neighbor)
-				}
-			}
+			search.nearest.Swap(parent, child)
+			child = parent
 		}
-		current = next
+		return
 	}
-
-	result := make([]s2.CellID, 0, len(visited))
-	for c := range visited {
-		result = append(result, c)
+	worst := search.nearest[0]
+	if distance > worst.DistanceTo || distance == worst.DistanceTo && id >= worst.EdgeID {
+		return
 	}
-	return result
+	search.nearest[0] = candidate
+	for parent := 0; ; {
+		child := 2*parent + 1
+		if child >= len(search.nearest) {
+			break
+		}
+		if child+1 < len(search.nearest) && search.nearest.Less(child, child+1) {
+			child++
+		}
+		if !search.nearest.Less(parent, child) {
+			break
+		}
+		search.nearest.Swap(parent, child)
+		parent = child
+	}
 }
 
-// cellSizeMeters returns approximate cell size in meters at the storage level
-func (storage *S2Storage) cellSizeMeters() float64 {
-	// S2 cell sizes (approximate, at equator):
-	// Level 0: ~9000 km, Level 10: ~10 km, Level 15: ~300 m, Level 20: ~10 m, Level 30: ~1 cm
-	// Formula: size ≈ 9000km / 2^level
-	return 9000000.0 / float64(uint64(1)<<uint(storage.storageLevel))
+func (search *sphericalNearestSearch) result() []NearestObject {
+	sort.Sort(search.nearest)
+	return search.nearest
 }
