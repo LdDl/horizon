@@ -2,7 +2,6 @@ package spatial
 
 import (
 	"container/heap"
-	"math"
 	"sort"
 
 	"github.com/golang/geo/s1"
@@ -185,11 +184,11 @@ func (storage *S2Storage) NearestNeighborsInRadius(pt s2.Point, radius float64, 
 	return ans, nil
 }
 
-// maxNearestCellVisits bounds index traversal work before a complete edge scan.
+// maxNearestCellVisits bounds intersecting leaf visits before a complete edge scan.
 const maxNearestCellVisits = 256
 
 // FindNearest returns up to n distinct edges ordered by distance and then edge ID.
-// A radius is complete only after all indexed cells in its covering have been scanned.
+// Occupied cells are visited until every remaining cell is disjoint from the search cap.
 func (storage *S2Storage) FindNearest(pt s2.Point, n int) ([]NearestObject, error) {
 	return storage.findNearest(pt, n, maxNearestCellVisits), nil
 }
@@ -202,81 +201,83 @@ func (storage *S2Storage) findNearest(pt s2.Point, n, cellBudget int) []NearestO
 		n = len(storage.edges)
 	}
 	search := sphericalNearestSearch{
-		storage: storage,
-		point:   pt,
-		limit:   n,
-		seen:    make(map[uint64]bool),
-		nearest: make([]NearestObject, 0, n),
+		storage:   storage,
+		point:     pt,
+		limit:     n,
+		seen:      make(map[uint64]bool),
+		nearest:   make([]NearestObject, 0, n),
+		remaining: cellBudget,
 	}
 
-	// The initial width and growth factor affect work, not the stopping condition.
-	radius := s2.MinWidthMetric.Value(storage.storageLevel) * EarthRadius
+	search.cap = s2.FullCap()
 	if n < len(storage.edges) && cellBudget > 0 {
 		center := s2.CellFromPoint(pt).ID().Parent(storage.storageLevel)
 		if item := storage.BTree.Get(indexedItem{CellID: center}); item != nil {
-			cellBudget--
+			search.remaining--
 			for _, id := range item.(indexedItem).edgesInCell {
 				search.add(id)
 			}
-			// These candidates only propose a radius; the complete covering is still required.
-			if len(search.nearest) == n {
-				radius = search.nearest[0].DistanceTo
-			}
 		}
-	}
-	coverer := s2.RegionCoverer{MaxLevel: storage.storageLevel, MaxCells: 8}
-	for n < len(storage.edges) && cellBudget > 0 && radius < math.Pi*EarthRadius {
-		cap := s2.CapFromCenterAngle(pt, s1.Angle(radius/EarthRadius))
-		// Coarse covering cells are B-tree ranges; never enumerate every fine cell in a large cap.
-		for _, cell := range coverer.FastCovering(cap) {
-			storage.BTree.AscendRange(indexedItem{CellID: cell.RangeMin()}, indexedItem{CellID: cell.RangeMax() + 1}, func(item btree.Item) bool {
-				if cellBudget == 0 {
-					return false
-				}
-				cellBudget--
-				indexed := item.(indexedItem)
-				// The coarse range may contain fine cells disjoint from the query cap.
-				if !cap.IntersectsCell(s2.CellFromCellID(indexed.CellID)) {
-					return true
-				}
-				for _, id := range indexed.edgesInCell {
-					search.add(id)
-				}
-				return true
+		// Any k seeds give an upper bound; the hierarchy still certifies the answer.
+		if len(search.nearest) < n {
+			storage.BTree.AscendGreaterOrEqual(indexedItem{CellID: center.Next()}, func(item btree.Item) bool {
+				search.visit(item.(indexedItem))
+				return false
 			})
-			if cellBudget == 0 {
-				break
+		}
+		var buffer [64]nearestCell
+		queue := nearestCellQueue(buffer[:0])
+		roots := search.cap.CellUnionBound()
+		for i, root := range roots {
+			if root.Level() > storage.storageLevel {
+				root = root.Parent(storage.storageLevel)
+			}
+			duplicate := false
+			for j := 0; j < i; j++ {
+				if roots[j] == root {
+					duplicate = true
+					break
+				}
+			}
+			roots[i] = root
+			if !duplicate {
+				search.enqueue(&queue, root)
 			}
 		}
-		// An exhausted budget may have interrupted the covering; it cannot certify a radius.
-		if cellBudget == 0 {
-			break
+		for len(queue) > 0 && !search.truncated {
+			item := queue.pop()
+			cell := s2.CellFromCellID(item.id)
+			// Queue distances only schedule work. Only geometric disjointness prunes it.
+			if !search.cap.IntersectsCell(cell) {
+				continue
+			}
+			for _, child := range item.id.Children() {
+				search.enqueue(&queue, child)
+			}
 		}
-		if len(search.seen) == len(storage.edges) {
+		if !search.truncated {
 			return search.result()
-		}
-		if len(search.nearest) == n && search.nearest[0].DistanceTo <= radius {
-			return search.result()
-		}
-		radius *= 2
-		if len(search.nearest) == n && search.nearest[0].DistanceTo > radius {
-			radius = search.nearest[0].DistanceTo
 		}
 	}
 
-	// Sparse data, large k and exhausted budgets still require a complete answer.
-	for id := range storage.edges {
-		search.add(id)
+	// Each remaining edge occurs once in this scan; growing seen here is unnecessary.
+	for id, edge := range storage.edges {
+		if !search.seen[id] {
+			search.consider(id, edge)
+		}
 	}
 	return search.result()
 }
 
 type sphericalNearestSearch struct {
-	storage *S2Storage
-	point   s2.Point
-	limit   int
-	seen    map[uint64]bool
-	nearest nearestHeap
+	storage   *S2Storage
+	point     s2.Point
+	limit     int
+	seen      map[uint64]bool
+	nearest   nearestHeap
+	cap       s2.Cap
+	remaining int
+	truncated bool
 }
 
 func (search *sphericalNearestSearch) add(id uint64) {
@@ -284,7 +285,10 @@ func (search *sphericalNearestSearch) add(id uint64) {
 		return
 	}
 	search.seen[id] = true
-	edge := search.storage.edges[id]
+	search.consider(id, search.storage.edges[id])
+}
+
+func (search *sphericalNearestSearch) consider(id uint64, edge *Edge) {
 	if edge == nil || edge.Polyline == nil || edge.Polyline.NumEdges() < 1 {
 		return
 	}
@@ -301,6 +305,7 @@ func (search *sphericalNearestSearch) add(id uint64) {
 			search.nearest.Swap(parent, child)
 			child = parent
 		}
+		search.updateCap()
 		return
 	}
 	worst := search.nearest[0]
@@ -321,6 +326,13 @@ func (search *sphericalNearestSearch) add(id uint64) {
 		}
 		search.nearest.Swap(parent, child)
 		parent = child
+	}
+	search.updateCap()
+}
+
+func (search *sphericalNearestSearch) updateCap() {
+	if len(search.nearest) == search.limit {
+		search.cap = s2.CapFromCenterAngle(search.point, s1.Angle(search.nearest[0].DistanceTo/EarthRadius))
 	}
 }
 

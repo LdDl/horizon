@@ -227,9 +227,9 @@ func (engine *MapEngine) extractDataFromCSVs(edgesFname, verticesFname, shortcut
 		}
 		edge := spatial.Edge{
 			ID:           edgeID,
-			Source:        sourceVertex,
-			Target:        targetVertex,
-			Weight:        weight,
+			Source:       sourceVertex,
+			Target:       targetVertex,
+			Weight:       weight,
 			LengthMeters: lengthMeters,
 			Polyline:     s2Polyline,
 		}
