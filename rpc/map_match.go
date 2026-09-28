@@ -7,7 +7,6 @@ import (
 
 	"github.com/LdDl/horizon"
 	"github.com/LdDl/horizon/rpc/protos_pb"
-	"github.com/LdDl/horizon/spatial"
 	"github.com/golang/geo/s2"
 )
 
@@ -56,6 +55,7 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 	response.SubMatches = make([]*protos_pb.SubMatch, len(result.SubMatches))
 	for s := range result.SubMatches {
 		subMatch := result.SubMatches[s]
+		geometries := subMatch.ResponseGeometries()
 		subMatchResp := &protos_pb.SubMatch{
 			Observations: make([]*protos_pb.ObservationEdge, len(subMatch.Observations)),
 			Probability:  subMatch.Probability,
@@ -83,14 +83,8 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 			if observationResult.MatchedEdge.Polyline == nil {
 				return nil, fmt.Errorf("matched edge has nil polyline nil for observation %d", observationResult.Observation.ID())
 			}
-			matchedEdgePolyline := *observationResult.MatchedEdge.Polyline
-
-			var matchedEdgeCut s2.Polyline
-			if i == 0 {
-				matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpTo(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
-			} else if i == len(subMatch.Observations)-1 {
-				matchedEdgePolyline, matchedEdgeCut = spatial.ExtractCutUpFrom(matchedEdgePolyline, observationResult.ProjectedPoint, observationResult.ProjectionPointIdx)
-			}
+			matchedEdgePolyline, matchedEdgeCut := geometries[i].Matched, geometries[i].Cut
+			nextEdges := geometries[i].NextEdges
 
 			if observationResult.MatchedVertex.Point == nil {
 				return nil, fmt.Errorf("matched vertex has nil point for observation %d", observationResult.Observation.ID())
@@ -121,7 +115,7 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 					Lon: projectedPoint.Lng.Degrees(),
 					Lat: projectedPoint.Lat.Degrees(),
 				},
-				NextEdges: make([]*protos_pb.IntermediateEdge, len(observationResult.NextEdges)),
+				NextEdges: make([]*protos_pb.IntermediateEdge, len(nextEdges)),
 			}
 			if len(matchedEdgeCut) > 0 {
 				cutLine := make([]*protos_pb.GeoPoint, len(matchedEdgeCut))
@@ -134,10 +128,10 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 				}
 				subMatchResp.Observations[i].MatchedEdgeCut = cutLine
 			}
-			for j := range observationResult.NextEdges {
-				nextLine := make([]*protos_pb.GeoPoint, len(observationResult.NextEdges[j].Geom))
-				for k := range observationResult.NextEdges[j].Geom {
-					latLng := s2.LatLngFromPoint(observationResult.NextEdges[j].Geom[k])
+			for j := range nextEdges {
+				nextLine := make([]*protos_pb.GeoPoint, len(nextEdges[j].Geom))
+				for k := range nextEdges[j].Geom {
+					latLng := s2.LatLngFromPoint(nextEdges[j].Geom[k])
 					nextLine[k] = &protos_pb.GeoPoint{
 						Lon: latLng.Lng.Degrees(),
 						Lat: latLng.Lat.Degrees(),
@@ -145,8 +139,8 @@ func (ts *Microservice) RunMapMatch(ctx context.Context, in *protos_pb.MapMatchR
 				}
 				subMatchResp.Observations[i].NextEdges[j] = &protos_pb.IntermediateEdge{
 					Geom:   nextLine,
-					Weight: observationResult.NextEdges[j].Weight,
-					Id:     observationResult.NextEdges[j].ID,
+					Weight: nextEdges[j].Weight,
+					Id:     nextEdges[j].ID,
 				}
 			}
 		}

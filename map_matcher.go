@@ -643,8 +643,9 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 		from := prevLayer.States[i]
 		for j := range currentLayer.States {
 			to := currentLayer.States[j]
-			rl := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
-			if rl < 0 {
+			// A missing route must not be treated as a zero-length route.
+			rl, exists := routeLengths[[2]int{from.RoadPositionID, to.RoadPositionID}]
+			if !exists || rl < 0 {
 				continue
 			}
 			if rl > ROUTE_LENGTH_THRESHOLD {
@@ -686,9 +687,10 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute
 
 // resolveRoute builds final path from cached CH result and computes route distance in meters.
 // rawPath comes from cache and must not be mutated, so a copy is made.
+// An unreachable route returns a negative length and a nil path.
 func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, targetVertex int64) (float64, []int64) {
 	if rawCost < 0 {
-		return math.MaxFloat64, nil
+		return -1, nil
 	}
 	finalPath := make([]int64, len(rawPath), len(rawPath)+1)
 	copy(finalPath, rawPath)

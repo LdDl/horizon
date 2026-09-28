@@ -1,4 +1,4 @@
-# Horizon v0.11.3 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
+# Horizon v0.12.0 [![GoDoc](https://godoc.org/github.com/LdDl/horizon?status.svg)](https://godoc.org/github.com/LdDl/horizon) [![Build Status](https://travis-ci.com/LdDl/horizon.svg?branch=master)](https://travis-ci.com/LdDl/horizon) [![Sourcegraph](https://sourcegraph.com/github.com/LdDl/horizon/-/badge.svg)](https://sourcegraph.com/github.com/LdDl/horizon?badge) [![Go Report Card](https://goreportcard.com/badge/github.com/LdDl/horizon)](https://goreportcard.com/report/github.com/LdDl/horizon) [![GitHub tag](https://img.shields.io/github/tag/LdDl/horizon.svg)](https://github.com/LdDl/horizon/releases)
 
 # Work in progress
 Horizon is project aimed to do map matching (snap GPS data to map) and routing (find shortest path between two points)
@@ -25,12 +25,12 @@ Demonstration:
 Via _go get_:
 ```shell
 go get github.com/LdDl/horizon
-go install github.com/LdDl/horizon/cmd/horizon@v0.11.3
+go install github.com/LdDl/horizon/cmd/horizon@v0.12.0
 ```
 
 Via downloading prebuilt binary and making updates in yours PATH environment varibale (both Linux and Windows):
-* Windows - https://github.com/LdDl/horizon/releases/download/v0.11.3/windows-horizon.zip
-* Linux - https://github.com/LdDl/horizon/releases/download/v0.11.3/linux-amd64-horizon.tar.gz
+* Windows - https://github.com/LdDl/horizon/releases/download/v0.12.0/windows-horizon.zip
+* Linux - https://github.com/LdDl/horizon/releases/download/v0.12.0/linux-amd64-horizon.tar.gz
 
 Check if **horizon** binary was installed properly:
 ```shell
@@ -217,13 +217,18 @@ Instruction has been made for Linux mainly. For Windows or OSX the way may vary.
     <img src="images/maplibre1.png" width="720">
     <img src="images/maplibre2.png" width="720">
 
-    - Blue - observation point (measurement)
-    - Purple - represents matched edge
-    - Yellow - represents projection of the point onto the matched edge
-    - Green - represents picked either source or target vertex of the matched edge
-    - Red - represents cuts of excessed geometries (for first and last matched edges)
-    - Dark Blue - represents intermediate edges (i.e. there are some edges between two matched edges)
-    
+    Map-matching colors:
+
+    - Blue points: input GPS observations (measurements).
+    - Pink solid lines: matched edge sections (`matched_edge`).
+    - Yellow points: projections onto the matched edges (`projected_point`), the actual matched positions.
+    - Green points: selected source or target vertices of the matched edges (`matched_vertex`). A green point can differ from the yellow projection when the projection lies inside an edge.
+    - Red dashed lines: clipped-off sections (`matched_edge_cut`) before the first projection or after the last projection of a sub-match. These sections are outside the matched portion; they can be nearly invisible when a projection coincides with an edge endpoint.
+    - Blue animated dashed lines: intermediate route edges connecting consecutive matched observations (`next_edges`). These belong to the connecting route, unlike the red clipped-off sections.
+    - Olive dashed lines: visual connections across gaps between sub-matches, not reconstructed road routes.
+
+    The backend provides the matched, intermediate and clipped-off sections; the demo displays them directly. Repeated edge IDs are allowed for observations on the same edge or repeated traversals of an edge.
+
 
 8. There is also [Swagger](https://en.wikipedia.org/wiki/Swagger_(software)) documentation for inialized REST API.
 
