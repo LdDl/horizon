@@ -47,8 +47,27 @@ func TestMapMatcherSRID_4326(t *testing.T) {
 	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges.Get(101, 102)
 	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges.Get(102, 105)
 
-	statesRadiusMeters := 7.0
 	maxStates := 5
+	// Every observation is more than 18 m from the nearest road in this fixture.
+	outside, err := matcher.Run(gpsMeasurements, 7, maxStates)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(outside.SubMatches) != len(gpsMeasurements) {
+		t.Fatalf("Expected %d unmatched observations, got %d sub-matches", len(gpsMeasurements), len(outside.SubMatches))
+	}
+	for i, subMatch := range outside.SubMatches {
+		if len(subMatch.Observations) != 1 || subMatch.Probability != 0 {
+			t.Fatalf("Unexpected unmatched sub-match %d: %+v", i, subMatch)
+		}
+		observation := subMatch.Observations[0]
+		if observation.IsMatched || observation.Code != CODE_NO_CANDIDATES || observation.Observation != gpsMeasurements[i] {
+			t.Fatalf("Unexpected unmatched observation %d: %+v", i, observation)
+		}
+	}
+
+	// The expected matched edges are 23-40 m from the observations.
+	statesRadiusMeters := 50.0
 	result, err := matcher.Run(gpsMeasurements, statesRadiusMeters, maxStates)
 	if err != nil {
 		t.Error(err)
@@ -111,7 +130,8 @@ func BenchmarkMapMatcherSRID_4326(b *testing.B) {
 		b.Error(err)
 	}
 
-	statesRadiusMeters := 7.0
+	// Include the fixture's matched edges so the benchmark still evaluates a complete path.
+	statesRadiusMeters := 50.0
 	maxStates := 5
 
 	b.Log("BenchmarkMapMatcherSRID_4326 is starting...")

@@ -47,8 +47,9 @@ func TestS2StorageSearchInRadius(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(found2) != 1 {
-		t.Errorf("Should be 1 element found, but got %d", len(found2))
+	// Both polylines are more than 723 m away, outside the 690 m query radius.
+	if len(found2) != 0 {
+		t.Errorf("Should be no elements found, but got %d", len(found2))
 	}
 
 	found3, err := storage.SearchInRadiusLonLat(37.40020751953125, 55.787577714316704, 7900)
