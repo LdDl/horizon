@@ -287,7 +287,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 						anyValidRoute = true
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
-						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
+						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
 						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
 						chRoutes[key] = finalPath
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
@@ -308,7 +308,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					anyValidRoute = true
 					continue
 				}
-				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexStrongComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
+				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
 				// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
 				// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
@@ -663,14 +663,12 @@ func (matcher *MapMatcher) computeTransitionLogProbabilities(prevLayer, currentL
 	return nil
 }
 
-// getCachedPath is a helper function to get or compute shortest path with caching
-// It uses SCC (Strongly Connected Components) to quickly reject impossible routes
-func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute, vertexSCC map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
-	// SCC check: if vertices are in different SCCs, no path exists
-	fromSCC, fromOK := vertexSCC[fromVertex]
-	toSCC, toOK := vertexSCC[toVertex]
-	if fromOK && toOK && fromSCC != toSCC {
-		// Different SCCs - no path possible, return immediately
+// getCachedPath returns a cached route or queries CH for directed reachability.
+// Only distinct weak components prove that no route exists without querying CH.
+func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute, weakComponents map[int64]int64, fromVertex, toVertex int64) (float64, []int64) {
+	fromComponent, fromOK := weakComponents[fromVertex]
+	toComponent, toOK := weakComponents[toVertex]
+	if fromOK && toOK && fromComponent != toComponent {
 		return -1, nil
 	}
 
