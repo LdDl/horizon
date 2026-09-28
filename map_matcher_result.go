@@ -95,7 +95,8 @@ func (matcher *MapMatcher) prepareSubMatch(vpath viterbi.ViterbiPath, gpsMeasure
 			ProjectedPoint:     currentState.Projected.Point,
 			ProjectionPointIdx: currentState.next,
 		}
-		if previousState.GraphEdge.ID == currentState.GraphEdge.ID {
+		// Only direct forward movement has no intermediate return route.
+		if previousState.GraphEdge.ID == currentState.GraphEdge.ID && previousState.beforeProjection <= currentState.beforeProjection {
 			continue
 		}
 		path := chRoutes[[2]int{previousState.RoadPositionID, currentState.RoadPositionID}]
