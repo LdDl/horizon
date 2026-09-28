@@ -42,7 +42,14 @@ func TestResolveRoutePreservesUnreachability(t *testing.T) {
 			copy(backing, tc.path)
 			before := append([]int64(nil), backing...)
 			raw := backing[:len(tc.path)]
-			length, path := matcher.resolveRoute(tc.cost, raw, tc.target)
+			from := &RoadPosition{GraphEdge: &spatial.Edge{ID: -1}}
+			to := &RoadPosition{GraphEdge: &spatial.Edge{ID: tc.target, Target: tc.target}}
+			if len(tc.path) > 0 {
+				from.GraphEdge.Target = tc.path[0]
+				to.GraphEdge.Source = tc.path[len(tc.path)-1]
+				to.beforeProjection = edges.Get(tc.path[len(tc.path)-1], tc.target).LengthMeters
+			}
+			length, path := matcher.resolveRoute(tc.cost, raw, from, to)
 			if length != tc.wantLength || !reflect.DeepEqual(path, tc.wantPath) {
 				t.Fatalf("resolved route = (%g, %v), want (%g, %v)", length, path, tc.wantLength, tc.wantPath)
 			}
@@ -100,16 +107,17 @@ func TestUnreachableRouteCannotWinViterbi(t *testing.T) {
 			}
 			from := NewRoadPositionFromLonLat(0, 0, 1, &spatial.Edge{ID: 9}, 0, 0, 0)
 			valid := NewRoadPositionFromLonLat(1, 0, 1, edges.Get(0, 1), tc.length, 0, 0)
-			unreachable := NewRoadPositionFromLonLat(2, 2, 3, &spatial.Edge{ID: 20}, 0, 0, 0)
+			unreachable := NewRoadPositionFromLonLat(2, 2, 3, &spatial.Edge{ID: 20, Target: 3}, 0, 0, 0)
+			valid.beforeProjection = tc.length
 			layers := []*CandidateLayer{
 				NewCandidateLayer(observations[0], RoadPositions{from}),
 				NewCandidateLayer(observations[1], RoadPositions{valid, unreachable}),
 			}
 			routes := make(lengths)
-			unreachableLength, _ := matcher.resolveRoute(rawCost, rawPath, 3)
+			unreachableLength, _ := matcher.resolveRoute(rawCost, rawPath, from, unreachable)
 			routes.AddRouteLength(from, unreachable, unreachableLength)
 			if tc.validRoute {
-				validLength, _ := matcher.resolveRoute(0, []int64{0}, 1)
+				validLength, _ := matcher.resolveRoute(0, []int64{0}, from, valid)
 				routes.AddRouteLength(from, valid, validLength)
 			}
 			decoder, err := matcher.PrepareViterbi(layers, routes, observations)

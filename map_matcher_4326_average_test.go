@@ -41,7 +41,7 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 						{Observation: gpsMeasurements[8]},
 						{Observation: gpsMeasurements[9]},
 					},
-					Probability: -86.578520,
+					Probability: -84.652771633838,
 				},
 			},
 		}
@@ -53,9 +53,9 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 		t.Error(err)
 	}
 
-	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges.Get(13640, 13641)
+	correctStates.SubMatches[0].Observations[0].MatchedEdge = *matcher.engine.edges.Get(13641, 13642)
 	correctStates.SubMatches[0].Observations[1].MatchedEdge = *matcher.engine.edges.Get(13650, 13651)
-	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges.Get(13659, 13660)
+	correctStates.SubMatches[0].Observations[2].MatchedEdge = *matcher.engine.edges.Get(13658, 13659)
 	correctStates.SubMatches[0].Observations[3].MatchedEdge = *matcher.engine.edges.Get(13661, 13662)
 	correctStates.SubMatches[0].Observations[4].MatchedEdge = *matcher.engine.edges.Get(13663, 13664)
 	correctStates.SubMatches[0].Observations[5].MatchedEdge = *matcher.engine.edges.Get(13664, 13665)
@@ -84,9 +84,9 @@ func TestMapMatcher_4326BIG(t *testing.T) {
 	}
 
 	for i := range resultSubMatch.Observations {
-		if resultSubMatch.Observations[i].MatchedEdge.Source != correctSubMatch.Observations[i].MatchedEdge.Source &&
-			resultSubMatch.Observations[i].MatchedEdge.Source != correctSubMatch.Observations[i].MatchedEdge.Target &&
-			resultSubMatch.Observations[i].MatchedEdge.Target != correctSubMatch.Observations[i].MatchedEdge.Source {
+		if resultSubMatch.Observations[i].MatchedEdge.Source != correctSubMatch.Observations[i].MatchedEdge.Source ||
+			resultSubMatch.Observations[i].MatchedEdge.Target != correctSubMatch.Observations[i].MatchedEdge.Target ||
+			resultSubMatch.Observations[i].MatchedEdge.ID != correctSubMatch.Observations[i].MatchedEdge.ID {
 			t.Errorf("Matched edge for observation %d should be %d->%d, but got %d->%d",
 				resultSubMatch.Observations[i].Observation.id,
 				correctSubMatch.Observations[i].MatchedEdge.Source, correctSubMatch.Observations[i].MatchedEdge.Target,

@@ -20,6 +20,8 @@ func BenchmarkResolveRoute(b *testing.B) {
 	edges.Set(0, 1, &spatial.Edge{LengthMeters: 2})
 	edges.Set(1, 2, &spatial.Edge{LengthMeters: 3})
 	matcher := &MapMatcher{engine: &MapEngine{edges: edges}}
+	from := &RoadPosition{GraphEdge: &spatial.Edge{ID: -1}}
+	to := &RoadPosition{GraphEdge: &spatial.Edge{ID: 1, Target: 2}, beforeProjection: 3}
 	for _, tc := range []resolvedRouteBenchmarkCase{
 		{name: "unreachable", cost: -1},
 		{name: "reachable", cost: 10, path: []int64{0, 1}},
@@ -27,7 +29,7 @@ func BenchmarkResolveRoute(b *testing.B) {
 		b.Run(tc.name, func(b *testing.B) {
 			b.ReportAllocs()
 			for i := 0; i < b.N; i++ {
-				benchmarkResolvedLength, benchmarkResolvedPath = matcher.resolveRoute(tc.cost, tc.path, 2)
+				benchmarkResolvedLength, benchmarkResolvedPath = matcher.resolveRoute(tc.cost, tc.path, from, to)
 			}
 		})
 	}
