@@ -243,8 +243,8 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				routingGraphVertex = n
 			}
 			roadPos := NewRoadPositionFromLonLat(stateID, pickedGraphVertex, routingGraphVertex, edge, lon, lat, srid)
-			roadPos.beforeProjection = edge.Weight * fraction
-			roadPos.afterProjection = edge.Weight * (1 - fraction)
+			roadPos.beforeProjection = edge.LengthMeters * fraction
+			roadPos.afterProjection = edge.LengthMeters * (1 - fraction)
 			roadPos.next = next
 			localStates[j] = roadPos
 			stateID++
@@ -288,7 +288,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 					} else {
 						// We should jump to source vertex of current state, since edges are not the same
 						rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].GraphEdge.Source)
-						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
+						routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, prevStates[m], currentStates[n])
 						chRoutes[key] = finalPath
 						currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 						// Only a non-empty CH path counts for break-point detection
@@ -310,12 +310,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				}
 				rawCost, rawPath := getCachedPath(matcher.engine.queryPool, vertexCache, matcher.engine.vertexComponent, prevStates[m].RoutingGraphVertex, currentStates[n].RoutingGraphVertex)
 
-				// Since we are doing Edge(target)-Edge(target) Dijkstra's call most of time we could:
-				// 1) add penalty for source edge by adding remaining distance to target vertex of source edge
-				// 2) add advantage for target edge by subtracting remaining distance to target vertex of target edge
-				// @todo: this could lead to negative values. Need to investigate when it happens
-				// finalCost = (finalCost + prevStates[m].afterProjection) - currentStates[n].afterProjection
-				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, currentStates[n].GraphEdge.Target)
+				routeDistMeters, finalPath := matcher.resolveRoute(rawCost, rawPath, prevStates[m], currentStates[n])
 				chRoutes[key] = finalPath
 				currentRouteLengths.AddRouteLength(prevStates[m], currentStates[n], routeDistMeters)
 				// Only a non-empty CH path counts for break-point detection
@@ -683,15 +678,22 @@ func getCachedPath(queryPool *ch.QueryPool, vertexCache map[[2]int64]cachedRoute
 	return rawCost, rawPath
 }
 
-// resolveRoute builds final path from cached CH result and computes route distance in meters.
+// resolveRoute builds the response path and computes route distance in meters.
+// For distinct edges, rawPath connects from.GraphEdge.Target to to.GraphEdge.Source.
 // rawPath comes from cache and must not be mutated, so a copy is made.
 // An unreachable route returns a negative length and a nil path.
-func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, targetVertex int64) (float64, []int64) {
+func (matcher *MapMatcher) resolveRoute(rawCost float64, rawPath []int64, from, to *RoadPosition) (float64, []int64) {
 	if rawCost < 0 {
 		return -1, nil
 	}
 	finalPath := make([]int64, len(rawPath), len(rawPath)+1)
 	copy(finalPath, rawPath)
-	finalPath = append(finalPath, targetVertex)
-	return matcher.engine.routeDistanceMeters(finalPath), finalPath
+	finalPath = append(finalPath, to.GraphEdge.Target)
+	if from.GraphEdge.ID == to.GraphEdge.ID {
+		// Same-edge cycles retain the full routed path distance.
+		return matcher.engine.routeDistanceMeters(finalPath), finalPath
+	}
+	// Sum nonnegative traversed portions instead of subtracting a long unused suffix.
+	distance := from.afterProjection + matcher.engine.routeDistanceMeters(rawPath) + to.beforeProjection
+	return distance, finalPath
 }

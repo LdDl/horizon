@@ -163,9 +163,9 @@ func TestMapMatcherSubMatches(t *testing.T) {
 		}
 		edge := spatial.Edge{
 			ID:           edge.id,
-			Source:        edge.source,
-			Target:        edge.target,
-			Weight:        weight,
+			Source:       edge.source,
+			Target:       edge.target,
+			Weight:       weight,
 			LengthMeters: weight,
 			Polyline:     &s2Polyline,
 		}
@@ -205,7 +205,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges.Get(0, 1)},
 					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges.Get(2, 3)},
 				},
-				Probability: -791.677435,
+				Probability: -918.993493684619,
 			},
 			{
 				Observations: []ObservationResult{
@@ -219,7 +219,7 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges.Get(9, 10)},
 					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges.Get(10, 11)},
 				},
-				Probability: -8100.966270,
+				Probability: -8292.995142266129,
 			},
 			{
 				Observations: []ObservationResult{
@@ -514,9 +514,9 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 		}
 		edge := spatial.Edge{
 			ID:           edge.id,
-			Source:        edge.source,
-			Target:        edge.target,
-			Weight:        weight,
+			Source:       edge.source,
+			Target:       edge.target,
+			Weight:       weight,
 			LengthMeters: weight,
 			Polyline:     &s2Polyline,
 		}
