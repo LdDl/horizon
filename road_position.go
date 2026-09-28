@@ -16,8 +16,8 @@ type RoadPositions []*RoadPosition
 	GraphEdge - pointer to closest edge in graph
 	GraphVertex  - indentifier of closest vertex
 	Projected - point (Observation) project onto edge, pointer to GeoPoint
-	beforeProjection - distance from starting point to projected one
-	afterProjection - distance from projected point to last one
+	beforeProjection - distance in meters from the edge start to the projection
+	afterProjection - distance in meters from the projection to the edge end
 	next - index of the next vertex in s2.Polyline after the projected point
 */
 type RoadPosition struct {
