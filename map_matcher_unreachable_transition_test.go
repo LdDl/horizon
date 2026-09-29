@@ -142,8 +142,8 @@ func TestUnreachableRouteCannotWinViterbi(t *testing.T) {
 					t.Fatal("unreachable route received a transition probability")
 				}
 			}
-			// Preserve the current model's initial prior and both positional emissions.
-			want := 3*math.Log(1/math.Sqrt(2*math.Pi)) - tc.length*tc.length/2 + math.Log(1/tc.beta) - tc.length/tc.beta
+			// Count both positional emissions and the sole allowed transition.
+			want := 2*math.Log(1/math.Sqrt(2*math.Pi)) - tc.length*tc.length/2 + math.Log(1/tc.beta) - tc.length/tc.beta
 			if math.IsNaN(path.Probability) || math.Abs(path.Probability-want) > 1e-12*math.Max(1, math.Abs(want)) {
 				t.Fatalf("score = %.15g, want %.15g", path.Probability, want)
 			}

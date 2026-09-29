@@ -205,13 +205,13 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[0], MatchedEdge: *mapEngine.edges.Get(0, 1)},
 					{Observation: gpsMeasurements[1], MatchedEdge: *mapEngine.edges.Get(2, 3)},
 				},
-				Probability: -918.993493684619,
+				Probability: -913.201843317342,
 			},
 			{
 				Observations: []ObservationResult{
 					{Observation: gpsMeasurements[2], MatchedEdge: *mapEngine.edges.Get(5, 6)},
 				},
-				Probability: -954.672372,
+				Probability: -477.336185788973,
 			},
 			{
 				Observations: []ObservationResult{
@@ -219,13 +219,13 @@ func TestMapMatcherSubMatches(t *testing.T) {
 					{Observation: gpsMeasurements[4], MatchedEdge: *mapEngine.edges.Get(9, 10)},
 					{Observation: gpsMeasurements[5], MatchedEdge: *mapEngine.edges.Get(10, 11)},
 				},
-				Probability: -8292.995142266129,
+				Probability: -4357.825636065393,
 			},
 			{
 				Observations: []ObservationResult{
 					{Observation: gpsMeasurements[6], MatchedEdge: *mapEngine.edges.Get(13, 14)},
 				},
-				Probability: -196.691325,
+				Probability: -98.345662645211,
 			},
 		},
 	}
@@ -547,7 +547,7 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 	// Expected sub-matches:
 	// - SubMatch 0 (Network 1): A (0->3), B (3->2)
 	// - SubMatch 1 (Network 2): C (5->6)
-	// - SubMatch 2 (Network 3): D (8->9), E (9->10), F (10->11)
+	// - SubMatch 2 (Network 3): D (9->10), E (9->10), F (10->11)
 	// - SubMatch 3 (Network 4): G (13->14)
 	expectedSubMatches := []struct {
 		observations []struct {
@@ -577,7 +577,7 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 				source int64
 				target int64
 			}{
-				{8, 9},
+				{9, 10},
 				{9, 10},
 				{10, 11},
 			},
@@ -598,6 +598,11 @@ func TestMapMatcherSubMatchesPlanar(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 		return
+	}
+
+	// Exhaustive enumeration of all eight candidate chains gives this optimum.
+	if len(result.SubMatches) == 4 && (math.IsNaN(result.SubMatches[2].Probability) || math.Abs(result.SubMatches[2].Probability-(-7.619215915841073)) > 1e-12) {
+		t.Errorf("third submatch score = %.15f, want -7.619215915841073", result.SubMatches[2].Probability)
 	}
 
 	// Debug output
