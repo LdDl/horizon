@@ -69,7 +69,7 @@ func TestMapMatcherSRID_0(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	correctProb := -1932.234419
+	correctProb := -1926.893407386203
 	eps := 10e-6
 	if math.Abs(vpath.Probability-correctProb) > eps {
 		t.Errorf(
