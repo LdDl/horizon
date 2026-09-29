@@ -145,8 +145,8 @@ func TestSameEdgeTransitions(t *testing.T) {
 						if len(subMatch.Observations) != len(group) {
 							t.Fatalf("submatch %d has %d observations, want %d", groupIndex, len(subMatch.Observations), len(group))
 						}
-						// Observations lie on their edges. Preserve the extra initial emission.
-						wantScore := -float64(len(group)+1) * math.Log(2*math.Pi) / 2
+						// Each observation lies on its edge and contributes one emission.
+						wantScore := -float64(len(group)) * math.Log(2*math.Pi) / 2
 						for i, obsIndex := range group {
 							observation := subMatch.Observations[i]
 							if !observation.IsMatched || observation.MatchedEdge.ID != tc.matchedEdge || observation.Observation != observations[obsIndex] {

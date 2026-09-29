@@ -106,8 +106,8 @@ func TestPrepareViterbiRoutePresence(t *testing.T) {
 					t.Fatalf("decoded path uses missing route %v", key)
 				}
 			}
-			// The existing model counts the first position in both prior and emission.
-			want := 3*math.Log(1/math.Sqrt(2*math.Pi)) + math.Log(0.5) - tc.penalty
+			// Two observations contribute two emissions.
+			want := 2*math.Log(1/math.Sqrt(2*math.Pi)) + math.Log(0.5) - tc.penalty
 			if math.IsNaN(path.Probability) || math.Abs(path.Probability-want) > 1e-12 {
 				t.Fatalf("score = %.15f, want %.15f", path.Probability, want)
 			}

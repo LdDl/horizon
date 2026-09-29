@@ -139,8 +139,8 @@ func TestTransitionProjectionDistanceInMeters(t *testing.T) {
 						}
 					}
 					// Both transitions follow the straight line between the observations.
-					// Their distance residuals vanish; retain the existing extra initial emission.
-					want := -2*math.Log(2*math.Pi) - 2*math.Log(2)
+					// Three emissions and two transitions contribute to the score.
+					want := -1.5*math.Log(2*math.Pi) - 2*math.Log(2)
 					if got := result.SubMatches[0].Probability; math.IsNaN(got) || math.Abs(got-want) > 1e-9 {
 						t.Fatalf("score = %.12g, want %.12g; route offsets must use metres between projections", got, want)
 					}

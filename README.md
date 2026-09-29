@@ -279,6 +279,8 @@ Thanks for approach described in this paper:
 
 [Viterbi algorithm](https://en.wikipedia.org/wiki/Viterbi_algorithm) is used to evaluate the most suitable trace of GPS track.
 
+Each submatch starts with equal initial log weights of zero. Its `probability` field is an unnormalized log score: one emission per observation plus one transition score per adjacent pair. A single-observation submatch has only its emission score. The field is not a calibrated probability between zero and one; the common normalizing constant of a uniform initial prior is omitted. The first observation is not counted again as a positional prior.
+
 ## Dependencies
 * Contraction hierarchies library with bidirectional Dijkstra's algorithm - [ch](https://github.com/LdDl/ch#ch---contraction-hierarchies). License is Apache-2.0
 * Viterbi's algorithm implementation - [viterbi](https://github.com/LdDl/viterbi#viterbi). License is Apache-2.0
@@ -293,4 +295,3 @@ Replaced with Maplibre due Mapbox [changed license](https://github.com/mapbox/ma
 
 ## License
 You can check it [here](https://github.com/LdDl/horizon/blob/master/LICENSE)
-

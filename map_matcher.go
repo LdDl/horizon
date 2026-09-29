@@ -354,8 +354,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				}
 				// Pick first candidate (already sorted by dist to observation)
 				bestCandidate := segmentObsState[0].States[0]
-				// Compute emission log probability for single point
-				// Note: Viterbi counts emission twice for first observation (start + emission = 2 * emission)
+				// Count the observation once, as in the decoder with a neutral initial weight.
 				sigma := matcher.hmmParams.sigma
 				if segmentObsState[0].Observation.accuracy > 0 {
 					sigma = segmentObsState[0].Observation.accuracy
@@ -365,7 +364,7 @@ func (matcher *MapMatcher) Run(gpsMeasurements []*GPSMeasurement, statesRadiusMe
 				results[i] = viterbiResult{
 					vpath: viterbi.ViterbiPath{
 						Path:        []viterbi.State{bestCandidate},
-						Probability: 2 * emissionLogProb,
+						Probability: emissionLogProb,
 					},
 				}
 				return
@@ -523,11 +522,12 @@ func (matcher *MapMatcher) PrepareViterbi(obsStates []*CandidateLayer, routeLeng
 		// @experimental
 		// currentLayer.EmissionLogProbabilities = softmaxEmissions(currentLayer.EmissionLogProbabilities)
 		if i == 0 {
+			// Equal initial log weights leave the first observation to its emission.
 			for j := range currentLayer.EmissionLogProbabilities {
 				if ViterbiDebug {
-					fmt.Printf(`v.PutStartProbability(incStates[%d], %.15f) // Graph edge: %d. Graph vertex: %d%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], currentLayer.EmissionLogProbabilities[j].prob, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.ID, currentLayer.EmissionLogProbabilities[j].rp.RoutingGraphVertex, "\n")
+					fmt.Printf(`v.PutStartProbability(incStates[%d], %.15f) // Graph edge: %d. Graph vertex: %d%s`, statesIndx[currentLayer.EmissionLogProbabilities[j].rp.ID()], 0.0, currentLayer.EmissionLogProbabilities[j].rp.GraphEdge.ID, currentLayer.EmissionLogProbabilities[j].rp.RoutingGraphVertex, "\n")
 				}
-				v.PutStartProbability(currentLayer.EmissionLogProbabilities[j].rp, currentLayer.EmissionLogProbabilities[j].prob)
+				v.PutStartProbability(currentLayer.EmissionLogProbabilities[j].rp, 0)
 			}
 			if ViterbiDebug {
 				fmt.Println()
